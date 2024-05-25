@@ -20,7 +20,7 @@ public class TelegramService : ITelegramService
         AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
     };
 
-    private IReadOnlyCollection<ITelegramCommand> commandInstances;
+    private IReadOnlyCollection<ITelegramCommand>? commandInstances;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
 
@@ -54,7 +54,7 @@ public class TelegramService : ITelegramService
 
         if (!TelebotServiceApp.IsDev)
         {
-            _ = this.SendAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
         }
     }
 
@@ -62,7 +62,7 @@ public class TelegramService : ITelegramService
     {
         if (!TelebotServiceApp.IsDev)
         {
-            await this.SendAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            await this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
         }
         cts.Cancel();
         cts.Dispose();
@@ -89,11 +89,7 @@ public class TelegramService : ITelegramService
         if (!this.config.AllowedUsers.Contains(message.Chat.Username))
         {
             Console.WriteLine($"Forbidden {message.Chat.Username}:{message.Chat.Id}");
-            _ = botClient.SendTextMessageAsync(
-                            chatId: message.Chat.Id,
-                            text: "Y usted quien es?",
-                            replyToMessageId: message.MessageId,
-                            cancellationToken: cancellationToken);
+            _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
             return;
         }
 
@@ -116,15 +112,13 @@ public class TelegramService : ITelegramService
         else
         {
             Console.WriteLine($"No commands found for message '{messageText}', chat {chatId}.");
-            await botClient.SendTextMessageAsync(
-                                chatId: message.Chat.Id,
-                                text: this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, "I didn't understand you"),
-                                replyToMessageId: message.MessageId,
-                                cancellationToken: cancellationToken);
+            await this.Reply(message, "I didn't understand you", cancellationToken);
         }
     }
 
-    private async Task SendAdminMessage(string message, CancellationToken cancellationToken)
+    private Task Reply(Message message, string text, CancellationToken cancellationToken) => this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
+
+    private async Task SentAdminMessage(string message, CancellationToken cancellationToken)
     {
         if (this.config.AdminChatId > 0)
         {

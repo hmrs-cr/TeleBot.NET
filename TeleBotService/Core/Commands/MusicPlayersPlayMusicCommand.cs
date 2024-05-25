@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -18,8 +19,8 @@ public class MusicPlayersPlayMusicCommand : MusicPlayerCommandBase
 
     protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
-        var url = preset?.Url ?? ParseLastUrl(message);
-        if (url != null)
+        var url = preset?.Url ?? message.ParseLastUrl();
+        if (url?.IsAbsoluteUri == true)
         {
             if (url.ToString().Contains(".m3u", StringComparison.OrdinalIgnoreCase))
             {
@@ -36,7 +37,7 @@ public class MusicPlayersPlayMusicCommand : MusicPlayerCommandBase
         }
         else if (ContainsText(message, "local"))
         {
-            await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayLocalList((uint)ParseLastInt(message).GetValueOrDefault()));
+            await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayLocalList((uint)message.ParseLastInt().GetValueOrDefault()));
         }
 
         return ReplyPlayerStatusDelayLong;

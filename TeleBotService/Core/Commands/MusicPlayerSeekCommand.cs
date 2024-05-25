@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -19,7 +20,7 @@ public class MusicPlayerSeekCommand : MusicPlayerCommandBase
         await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>
         {
             int? newPos = null;
-            var offsetPos = ParseLastInt(message).GetValueOrDefault(5);
+            var offsetPos = message.ParseLastInt().GetValueOrDefault(5);
             var status = await playerConfig.Client.GetPlayerStatus();
             var curPos = status.Curpos / 1000;
             if (ContainsText(message, "forward"))

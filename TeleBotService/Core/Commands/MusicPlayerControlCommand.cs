@@ -1,6 +1,7 @@
 ﻿using Linkplay.HttpApi.Model;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -30,7 +31,7 @@ public class MusicPlayerControlCommand : MusicPlayerCommandBase
         await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>
         {
             var command = commandMap.First(c => ContainsText(message, c.Key)).Value;
-            var repeat = ParseLastInt(message).GetValueOrDefault(command.DefaultRepeat);
+            var repeat = message.ParseLastInt().GetValueOrDefault(command.DefaultRepeat);
             if (repeat > command.MaxRepeat)
             {
                 repeat = command.MaxRepeat;

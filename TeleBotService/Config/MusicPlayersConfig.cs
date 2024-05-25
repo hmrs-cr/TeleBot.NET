@@ -27,7 +27,7 @@ public class PlayersConfig
         return linkplayHttpApiClient;
     }
 
-    internal MusicPlayersPresetConfig? GetPreset(string text) => this.Presets?.FirstOrDefault(p => text.Contains(p.Name, StringComparison.InvariantCultureIgnoreCase));
+    internal MusicPlayersPresetConfig? GetPreset(string? text) => this.Presets?.FirstOrDefault(p => text?.Contains(p.Name, StringComparison.InvariantCultureIgnoreCase) == true);
 }
 
 public record MusicPlayersPresetConfig

@@ -20,10 +20,15 @@ public class HelpCommand : TelegramCommand
         foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage)))
         {
             sb.Append("<b>").Append(Localize(message, command.Description)).Append(':').Append("</b>")
-              .AppendLine()
-              .Append("<i>").Append(Localize(message, command.Usage)).Append("</i>")
-              .AppendLine()
               .AppendLine();
+
+            foreach (var cmd in command.Usage.Split('\n'))
+            {
+                var cmdLocalized = Localize(message, cmd);
+                sb.Append("<i>").Append(cmdLocalized).Append(" --> </i>/").Append(cmdLocalized.Replace(" ", string.Empty));
+                sb.AppendLine();
+            }
+            sb.AppendLine();
         }
 
         await this.ReplyFormated(message, sb.ToString(), cancellationToken);

@@ -69,7 +69,7 @@
         "es": [ "Mitad" ]
     },
     "Low": {
-        "es": [ "Bajo", "" ]
+        "es": [ "Bajo" ]
     },
     "Control music volume": {
         "es": [ "Sube o baja el volumen" ]
@@ -95,13 +95,22 @@
     "Something failed": {
         "es": [ "Algo falló" ]
     },
-    "Playing '[songTitle]' by '[artist]' in '[palyerName]' ([playerMode]). Volume at [volume]": {
-        "es": [ "Está sonando '[songTitle]' de '[artist]' en '[palyerName]' ([playerMode]). Volumen al [volume]" ]
+    "Playing '[songTitle]' by '[artist]' in '[playerName]' ([playerMode]). Volume at [volume]": {
+        "es": [ "Está sonando '[songTitle]' de '[artist]' en '[playerName]' ([playerMode]). Volumen al [volume]" ]
     },
-    "Nothing playing in '[palyerName]'": {
-        "es": [ "No esta sonando nada por ahora en '[palyerName]'" ]
+    "Nothing playing in '[playerName]'": {
+        "es": [ "No esta sonando nada por ahora en '[playerName]'" ]
     },
     "I didn't understand you": {
         "es": [ "No entendí" ]
+    },
+    "Hello, the new language is '[lang]'": {
+        "es": [ "Hola, el nuevo idioma es '[lang]'" ]
+    },
+    "Language '[lang]' not found": {
+        "es": [ "Idioma '[lang]' no encontrado" ]
+    },
+    "'[playerName]' does not respond": {
+        "es": [ "'[playerName]' no responde" ]
     }
 }

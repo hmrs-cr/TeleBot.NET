@@ -44,28 +44,6 @@ public abstract class TelegramCommand : ITelegramCommand
     protected bool ContainsText(Message message, string text) =>
         (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
             message.Text?.Contains(t, StringComparison.InvariantCultureIgnoreCase) == true) == true;
-
-    protected static int? ParseLastInt(Message message)
-    {
-        var i = message.Text?.LastIndexOf(' ');
-        if (i > 0 && int.TryParse(message.Text.AsSpan(i.Value), out var result))
-        {
-            return result;
-        }
-
-        return null;
-    }
-
-    protected static Uri? ParseLastUrl(Message message)
-    {
-        var i = message.Text?.LastIndexOf(' ');
-        if (i > 0 && Uri.TryCreate(message.Text.Substring(i.Value), default(UriCreationOptions), out var result))
-        {
-            return result;
-        }
-
-        return null;
-    }
 }
 
 public static class TelegramCommandRegistrationExtensions

@@ -6,7 +6,11 @@ namespace TeleBotService.Localization;
 
 public partial class SimpleLocalizationResolver : ILocalizationResolver
 {
+    public const string DefaulLanguage = "en";
+
     private CaseInsensitiveTextMappingDictionary? localizedTextMappings = null;
+
+    public IEnumerable<string>? DefinedLanguages => localizedTextMappings?.Values.SelectMany(v => v.Keys).Append(DefaulLanguage).Distinct();
 
     public CultureInfo? GetCultureInfo(string cultureName) => CultureInfo.GetCultureInfo(cultureName);
 
@@ -32,7 +36,7 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
     {
         try
         {
-            using var file = File.OpenRead(fileName);
+            using var file = File.OpenRead(fileName ?? "localizedStrings.json");
             this.localizedTextMappings = JsonSerializer.Deserialize<CaseInsensitiveTextMappingDictionary>(file);
         }
         catch (Exception e)
@@ -52,12 +56,6 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
 
         return template;
     }
-
-    internal static string ResolveSquareTokens(string template, Dictionary<string, string> tokenValues) =>
-        ResolveSquareTokensRegex().Replace(template, match => tokenValues.GetValueOrDefault(match.Groups[1].Value) ?? match.Value.TrimStart('[').TrimEnd(']'));
-
-    [GeneratedRegex(@"[(.*?)]")]
-    private static partial Regex ResolveSquareTokensRegex();
 
     [GeneratedRegex(@"{(.*?)}")]
     private static partial Regex ResolveCurlyTokensRegex();

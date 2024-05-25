@@ -31,12 +31,10 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     public override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         message.Text = message.Text?.Trim();
-        if (this.playersConfig?.Count > 0)
+        var text = message.Text;
+        if (this.playersConfig?.Count > 0 && this.GetPlayerConfig(text) is { } playerConfig)
         {
-            var text = message.Text;
-            var playerConfig = this.GetPlayerConfig(text);
             var preset = playerConfig.GetPreset(text);
-
             try
             {
                 if (this.CanAutoTurnOn)
@@ -108,7 +106,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         MusicPlayersPresetConfig? musicPlayersPresetConfig,
         CancellationToken cancellationToken = default);
 
-    protected PlayersConfig GetPlayerConfig(string text) => this.playersConfig.FirstOrDefault(pc => text.Contains(pc.Key)).Value ?? this.playersConfig.FirstOrDefault().Value;
+    protected PlayersConfig? GetPlayerConfig(string? text) => this.playersConfig?.FirstOrDefault(pc => text?.Contains(pc.Key) == true).Value ?? this.playersConfig?.FirstOrDefault().Value;
 
     protected async Task ReplyPlayerStatus(
         Message message,
@@ -125,7 +123,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         var playerStatus = await playerConfig.Client.GetPlayerStatus();
         if (playerStatus == null)
         {
-            statusMessage = $"'{playerConfig.Name}' no responde";
+            statusMessage = $"'[playerName]' does not respond";
         }
         else if (playerStatus.Status == "play")
         {
@@ -167,21 +165,21 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         return result;
     }
 
-    private static string ResolveTokens(string tmplate, PlayerStatus? playerStatus, PlayersConfig playerConfig)
+    private static string ResolveTokens(string template, PlayerStatus? playerStatus, PlayersConfig playerConfig)
     {
         var tokenValues = new Dictionary<string, string>
         {
-            { "[playerName]", playerConfig.Name }
+            { "playerName", playerConfig.Name }
         };
 
         if (playerStatus != null)
         {
-            tokenValues["[songTitle]"] = playerStatus.Title.ToString();
-            tokenValues["[artist]"] = playerStatus.Artist.ToString();
-            tokenValues["[playerMode]"] = $"{playerStatus.Mode}";
-            tokenValues["[volume]"] = $"{(playerStatus.Mute ? 0 : playerStatus.Vol)}";
+            tokenValues["songTitle"] = playerStatus.Title.ToString();
+            tokenValues["artist"] = playerStatus.Artist.ToString();
+            tokenValues["playerMode"] = $"{playerStatus.Mode}";
+            tokenValues["volume"] = $"{(playerStatus.Mute ? 0 : playerStatus.Vol)}";
         }
 
-        return SimpleLocalizationResolver.ResolveSquareTokens(tmplate, tokenValues);
+        return template.Format(tokenValues);
     }
 }
