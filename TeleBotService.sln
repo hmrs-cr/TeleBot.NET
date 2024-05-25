@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeleBotService", "TeleBotService\TeleBotService.csproj", "{77BA4DFD-5DEF-4BBC-8FD7-054209CAC671}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linkplay.HttpApi", "Linkplay.HttpApi\Linkplay.HttpApi.csproj", "{9EB24338-49E7-402D-95C7-AA6FCED59E78}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77BA4DFD-5DEF-4BBC-8FD7-054209CAC671}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77BA4DFD-5DEF-4BBC-8FD7-054209CAC671}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77BA4DFD-5DEF-4BBC-8FD7-054209CAC671}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77BA4DFD-5DEF-4BBC-8FD7-054209CAC671}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

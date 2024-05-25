@@ -1,0 +1,117 @@
+﻿using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Linkplay.HttpApi.Json;
+using Linkplay.HttpApi.Model;
+
+namespace Linkplay.HttpApi;
+
+public class LinkplayHttpApiClient
+{
+    private const string CommandPath = "/httpapi.asp";
+    private readonly string host;
+    private readonly HttpClient httpClient;
+
+    public TimeSpan RequestTimeout { get => this.httpClient.Timeout; set => this.httpClient.Timeout = value; }
+
+    private readonly JsonSerializerOptions jsonOptions = new()
+    {
+        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+
+    };
+
+    public LinkplayHttpApiClient(string host, HttpClient? httpClient = null) 
+    {
+        this.host = host ?? throw new ArgumentNullException(nameof(host));
+        this.httpClient = httpClient ?? new HttpClient();
+        this.jsonOptions.Converters.Add(new JsonStringEnumConverter());
+        this.jsonOptions.Converters.Add(new HexedStringJsonConverter());
+        this.jsonOptions.Converters.Add(new BoolStringJsonConverter());
+        this.jsonOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower;
+    }
+
+    public async Task<string> Reboot() => await this.ExecuteCommand("reboot");
+
+    public async Task<PlayerStatus?> GetPlayerStatus() => await this.ExecuteCommand<PlayerStatus>("getPlayerStatus");
+
+    public async Task<NetworkStatus?> GetNetworkStatus() => await this.ExecuteCommand<NetworkStatus>("getStaticIP");
+
+    public async Task<bool> IsConnected()
+    {
+        var netStatus = await this.GetNetworkStatus();
+        var isConnected = netStatus != null && (netStatus.Eth != NetworkState.NotConnected || netStatus.Wifi != NetworkState.NotConnected);
+        return isConnected;
+    }
+
+    public async Task<DeviceStatus?> GetDeviceStatus() => await this.ExecuteCommand<DeviceStatus>("getStatusEx");
+
+    public async Task<int> GetTrackCount() => await this.ExecuteCommand<int>("GetTrackNumber");
+
+    public async Task<LocalPlayList?> GetLocalPlayList() => await this.ExecuteCommand<LocalPlayList>("getLocalPlayList");
+
+    public async Task<LocalInfolist?> GetLocalFileInfo(uint indexStart, uint range) => await this.ExecuteCommand<LocalInfolist>($"getFileInfo:{indexStart}:{range}");
+
+    public async Task<bool> SetPlayerMode(PlayerMode playerMode) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:switchmode:{playerMode}"));
+
+    public async Task<bool> PlayUrl(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:play:{uri}"));
+
+    public async Task<bool> PlayPlaylist(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:m3u:play:{uri}"));
+
+    public async Task<bool> PlayLocalList(uint index) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playLocalList:{index}"));
+
+    public async Task<bool> PlayIndex(uint index) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playindex:{index}"));
+
+    public async Task<bool> SetPlayerLoopMode(ShuffleMode mode) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:loopmode:{(int)mode}"));
+
+    public async Task<bool> ControlPlayer(PlayerControl command) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:{command}"));
+
+    public Task<bool> Pause() => this.ControlPlayer(PlayerControl.Pause);
+    public Task<bool> Stop() => this.ControlPlayer(PlayerControl.Stop);
+    public Task<bool> Resume() => this.ControlPlayer(PlayerControl.Resume);
+    public Task<bool> TogglePause() => this.ControlPlayer(PlayerControl.OnePause);
+    public Task<bool> Prev() => this.ControlPlayer(PlayerControl.Prev);
+    public Task<bool> Next() => this.ControlPlayer(PlayerControl.Next);
+
+    public async Task<bool> PlayerSeek(uint positionInSeconds) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:seek:{positionInSeconds}"));
+
+    public async Task<bool> PlayPreset(uint preset) => IsOkResponse(await this.ExecuteCommand($"MCUKeyShortClick:{preset}"));
+
+    public async Task<bool> PlayerSetVolume(uint vol) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:vol:{vol}"));
+
+    public async Task<bool> PlayerVolumeDown() => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:vol--"));
+
+    public async Task<bool> PlayerVolumeUp() => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:vol%2b%2b"));
+
+    public async Task<bool> PlayerMuteVolume(bool mute) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:mute:{Convert.ToInt16(mute)}"));
+
+    public async Task<T?> ExecuteCommand<T>(string command)
+    {
+        try 
+        {
+            return await this.httpClient.GetFromJsonAsync<T>(this.GetCommnadUrl(command), this.jsonOptions);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            return default;
+        }
+    }
+
+    public async Task<string> ExecuteCommand(string command) => this.Log(await this.httpClient.GetStringAsync(this.GetCommnadUrl(command)));
+
+    private static bool IsOkResponse(string response) => response == "OK";
+
+    private Uri GetCommnadUrl(string command) => this.Log(new UriBuilder(schemeName: "http://", hostName: this.host)
+        {
+            Path = CommandPath,
+            Query = $"command={command}"
+        }.Uri);
+
+    private T Log<T>(T value)
+    {
+        Console.WriteLine(value);
+        return value;
+    }
+}
