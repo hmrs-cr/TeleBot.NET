@@ -1,5 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using TeleBotService.Extensions;
+using TeleBotService.Localization;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -18,6 +20,9 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual string Usage => string.Empty;
 
+[   JsonIgnore]
+    public ILocalizationResolver? LocalizationResolver { get; protected set; }
+
     public abstract Task Execute(Message message, CancellationToken cancellationToken = default);
     public abstract bool CanExecuteCommand(Message message);
 
@@ -34,12 +39,10 @@ public abstract class TelegramCommand : ITelegramCommand
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken);
 
-    protected static TelegramChatContext GetContext(Message message) => TelegramChatContext.GetContext(message.Chat);
+    protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 
-    protected static string Localize(Message message, string text) => GetContext(message)?.Localize(text) ?? text;
-
-    protected static bool ContainsText(Message message, string text) =>
-        GetContext(message)?.GetLocalizedStrings(text).Append(text).Any(t =>
+    protected bool ContainsText(Message message, string text) =>
+        (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
             message.Text?.Contains(t, StringComparison.InvariantCultureIgnoreCase) == true) == true;
 
     protected static int? ParseLastInt(Message message)

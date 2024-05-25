@@ -1,11 +1,11 @@
-﻿using System.Globalization;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text.Json.Serialization;
 using Linkplay.HttpApi;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
 using TeleBotService.Config;
 using TeleBotService.Core;
+using TeleBotService.Localization;
 
 namespace TeleBotService;
 
@@ -22,8 +22,6 @@ public static class TelebotServiceApp
     {
         Console.WriteLine($"Starting service V{Version}");
 
-        SimpleLocalizationResolver.InitDefaultInstance("localizedStrings.json");
-
         var builder = WebApplication.CreateBuilder(args);
         builder.Services
                .AddSwagger()
@@ -35,7 +33,6 @@ public static class TelebotServiceApp
                      .AddDevOnlyEndpoints();
 
         IsDev = App.Environment.IsDevelopment();
-
         try
         {
             App.Run();
@@ -57,6 +54,7 @@ public static class TelebotServiceApp
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
+                .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .ConfigureHttpJsonOptions(options =>
                 {
@@ -88,7 +86,7 @@ public static class TelebotServiceApp
     {
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("test", async () =>
+            app.MapGet("test", () =>
             {
                 var client = new LinkplayHttpApiClient("192.168.100.104");
                 return client.GetDeviceStatus();

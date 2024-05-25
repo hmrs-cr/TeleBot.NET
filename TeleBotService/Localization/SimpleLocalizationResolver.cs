@@ -1,36 +1,25 @@
-﻿using System.Collections.ObjectModel;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Telegram.Bot.Requests;
 
-namespace TeleBotService;
+namespace TeleBotService.Localization;
 
-public partial class SimpleLocalizationResolver
+public partial class SimpleLocalizationResolver : ILocalizationResolver
 {
-    private Dictionary<string, Dictionary<string, string[]>>? localizedTextMappings = null;
-
-    public static SimpleLocalizationResolver Default { get; private set; }
-
-    public string? CultureName { get; set; }
-
-    public CultureInfo? CultureInfo => this.GetCultureInfo(this.CultureName);
-
-
-    public string this[string text] => this.GetLocalizedString(this.CultureName, text);
+    private CaseInsensitiveTextMappingDictionary? localizedTextMappings = null;
 
     public CultureInfo? GetCultureInfo(string cultureName) => CultureInfo.GetCultureInfo(cultureName);
 
-    public string GetLocalizedString(string cultureName, string textValue, int idx = 0)
+    public string GetLocalizedString(string? cultureName, string textValue, int idx = 0)
     {
-        var localizedText = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);
-        var value = localizedText?.Skip(idx).FirstOrDefault() ?? textValue;
-        if (this.localizedTextMappings != null && value.Contains('{') && value.Contains('}'))
+        if (cultureName is null)
         {
-            value = ResolveTokens(value, cultureName, idx, this.localizedTextMappings);
+            return textValue;
         }
 
-        return value;
+        var localizedText = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);
+        var value = localizedText?.Skip(idx).FirstOrDefault() ?? textValue;
+        return ResolveTokens(value, cultureName, idx, this.localizedTextMappings);
     }
 
     public IEnumerable<string> GetLocalizedStrings(string cultureName, string textValue)
@@ -39,21 +28,12 @@ public partial class SimpleLocalizationResolver
         return localizedStrings ?? Enumerable.Repeat(textValue, 1);
     }
 
-    internal static string ResolveTokens(string template, string cultureName, int idx, Dictionary<string, Dictionary<string, string[]>> replacements) =>
-        ResolveCurlyTokensRegex().Replace(template, match => replacements.GetValueOrDefault(match.Groups[1].Value)?.GetValueOrDefault(cultureName)?.Skip(idx)?.FirstOrDefault() ?? match.Value.TrimStart('{').TrimEnd('}'));
-
-    internal static string ResolveSquareTokens(string template, Dictionary<string, string> tokenValues) =>
-        ResolveSquareTokensRegex().Replace(template, match => tokenValues.GetValueOrDefault(match.Groups[1].Value) ?? match.Value.TrimStart('[').TrimEnd(']'));
-
-
-    internal static void InitDefaultInstance(string fileName)
+    internal void LoadStringMappings(string? fileName)
     {
-        Default = new SimpleLocalizationResolver();
         try
         {
             using var file = File.OpenRead(fileName);
-            Default.localizedTextMappings = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string[]>>>(file);
-            Default.localizedTextMappings = new(Default.localizedTextMappings, StringComparer.OrdinalIgnoreCase);
+            this.localizedTextMappings = JsonSerializer.Deserialize<CaseInsensitiveTextMappingDictionary>(file);
         }
         catch (Exception e)
         {
@@ -61,9 +41,41 @@ public partial class SimpleLocalizationResolver
         }
     }
 
+    internal static string ResolveTokens(string template, string cultureName, int idx, Dictionary<string, Dictionary<string, string[]>>? replacements)
+    {
+        if (template.Contains('{') && template.Contains('}'))
+        {
+            return ResolveCurlyTokensRegex().Replace(template, match => replacements?.GetValueOrDefault(match.Groups[1].Value)?
+                                                                                     .GetValueOrDefault(cultureName)?
+                                                                                     .Skip(idx)?.FirstOrDefault() ?? match.Value.TrimStart('{').TrimEnd('}'));
+        }
+
+        return template;
+    }
+
+    internal static string ResolveSquareTokens(string template, Dictionary<string, string> tokenValues) =>
+        ResolveSquareTokensRegex().Replace(template, match => tokenValues.GetValueOrDefault(match.Groups[1].Value) ?? match.Value.TrimStart('[').TrimEnd(']'));
+
     [GeneratedRegex(@"[(.*?)]")]
     private static partial Regex ResolveSquareTokensRegex();
 
     [GeneratedRegex(@"{(.*?)}")]
     private static partial Regex ResolveCurlyTokensRegex();
+
+    private class CaseInsensitiveTextMappingDictionary : Dictionary<string, Dictionary<string, string[]>>
+    {
+        public CaseInsensitiveTextMappingDictionary() : base(StringComparer.OrdinalIgnoreCase) {}
+    }
+}
+
+public static class ResgistrationExtensions
+{
+    public static IServiceCollection AddCommandTextMappings(this IServiceCollection services, IConfiguration config)
+    {
+        var fileName = config.GetValue<string>("LocalizedStringMappingFile");
+        var instance = new SimpleLocalizationResolver();
+        instance.LoadStringMappings(fileName);
+        services.AddSingleton<ILocalizationResolver>(instance);
+        return services;
+    }
 }

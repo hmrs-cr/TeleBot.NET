@@ -100,5 +100,8 @@
     },
     "Nothing playing in '[palyerName]'": {
         "es": [ "No esta sonando nada por ahora en '[palyerName]'" ]
+    },
+    "I didn't understand you": {
+        "es": [ "No entendí" ]
     }
 }

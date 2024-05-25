@@ -1,23 +1,44 @@
 ﻿using System.Collections.Concurrent;
 using Telegram.Bot.Types;
 
-namespace TeleBotService;
+namespace TeleBotService.Model;
 
 public class TelegramChatContext
 {
-    private static ConcurrentDictionary<long, TelegramChatContext> currentChats = [];
+    private static ConcurrentDictionary<ChatContextKey, TelegramChatContext> currentChats = [];
 
-    public TelegramChatContext(long id)
+    private readonly ChatContextKey key;
+
+    private TelegramChatContext(ChatContextKey key)
     {
-        this.ChatId = id;
+        this.key = key;
     }
 
-    public long ChatId { get; }
-    public string CultureName { get; set; } = "es";
+    public long? ChatId => this.key.Chat?.Id;
 
-    public string Localize(string text) => SimpleLocalizationResolver.Default?.GetLocalizedString(this.CultureName, text) ?? text;
+    public string? Username => this.key.Chat?.Username;
 
-    public IEnumerable<string> GetLocalizedStrings(string text) => SimpleLocalizationResolver.Default?.GetLocalizedStrings(this.CultureName, text) ?? Enumerable.Repeat(text, 1);
+    public string LanguageCode { get; set; } = "es";
 
-    public static TelegramChatContext GetContext(Chat chat) => currentChats.GetOrAdd(chat.Id, (id) => new TelegramChatContext(id));
+    public override int GetHashCode() => this.key.GetHashCode();
+
+    public override bool Equals(object? obj) => this.key.Equals(obj);
+
+    public static TelegramChatContext GetContext(Chat chat) => currentChats.GetOrAdd(new (chat), (key) => new TelegramChatContext(key));
+
+    private class ChatContextKey
+    {
+        public Chat Chat { get; }
+
+        public ChatContextKey(Chat chat)
+        {
+            this.Chat = chat;
+        }
+
+        public override bool Equals(object? obj) => obj is ChatContextKey other && this.Equals(other);
+
+        public bool Equals(ChatContextKey? other) => other?.Chat?.Id == this.Chat?.Id && other?.Chat?.Username == this.Chat?.Username;
+
+        public override int GetHashCode() => HashCode.Combine(this.Chat?.Id, this.Chat?.Username);
+    }
 }

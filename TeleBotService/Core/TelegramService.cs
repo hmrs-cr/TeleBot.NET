@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
+using TeleBotService.Localization;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -19,10 +21,10 @@ public class TelegramService : ITelegramService
     };
 
     private IReadOnlyCollection<ITelegramCommand> commandInstances;
-
+    private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
 
-    public TelegramService(IOptions<TelegramConfig> confif, IServiceProvider serviceProvider)
+    public TelegramService(IOptions<TelegramConfig> confif, ILocalizationResolver localizationResolver, IServiceProvider serviceProvider)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
         {
@@ -31,6 +33,7 @@ public class TelegramService : ITelegramService
 
         this.botClient = new TelegramBotClient(confif.Value.BotToken);
         this.config = confif.Value;
+        this.localizationResolver = localizationResolver;
         this.serviceProvider = serviceProvider;
     }
 
@@ -115,7 +118,7 @@ public class TelegramService : ITelegramService
             Console.WriteLine($"No commands found for message '{messageText}', chat {chatId}.");
             await botClient.SendTextMessageAsync(
                                 chatId: message.Chat.Id,
-                                text: "No entendí",
+                                text: this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, "I didn't understand you"),
                                 replyToMessageId: message.MessageId,
                                 cancellationToken: cancellationToken);
         }
@@ -153,6 +156,7 @@ public class TelegramService : ITelegramService
             ;
             var instance = this.serviceProvider.GetService(t);
             typeof(TelegramCommand).GetProperty(nameof(TelegramCommand.BotClient))?.SetValue(instance, this.botClient);
+            typeof(TelegramCommand).GetProperty(nameof(TelegramCommand.LocalizationResolver))?.SetValue(instance, this.localizationResolver);
             return instance as TelegramCommand;
 
         })
