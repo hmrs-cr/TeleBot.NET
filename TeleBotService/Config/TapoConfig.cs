@@ -4,7 +4,7 @@ namespace TeleBotService.Config;
 
 public class TapoConfig
 {
-    private static readonly Dictionary<string, Func<TapoConfig, TapoDeviceConfig, TapoDevice>> tapoDeviceFactory = new ()
+    private static readonly Dictionary<string, Func<TapoConfig, TapoDeviceConfig, TapoDevice>> tapoDeviceFactory = new()
     {
         { "P105", (tc, td) => new P105(td.Host, tc.UserName, tc.Password) },
     };
@@ -16,7 +16,7 @@ public class TapoConfig
 
     public TapoDevice? GetDeviceByConfigId(int configId)
     {
-        if (!string.IsNullOrEmpty(this.UserName) && !string.IsNullOrEmpty(this.Password) && this.UserName != "secret" && this.Password != "secret" )
+        if (!string.IsNullOrEmpty(this.UserName) && !string.IsNullOrEmpty(this.Password) && this.UserName != "secret" && this.Password != "secret")
         {
             var deviceConfig = this.Devices?.FirstOrDefault(t => t.Id == configId);
             if (deviceConfig != null)
@@ -48,4 +48,3 @@ public class TapoConfig
 
 
 
-    

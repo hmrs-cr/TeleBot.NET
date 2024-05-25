@@ -21,20 +21,20 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
         var isShutDown = ContainsText(message, "turn off");
         if (tapoDeviceClient != null)
         {
-            if (isShutDown) 
+            if (isShutDown)
             {
                 await tapoDeviceClient.TurnOffAsync();
                 await Task.Delay(2000, cancellationToken);
             }
             else
             {
-                 await tapoDeviceClient.TurnOnAsync();
-                 await this.UntilOnline(playerConfig, cancellationToken: cancellationToken);
-                 return ReplyPlayerStatusDelay;
+                await tapoDeviceClient.TurnOnAsync();
+                await this.UntilOnline(playerConfig, cancellationToken: cancellationToken);
+                return ReplyPlayerStatusDelay;
             }
         }
 
-        if (isShutDown)  
+        if (isShutDown)
         {
             var connected = await playerConfig.Client.IsConnected();
             await this.Reply(message, connected ? "Still on" : "Turned Off!");

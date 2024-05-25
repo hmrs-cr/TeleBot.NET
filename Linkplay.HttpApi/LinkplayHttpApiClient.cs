@@ -22,7 +22,7 @@ public class LinkplayHttpApiClient
 
     };
 
-    public LinkplayHttpApiClient(string host, HttpClient? httpClient = null) 
+    public LinkplayHttpApiClient(string host, HttpClient? httpClient = null)
     {
         this.host = host ?? throw new ArgumentNullException(nameof(host));
         this.httpClient = httpClient ?? new HttpClient();
@@ -88,7 +88,7 @@ public class LinkplayHttpApiClient
 
     public async Task<T?> ExecuteCommand<T>(string command)
     {
-        try 
+        try
         {
             return await this.httpClient.GetFromJsonAsync<T>(this.GetCommnadUrl(command), this.jsonOptions);
         }
@@ -104,10 +104,10 @@ public class LinkplayHttpApiClient
     private static bool IsOkResponse(string response) => response == "OK";
 
     private Uri GetCommnadUrl(string command) => this.Log(new UriBuilder(schemeName: "http://", hostName: this.host)
-        {
-            Path = CommandPath,
-            Query = $"command={command}"
-        }.Uri);
+    {
+        Path = CommandPath,
+        Query = $"command={command}"
+    }.Uri);
 
     private T Log<T>(T value)
     {

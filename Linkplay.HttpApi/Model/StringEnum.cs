@@ -4,7 +4,7 @@ public class StringEnum
 {
     private readonly string value;
 
-    protected StringEnum(string value) 
+    protected StringEnum(string value)
     {
         this.value = value;
     }
@@ -21,7 +21,7 @@ public class StringEnum
 
     public bool Equals(StringEnum other) => EqualityComparer<string>.Default.Equals(value, other.value);
 
-    public static IEnumerable<StringEnum> GetValues<T>() where T : StringEnum => 
+    public static IEnumerable<StringEnum> GetValues<T>() where T : StringEnum =>
         typeof(T).GetFields(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public)
                  .Where(f => f.FieldType.IsAssignableTo(typeof(StringEnum)))
                  .Select(f => f.GetValue(null))

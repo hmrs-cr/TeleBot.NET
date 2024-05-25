@@ -7,25 +7,25 @@ public struct HexedString
 {
     private readonly string value;
 
-    public HexedString(string hexedValue) 
+    public HexedString(string hexedValue)
     {
-        try 
+        try
         {
             this.value = HexedToString(hexedValue);
-        } 
+        }
         catch
         {
             this.value = hexedValue;
         }
     }
 
-     public static string HexedToString(string hexString)
+    public static string HexedToString(string hexString)
     {
         var sb = new StringBuilder();
         for (var i = 0; i < hexString.Length; i += 2)
         {
             var hs = hexString.AsSpan(i, 2);
-            var decval =  uint.Parse(hs, NumberStyles.HexNumber);
+            var decval = uint.Parse(hs, NumberStyles.HexNumber);
             var character = Convert.ToChar(decval);
             sb.Append(character);
         }

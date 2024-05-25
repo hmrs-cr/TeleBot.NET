@@ -21,7 +21,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
 
     protected virtual bool CanAutoTurnOn => false;
 
-    protected MusicPlayerCommandBase(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) 
+    protected MusicPlayerCommandBase(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig)
     {
         this.playersConfig = config.Value?.Players.ToDictionary(p => p.Name.ToLower());
         this.tapoConfig = tapoConfig.Value;
@@ -30,13 +30,13 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     public override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         message.Text = message.Text?.Trim();
-        if (this.playersConfig?.Count > 0) 
+        if (this.playersConfig?.Count > 0)
         {
             var text = message.Text;
             var playerConfig = this.GetPlayerConfig(text);
             var preset = playerConfig.GetPreset(text);
 
-            try 
+            try
             {
                 if (this.CanAutoTurnOn)
                 {
@@ -67,7 +67,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         var retries = maxRetries;
 
         var tapoDeviceClient = this.tapoConfig.GetDeviceByConfigId(playerConfig.TapoDevice);
-        if (tapoDeviceClient != null) 
+        if (tapoDeviceClient != null)
         {
             var isConnected = await playerConfig.Client.IsConnected();
             if (!isConnected)
@@ -87,12 +87,12 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                         isConnected = await playerConfig.Client.IsConnected();
                     } while (!isConnected && --retries > 0);
 
-                    if (isConnected) 
+                    if (isConnected)
                     {
                         Console.WriteLine($"{playerConfig.Name} connected! ({maxRetries - retries})");
                         await Task.Delay(15000, cancellationToken);
                     }
-                } 
+                }
                 catch (Exception e)
                 {
                     Console.WriteLine($"Error connecting {playerConfig.Name}: {e.Message}");
@@ -115,22 +115,22 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         int? delay = null,
         CancellationToken cancellationToken = default)
     {
-        if (delay.HasValue) 
+        if (delay.HasValue)
         {
             await Task.Delay(delay.Value, cancellationToken);
         }
-        
-         var statusMessage = string.Empty;
+
+        var statusMessage = string.Empty;
         var playerStatus = await playerConfig.Client.GetPlayerStatus();
         if (playerStatus == null)
         {
             statusMessage = $"'{playerConfig.Name}' no responde";
-        } 
-        else if (playerStatus.Status == "play") 
+        }
+        else if (playerStatus.Status == "play")
         {
             statusMessage = "Playing '[songTitle]' by '[artist]' in '[playerName]' ([playerMode]). Volume at [volume]";
         }
-        else 
+        else
         {
             statusMessage = "Nothing playing in '[playerName]'";
         }
@@ -144,7 +144,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     {
         var success = false;
         var result = default(T);
-        try 
+        try
         {
             result = await command.Invoke(playerConfig);
             success = true;

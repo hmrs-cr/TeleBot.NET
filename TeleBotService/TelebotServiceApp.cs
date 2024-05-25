@@ -23,7 +23,7 @@ public static class TelebotServiceApp
         Console.WriteLine($"Starting service V{Version}");
 
         SimpleLocalizationResolver.InitDefaultInstance("localizedStrings.json");
-        
+
         var builder = WebApplication.CreateBuilder(args);
         builder.Services
                .AddSwagger()
@@ -39,7 +39,7 @@ public static class TelebotServiceApp
         try
         {
             App.Run();
-        } 
+        }
         catch (ApplicationException e)
         {
             Environment.ExitCode = 1;
@@ -51,14 +51,14 @@ public static class TelebotServiceApp
 
     public static IServiceCollection AddSwagger(this IServiceCollection services) => services.AddEndpointsApiExplorer().AddSwaggerGen();
 
-    public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfiguration configuration) => 
+    public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfiguration configuration) =>
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
-                .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))   
+                .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .RegisterTelegramCommands()
-                .ConfigureHttpJsonOptions(options => 
+                .ConfigureHttpJsonOptions(options =>
                 {
                     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
                     options.SerializerOptions.Converters.Add(new HexedStringJsonConverter());
@@ -79,8 +79,8 @@ public static class TelebotServiceApp
 
     public static WebApplication AddEndpoints(this WebApplication app)
     {
-        app.MapGet("/info", async ([FromServices]ITelegramService ts) => await ts.GetInfo()).WithName("GetInfo").WithOpenApi();
-        app.MapGet("/commands", ([FromServices]ITelegramService ts) => ts.GetCommands()).WithName("GetCommands").WithOpenApi();
+        app.MapGet("/info", async ([FromServices] ITelegramService ts) => await ts.GetInfo()).WithName("GetInfo").WithOpenApi();
+        app.MapGet("/commands", ([FromServices] ITelegramService ts) => ts.GetCommands()).WithName("GetCommands").WithOpenApi();
         return app;
     }
 
@@ -88,7 +88,7 @@ public static class TelebotServiceApp
     {
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("test", async () => 
+            app.MapGet("test", async () =>
             {
                 var client = new LinkplayHttpApiClient("192.168.100.104");
                 return client.GetDeviceStatus();

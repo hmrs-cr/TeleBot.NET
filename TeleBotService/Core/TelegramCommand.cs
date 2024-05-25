@@ -27,18 +27,18 @@ public abstract class TelegramCommand : ITelegramCommand
                 replyToMessageId: message.MessageId,
                 cancellationToken: cancellationToken);
 
-     protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: replyMessage,
-                replyToMessageId: message.MessageId,
-                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-                cancellationToken: cancellationToken);
+    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
+               chatId: message.Chat.Id,
+               text: replyMessage,
+               replyToMessageId: message.MessageId,
+               parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+               cancellationToken: cancellationToken);
 
     protected static TelegramChatContext GetContext(Message message) => TelegramChatContext.GetContext(message.Chat);
 
     protected static string Localize(Message message, string text) => GetContext(message)?.Localize(text) ?? text;
 
-    protected static bool ContainsText(Message message, string text) => 
+    protected static bool ContainsText(Message message, string text) =>
         GetContext(message)?.GetLocalizedStrings(text).Append(text).Any(t =>
             message.Text?.Contains(t, StringComparison.InvariantCultureIgnoreCase) == true) == true;
 
@@ -56,7 +56,7 @@ public abstract class TelegramCommand : ITelegramCommand
     protected static Uri? ParseLastUrl(Message message)
     {
         var i = message.Text?.LastIndexOf(' ');
-        if (i > 0 &&  Uri.TryCreate(message.Text.Substring(i.Value), default(UriCreationOptions),  out var result))
+        if (i > 0 && Uri.TryCreate(message.Text.Substring(i.Value), default(UriCreationOptions), out var result))
         {
             return result;
         }
@@ -65,16 +65,16 @@ public abstract class TelegramCommand : ITelegramCommand
     }
 }
 
-public static class TelegramCommandRegistrationExtensions 
+public static class TelegramCommandRegistrationExtensions
 {
     internal static IEnumerable<Type> CommandTypes => AppDomain.CurrentDomain
                                                                .GetAssemblies()
                                                                .SelectMany(a => a.GetTypes())
                                                                .Where(t => !t.IsAbstract && t.IsClass && t.IsAssignableTo(typeof(ITelegramCommand)));
 
-    public static IServiceCollection RegisterTelegramCommands(this IServiceCollection serviceDescriptors) 
+    public static IServiceCollection RegisterTelegramCommands(this IServiceCollection serviceDescriptors)
     {
-        foreach (var commandType in CommandTypes) 
+        foreach (var commandType in CommandTypes)
         {
             serviceDescriptors.AddSingleton(commandType);
         }

@@ -12,17 +12,17 @@ public class TelegramService : ITelegramService
 {
     private readonly TelegramBotClient botClient;
     private readonly TelegramConfig config;
-    private readonly CancellationTokenSource cts = new ();
-    private readonly ReceiverOptions receiverOptions = new ()
+    private readonly CancellationTokenSource cts = new();
+    private readonly ReceiverOptions receiverOptions = new()
     {
         AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
     };
-    
+
     private IReadOnlyCollection<ITelegramCommand> commandInstances;
 
     private readonly IServiceProvider serviceProvider;
 
-    public TelegramService(IOptions<TelegramConfig> confif, IServiceProvider serviceProvider) 
+    public TelegramService(IOptions<TelegramConfig> confif, IServiceProvider serviceProvider)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
         {
@@ -31,7 +31,7 @@ public class TelegramService : ITelegramService
 
         this.botClient = new TelegramBotClient(confif.Value.BotToken);
         this.config = confif.Value;
-        this.serviceProvider = serviceProvider;      
+        this.serviceProvider = serviceProvider;
     }
 
     public Task<User> GetInfo() => this.botClient.GetMeAsync();
@@ -51,25 +51,25 @@ public class TelegramService : ITelegramService
 
         if (!TelebotServiceApp.IsDev)
         {
-            _ = this.SendAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);   
+            _ = this.SendAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-       if (!TelebotServiceApp.IsDev)
-       {
+        if (!TelebotServiceApp.IsDev)
+        {
             await this.SendAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
-       }
-       cts.Cancel();
-       cts.Dispose();
+        }
+        cts.Cancel();
+        cts.Dispose();
     }
 
     private Task SetUpCommandsIfNeeded()
     {
         /*var commands = await this.botClient.GetMyCommandsAsync();
-        if (commands.Length == 0) 
-        {            
+        if (commands.Length == 0)
+        {
         }*/
         return Task.CompletedTask;
     }
@@ -99,7 +99,7 @@ public class TelegramService : ITelegramService
 
         var executedCommandCount = 0;
         var commands = this.GetCommands(message);
-        foreach (var command in commands) 
+        foreach (var command in commands)
         {
             await command.Execute(message, cts.Token);
             Console.WriteLine($"Executed '{command.GetType().Name}' commnad in chat {chatId}.");
@@ -110,7 +110,7 @@ public class TelegramService : ITelegramService
         {
             Console.WriteLine($"Executed {executedCommandCount} commands: '{messageText}', chat {chatId}.");
         }
-        else 
+        else
         {
             Console.WriteLine($"No commands found for message '{messageText}', chat {chatId}.");
             await botClient.SendTextMessageAsync(
@@ -123,7 +123,7 @@ public class TelegramService : ITelegramService
 
     private async Task SendAdminMessage(string message, CancellationToken cancellationToken)
     {
-        if (this.config.AdminChatId > 0) 
+        if (this.config.AdminChatId > 0)
         {
             await botClient.SendTextMessageAsync(
                     chatId: this.config.AdminChatId,
@@ -148,7 +148,7 @@ public class TelegramService : ITelegramService
     }
 
     internal IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
-        TelegramCommandRegistrationExtensions.CommandTypes.Select(t => 
+        TelegramCommandRegistrationExtensions.CommandTypes.Select(t =>
         {
             ;
             var instance = this.serviceProvider.GetService(t);

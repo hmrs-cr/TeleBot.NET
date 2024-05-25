@@ -25,13 +25,13 @@ public class MusicPlayerControlCommand : MusicPlayerCommandBase
     public override bool CanExecuteCommand(Message message) =>
         (ContainsText(message, "music") || ContainsText(message, "song")) && commandMap.Any(c => ContainsText(message, c.Key));
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default) 
+    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
-        await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>  
+        await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>
         {
             var command = commandMap.First(c => ContainsText(message, c.Key)).Value;
             var repeat = ParseLastInt(message).GetValueOrDefault(command.DefaultRepeat);
-            if (repeat > command.MaxRepeat) 
+            if (repeat > command.MaxRepeat)
             {
                 repeat = command.MaxRepeat;
             }
@@ -39,7 +39,7 @@ public class MusicPlayerControlCommand : MusicPlayerCommandBase
             for (int i = 0; i < repeat; i++)
             {
                 await pc.Client.ControlPlayer(command);
-                if (repeat > 1 && command.RepeatDelay > 0) 
+                if (repeat > 1 && command.RepeatDelay > 0)
                 {
                     await Task.Delay(command.RepeatDelay);
                 }

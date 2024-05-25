@@ -21,35 +21,35 @@ public partial class SimpleLocalizationResolver
 
     public CultureInfo? GetCultureInfo(string cultureName) => CultureInfo.GetCultureInfo(cultureName);
 
-    public string GetLocalizedString(string cultureName, string textValue, int idx = 0) 
+    public string GetLocalizedString(string cultureName, string textValue, int idx = 0)
     {
-       var localizedText = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);       
-       var value = localizedText?.Skip(idx).FirstOrDefault() ?? textValue;
-       if (this.localizedTextMappings != null && value.Contains('{') && value.Contains('}')) 
-       {
+        var localizedText = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);
+        var value = localizedText?.Skip(idx).FirstOrDefault() ?? textValue;
+        if (this.localizedTextMappings != null && value.Contains('{') && value.Contains('}'))
+        {
             value = ResolveTokens(value, cultureName, idx, this.localizedTextMappings);
-       }
+        }
 
-       return value;
+        return value;
     }
 
     public IEnumerable<string> GetLocalizedStrings(string cultureName, string textValue)
     {
-       var localizedStrings = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);
-       return localizedStrings ?? Enumerable.Repeat(textValue, 1);
+        var localizedStrings = this.localizedTextMappings?.GetValueOrDefault(textValue)?.GetValueOrDefault(cultureName);
+        return localizedStrings ?? Enumerable.Repeat(textValue, 1);
     }
 
     internal static string ResolveTokens(string template, string cultureName, int idx, Dictionary<string, Dictionary<string, string[]>> replacements) =>
-        ResolveCurlyTokensRegex().Replace(template, match => replacements.GetValueOrDefault(match.Groups[1].Value)?.GetValueOrDefault(cultureName)?.Skip(idx)?.FirstOrDefault() ??  match.Value.TrimStart('{').TrimEnd('}'));
+        ResolveCurlyTokensRegex().Replace(template, match => replacements.GetValueOrDefault(match.Groups[1].Value)?.GetValueOrDefault(cultureName)?.Skip(idx)?.FirstOrDefault() ?? match.Value.TrimStart('{').TrimEnd('}'));
 
-    internal static string ResolveSquareTokens(string template, Dictionary<string, string> tokenValues) => 
-        ResolveSquareTokensRegex().Replace(template, match => tokenValues.GetValueOrDefault(match.Groups[1].Value) ??  match.Value.TrimStart('[').TrimEnd(']'));
+    internal static string ResolveSquareTokens(string template, Dictionary<string, string> tokenValues) =>
+        ResolveSquareTokensRegex().Replace(template, match => tokenValues.GetValueOrDefault(match.Groups[1].Value) ?? match.Value.TrimStart('[').TrimEnd(']'));
 
 
-    internal static void InitDefaultInstance(string fileName) 
+    internal static void InitDefaultInstance(string fileName)
     {
         Default = new SimpleLocalizationResolver();
-         try
+        try
         {
             using var file = File.OpenRead(fileName);
             Default.localizedTextMappings = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string[]>>>(file);

@@ -12,31 +12,31 @@ public class MusicPlayersVolumeCommand : MusicPlayerCommandBase
 
     public override string Usage => "{music} {volume} {up}\n{music} {volume} {down}\n{music} {volume} {low}\n{music} {volume} {half}\n{music} {volume} {high}";
 
-    public override bool CanExecuteCommand(Message message) => 
-        ContainsText(message, "volume") && ContainsText(message, "music") && 
-        (ContainsText(message, "up") || ContainsText(message, "down") || ContainsText(message, "high")|| ContainsText(message, "half") || ContainsText(message, "low"));
+    public override bool CanExecuteCommand(Message message) =>
+        ContainsText(message, "volume") && ContainsText(message, "music") &&
+        (ContainsText(message, "up") || ContainsText(message, "down") || ContainsText(message, "high") || ContainsText(message, "half") || ContainsText(message, "low"));
 
     protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
-        if (ContainsText(message, "up")) 
+        if (ContainsText(message, "up"))
         {
             await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerVolumeUp());
-        } 
-        else if (ContainsText(message, "down")) 
+        }
+        else if (ContainsText(message, "down"))
         {
             await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerVolumeDown());
         }
-        else if (ContainsText(message, "low")) 
+        else if (ContainsText(message, "low"))
         {
-           await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(33));
+            await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(33));
         }
-        else if (ContainsText(message, "half")) 
+        else if (ContainsText(message, "half"))
         {
-           await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(50));
+            await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(50));
         }
-        else if (ContainsText(message, "high")) 
+        else if (ContainsText(message, "high"))
         {
-           await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(88));
+            await this.ExecutePlayerClientCommand(message, playerConfig, (pc) => pc.Client.PlayerSetVolume(88));
         }
 
         return ReplyPlayerStatusDelayShort;

@@ -2,16 +2,16 @@
 
 namespace TeleBotService.Config;
 
-public class PlayersConfig 
+public class PlayersConfig
 {
     private LinkplayHttpApiClient client = null;
 
     public string Name { get; set; }
-    public string Host  { get; set; }
+    public string Host { get; set; }
 
-    public int Timeout  { get; set; } = 5;
+    public int Timeout { get; set; } = 5;
 
-    public IReadOnlyList<MusicPlayersPresetConfig> Presets  { get; set; }
+    public IReadOnlyList<MusicPlayersPresetConfig> Presets { get; set; }
 
     public LinkplayHttpApiClient Client => this.client ??= this.SetTimeOut(new LinkplayHttpApiClient(this.Host));
 
@@ -23,11 +23,11 @@ public class PlayersConfig
         {
             linkplayHttpApiClient.RequestTimeout = TimeSpan.FromSeconds(this.Timeout);
         }
-        
+
         return linkplayHttpApiClient;
     }
 
-    internal MusicPlayersPresetConfig? GetPreset(string text) => this.Presets?.FirstOrDefault(p => text.Contains(p.Name, StringComparison.InvariantCultureIgnoreCase));    
+    internal MusicPlayersPresetConfig? GetPreset(string text) => this.Presets?.FirstOrDefault(p => text.Contains(p.Name, StringComparison.InvariantCultureIgnoreCase));
 }
 
 public record MusicPlayersPresetConfig
@@ -38,8 +38,8 @@ public record MusicPlayersPresetConfig
     public Uri Url { get; set; }
 }
 
-public record MusicPlayersConfig 
-{    
+public record MusicPlayersConfig
+{
     public const string MusicPlayersConfigName = "MusicPlayers";
     public IReadOnlyList<PlayersConfig> Players { get; set; }
 }

@@ -3,7 +3,7 @@
 public class TelegramConfig
 {
     public const string TelegramConfigName = "Telegram";
-    public int AdminChatId { get;  set; }
+    public int AdminChatId { get; set; }
 
     public required string BotToken { get; set; }
 
