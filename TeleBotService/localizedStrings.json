@@ -80,8 +80,8 @@
     "Turn Off": {
         "es": [ "Apagar", "Apague" , "Desconetar", "Desconecte" ]
     },
-    "Still on": {
-        "es": [ "Sigue encendido" ]
+    "Still on: [error]": {
+        "es": [ "Sigue encendido: [error]" ]
     },
     "Turned Off!": {
         "es": [ "Apagado!" ]

@@ -13,7 +13,7 @@ public class MusicPlayersStatusCommand : MusicPlayerCommandBase
     public override string Usage => "Playing now";
 
     public override bool CanExecuteCommand(Message message) =>
-        ContainsText(message, "Playing now");
+        ContainsText(message, "Playing now", true);
 
     protected override Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default) => ReplyPlayerStatusDelayShortTask;
 }

@@ -1,7 +1,6 @@
 ﻿using Linkplay.HttpApi.Model;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
-using TeleBotService.Localization;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;

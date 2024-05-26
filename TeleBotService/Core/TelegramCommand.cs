@@ -41,9 +41,19 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 
-    protected bool ContainsText(Message message, string text) =>
-        (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
+    protected bool ContainsText(Message message, string text, bool ignoreSpaces = false)
+    {
+        var result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
             message.Text?.Contains(t, StringComparison.InvariantCultureIgnoreCase) == true) == true;
+
+        if (!result && ignoreSpaces)
+        {
+            result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
+                message.Text?.Contains(t.Replace(" ", null), StringComparison.InvariantCultureIgnoreCase) == true) == true;
+        }
+
+        return result;
+    }
 }
 
 public static class TelegramCommandRegistrationExtensions

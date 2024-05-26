@@ -25,12 +25,12 @@ public class HelpCommand : TelegramCommand
             foreach (var cmd in command.Usage.Split('\n'))
             {
                 var cmdLocalized = Localize(message, cmd);
-                sb.Append("<i>").Append(cmdLocalized).Append(" --> </i>/").Append(cmdLocalized.Replace(" ", string.Empty));
+                sb.Append("<i>").Append(cmdLocalized).Append("\t==>\t</i>/").Append(cmdLocalized.Replace(" ", string.Empty));
                 sb.AppendLine();
             }
             sb.AppendLine();
         }
 
-        await this.ReplyFormated(message, sb.ToString(), cancellationToken);
+        await this.ReplyFormated(message, sb.RemoveAccents().ToString(), cancellationToken);
     }
 }

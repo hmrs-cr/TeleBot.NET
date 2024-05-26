@@ -13,7 +13,7 @@ public class MusicPlayersPlayMusicCommand : MusicPlayerCommandBase
 
     public override string Description => "Play music";
 
-    public override string Usage => "{play} {music} [preset]\n{play} {music} [url]\n{play} {music} local [idx]";
+    public override string Usage => "{play} {music} [presetId/url]\n{play} {music} local [idx]";
 
     protected override bool CanAutoTurnOn => true;
 
