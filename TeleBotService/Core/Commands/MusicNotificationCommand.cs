@@ -20,6 +20,7 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
             _ = message.GetContext().NotifyPlayerStatusChanges(playersConfig.Client, async (client, prevStatus, currentStatus) =>
             {
                 var same = prevStatus?.Title == currentStatus?.Title;
+                // TODO: Do not sent status if stopped
                 await ReplyPlayerStatus(message, playersConfig);
                 Console.WriteLine($"Player status New: {currentStatus?.Title}, Prev: {prevStatus?.Title}");
             });

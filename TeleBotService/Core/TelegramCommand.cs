@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
@@ -48,6 +47,7 @@ public abstract class TelegramCommand : ITelegramCommand
 
         if (!result && ignoreSpaces)
         {
+            // TODO: find a more efficient way to implement this
             result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
                 message.Text?.Contains(t.Replace(" ", null), StringComparison.InvariantCultureIgnoreCase) == true) == true;
         }

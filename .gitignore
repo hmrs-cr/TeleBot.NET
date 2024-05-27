@@ -3,3 +3,5 @@
 /TeleBotService/bin
 /Linkplay.HttpApi/obj
 /Linkplay.HttpApi/bin
+TeleBotService/appsettings.Production.json
+.DS_Store
