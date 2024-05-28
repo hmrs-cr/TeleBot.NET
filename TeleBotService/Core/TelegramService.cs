@@ -129,7 +129,7 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private IEnumerable<ITelegramCommand> GetCommands(Message message) => this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message))!;
+    private IEnumerable<ITelegramCommand> GetCommands(Message message) => this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message));
 
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
