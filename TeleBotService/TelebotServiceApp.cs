@@ -14,6 +14,8 @@ public static class TelebotServiceApp
     private static Version? version = null;
 
     public static Version? Version => version ??= Assembly.GetExecutingAssembly().GetName().Version;
+    public static string? VersionLabel { get; private set; }
+    public static string? VersionHash { get; private set; }
 
     public static WebApplication? App { get; private set; }
     public static bool IsDev { get; private set; }
@@ -32,6 +34,8 @@ public static class TelebotServiceApp
                      .AddEndpoints()
                      .AddDevOnlyEndpoints();
 
+        VersionHash = GetVersionHash();
+        VersionLabel = builder.Configuration.GetValue<string>("ServiceVersionLabel");
         IsDev = App.Environment.IsDevelopment();
         try
         {
@@ -44,6 +48,21 @@ public static class TelebotServiceApp
         }
 
         Console.WriteLine($"Exiting service V{Version}. Bye bye.");
+    }
+
+    private static string? GetVersionHash()
+    {
+        var result = "NONE";
+        try
+        {
+            result = File.ReadAllText("buildinfo").Trim();
+        }
+        catch
+        {
+            // Ignore
+        }
+
+        return result;
     }
 
     public static IServiceCollection AddSwagger(this IServiceCollection services) => services.AddEndpointsApiExplorer().AddSwaggerGen();

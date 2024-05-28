@@ -5,3 +5,4 @@
 /Linkplay.HttpApi/bin
 TeleBotService/appsettings.Production.json
 .DS_Store
+TeleBotService/buildinfo

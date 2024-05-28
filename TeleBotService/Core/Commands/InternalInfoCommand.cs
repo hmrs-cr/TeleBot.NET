@@ -23,5 +23,9 @@ public class InternalInfoCommand : TelegramCommand
           .Append(user.Username)
           .Append(") V")
           .Append(TelebotServiceApp.Version)
+          .Append('-')
+          .Append(TelebotServiceApp.VersionLabel)
+          .Append('-')
+          .Append(TelebotServiceApp.VersionHash)
           .ToString();
 }

@@ -18,4 +18,10 @@
     <ProjectReference Include="..\Linkplay.HttpApi\Linkplay.HttpApi.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="buildinfo" Condition="Exists('buildinfo')" >
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
