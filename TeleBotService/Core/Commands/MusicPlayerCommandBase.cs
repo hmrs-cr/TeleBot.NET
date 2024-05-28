@@ -1,6 +1,7 @@
 ﻿using Linkplay.HttpApi.Model;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -16,14 +17,14 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     protected static readonly Task<int> ReplyPlayerStatusDelayShortTask = Task.FromResult(ReplyPlayerStatusDelayShort);
 
 
-    protected readonly IDictionary<string, PlayersConfig>? playersConfig;
+    protected readonly IReadOnlyDictionary<string, PlayersConfig>? playersConfig;
     protected readonly TapoConfig tapoConfig;
 
     protected virtual bool CanAutoTurnOn => false;
 
     protected MusicPlayerCommandBase(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig)
     {
-        this.playersConfig = config.Value?.Players.ToDictionary(p => p.Name.ToLower());
+        this.playersConfig = config.Value?.PlayersDict;
         this.tapoConfig = tapoConfig.Value;
     }
 
@@ -31,7 +32,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     {
         message.Text = message.Text?.Trim();
         var text = message.Text;
-        if (this.playersConfig?.Count > 0 && this.GetPlayerConfig(text) is { } playerConfig)
+        if (this.playersConfig?.Count > 0 && this.GetPlayerConfig(message) is { } playerConfig)
         {
             var preset = playerConfig.GetPreset(text);
             try
@@ -42,6 +43,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 }
 
                 var result = await this.ExecuteMusicPlayerCommand(message, playerConfig, preset, cancellationToken);
+                message.GetContext().LastPlayerConfig = playerConfig;
                 if (result > 0)
                 {
                     await this.ReplyPlayerStatus(message, playerConfig, result);
@@ -105,7 +107,8 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         MusicPlayersPresetConfig? musicPlayersPresetConfig,
         CancellationToken cancellationToken = default);
 
-    protected PlayersConfig? GetPlayerConfig(string? text) => this.playersConfig?.FirstOrDefault(pc => text?.Contains(pc.Key) == true).Value ?? this.playersConfig?.FirstOrDefault().Value;
+    protected PlayersConfig? GetPlayerConfig(Message message) =>
+        this.playersConfig?.FirstOrDefault(pc => message.Text?.Contains(pc.Key, StringComparison.OrdinalIgnoreCase) == true).Value ?? message.GetContext().LastPlayerConfig ?? this.playersConfig?.FirstOrDefault().Value;
 
     protected async Task ReplyPlayerStatus(
         Message message,

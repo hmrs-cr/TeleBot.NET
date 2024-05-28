@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using Linkplay.HttpApi;
 using Linkplay.HttpApi.Model;
+using TeleBotService.Config;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Model;
@@ -22,8 +23,11 @@ public class TelegramChatContext
 
     public string? Username => this.key.Chat?.Username;
 
-    public string LanguageCode { get; set; } = "en";
+    public string LanguageCode { get; set; } = "es";
     public bool IsNotifingPlayerStatusChanges => this.playerStatusNotificationCts != null && !this.playerStatusNotificationCts.IsCancellationRequested;
+
+    public PlayersConfig LastPlayerConfig { get; internal set; }
+
     public override int GetHashCode() => this.key.GetHashCode();
 
     public override bool Equals(object? obj) => this.key.Equals(obj);

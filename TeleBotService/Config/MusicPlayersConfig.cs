@@ -40,6 +40,11 @@ public record MusicPlayersPresetConfig
 
 public record MusicPlayersConfig
 {
+    private IReadOnlyDictionary<string, PlayersConfig>? playersDict;
+
     public const string MusicPlayersConfigName = "MusicPlayers";
     public IReadOnlyList<PlayersConfig> Players { get; set; }
+
+    public IReadOnlyDictionary<string, PlayersConfig> PlayersDict => this.playersDict ??= this.Players.ToDictionary(p => p.Name);
+
 }
