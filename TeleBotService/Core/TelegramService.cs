@@ -100,9 +100,17 @@ public class TelegramService : ITelegramService
         var commands = this.GetCommands(message);
         foreach (var command in commands)
         {
-            await command.Execute(message, cts.Token);
-            Console.WriteLine($"Executed '{command.GetType().Name}' commnad in chat {chatId}.");
-            executedCommandCount++;
+            try
+            {
+                await command.Execute(message, cts.Token);
+                Console.WriteLine($"Executed '{command.GetType().Name}' commnad in chat {chatId}.");
+                executedCommandCount++;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Unhandled error while executing command {command.Name}: {e.Message}");
+                Console.WriteLine(e.StackTrace);
+            }
         }
 
         if (executedCommandCount > 0)
