@@ -10,9 +10,9 @@ public class TapoConfig
     };
 
     public const string TapoConfigName = "Tapo";
-    public string UserName { get; set; }
-    public string Password { get; set; }
-    public ICollection<TapoDeviceConfig> Devices { get; set; }
+    public string? UserName { get; set; }
+    public string? Password { get; set; }
+    public ICollection<TapoDeviceConfig>? Devices { get; set; }
 
     public TapoDevice? GetDeviceByConfigId(int configId)
     {
@@ -38,11 +38,11 @@ public class TapoConfig
     public class TapoDeviceConfig
     {
         public int Id { get; set; }
-        public string Type { get; set; }
-        public string Name { get; set; }
-        public string Host { get; set; }
+        public string? Type { get; set; }
+        public string? Name { get; set; }
+        public string? Host { get; set; }
 
-        public TapoDevice DeviceClient { get; internal set; }
+        public TapoDevice? DeviceClient { get; internal set; }
     }
 }
 

@@ -78,24 +78,26 @@ public class TelegramService : ITelegramService
         return Task.CompletedTask;
     }
 
-    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         // Only process Message updates: https://core.telegram.org/bots/api#message
         if (update.Message is not { } message)
-            return;
+            return Task.CompletedTask;
         // Only process text messages
         if (message.Text is not { } messageText)
-            return;
+            return Task.CompletedTask;
 
         if (!this.config.AllowedUsers.Contains(message.Chat.Username))
         {
             Console.WriteLine($"Forbidden {message.Chat.Username}:{message.Chat.Id}");
             _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
-            return;
+            return Task.CompletedTask;
         }
 
         Console.WriteLine($"Received '{messageText}' message in chat {message.Chat.Id}.");
         _ = HandleCommands(message, cancellationToken);
+
+        return Task.CompletedTask;
     }
 
     private async Task HandleCommands(Message message, CancellationToken cancellationToken)

@@ -22,17 +22,22 @@ public class MusicPlayerSeekCommand : MusicPlayerCommandBase
             int? newPos = null;
             var offsetPos = message.ParseLastInt().GetValueOrDefault(5);
             var status = await playerConfig.Client.GetPlayerStatus();
-            var curPos = status.Curpos / 1000;
-            if (ContainsText(message, "forward"))
+            if (status != null)
             {
-                newPos = curPos + offsetPos;
-            }
-            else if (ContainsText(message, "backward"))
-            {
-                newPos = curPos - offsetPos;
+                var curPos = status.Curpos / 1000;
+                if (ContainsText(message, "forward"))
+                {
+                    newPos = curPos + offsetPos;
+                }
+                else if (ContainsText(message, "backward"))
+                {
+                    newPos = curPos - offsetPos;
+                }
+
+                return newPos.HasValue && await playerConfig.Client.PlayerSeek((uint)newPos);
             }
 
-            return newPos.HasValue ? playerConfig.Client.PlayerSeek((uint)newPos) : Task.CompletedTask;
+            return false;
         });
 
         return ReplyPlayerStatusDelayShort;

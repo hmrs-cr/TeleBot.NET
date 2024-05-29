@@ -29,7 +29,7 @@ public class TelegramChatContext
     public string LanguageCode { get; set; } = "es";
     public bool IsNotifingPlayerStatusChanges => this.playerStatusNotificationCts != null && !this.playerStatusNotificationCts.IsCancellationRequested;
 
-    public PlayersConfig LastPlayerConfig { get; internal set; }
+    public PlayersConfig? LastPlayerConfig { get; internal set; }
 
     public override int GetHashCode() => this.key.GetHashCode();
 
@@ -43,7 +43,7 @@ public class TelegramChatContext
         {
             if (this.IsNotifingPlayerStatusChanges)
             {
-                this.playerStatusNotificationCts.Cancel();
+                this.playerStatusNotificationCts?.Cancel();
                 Console.WriteLine("Unregistered player status change notification");
             }
         }
@@ -84,8 +84,9 @@ public class TelegramChatContext
                         await Task.Delay(delay, this.playerStatusNotificationCts.Token);
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
+                    // Ignored
                 }
             }
 

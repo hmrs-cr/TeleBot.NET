@@ -171,7 +171,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     {
         var tokenValues = new Dictionary<string, string>
         {
-            { "playerName", playerConfig.Name }
+            { "playerName", playerConfig.Name ?? string.Empty }
         };
 
         if (playerStatus != null)

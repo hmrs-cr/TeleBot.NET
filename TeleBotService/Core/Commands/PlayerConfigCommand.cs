@@ -26,17 +26,20 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
         {
             var deafultConfig = message.GetContext().LastPlayerConfig;
             var sb = new StringBuilder();
-            foreach (var confifName in this.playersConfig.Values.Select(v => v.Name))
+            if (this.playersConfig != null)
             {
-                var isDefault = deafultConfig?.Name?.Equals(confifName, StringComparison.InvariantCultureIgnoreCase) == true;
-                if (isDefault)
+                foreach (var confifName in this.playersConfig.Values.Select(v => v.Name))
                 {
-                    sb.Append("<b>");
-                }
-                sb.AppendLine(confifName);
-                if (isDefault)
-                {
-                    sb.Append("</b>");
+                    var isDefault = deafultConfig?.Name?.Equals(confifName, StringComparison.InvariantCultureIgnoreCase) == true;
+                    if (isDefault)
+                    {
+                        sb.Append("<b>");
+                    }
+                    sb.AppendLine(confifName);
+                    if (isDefault)
+                    {
+                        sb.Append("</b>");
+                    }
                 }
             }
 
