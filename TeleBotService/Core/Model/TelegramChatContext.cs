@@ -13,6 +13,8 @@ public class TelegramChatContext
 
     private static ConcurrentDictionary<ChatContextKey, TelegramChatContext> currentChats = [];
 
+    private ConcurrentDictionary<Type, ICollection<object>> commandContextData = [];
+
     private readonly ChatContextKey key;
 
     private CancellationTokenSource? playerStatusNotificationCts;
@@ -27,6 +29,21 @@ public class TelegramChatContext
     public string? Username => this.key.Chat?.Username;
 
     public string LanguageCode { get; set; } = "es";
+
+    public TResult GetCommandContextData<TResult>(TelegramCommand command) where TResult : class, new()
+    {
+        var contextDataList = this.commandContextData.GetOrAdd(command.GetType(), k => []);
+        var commandContextData = contextDataList.FirstOrDefault(c => c is TResult);
+        if (commandContextData == null)
+        {
+            commandContextData = new TResult();
+            contextDataList.Add(commandContextData);
+        }
+
+        return (TResult)commandContextData;
+    }
+
+
     public bool IsNotifingPlayerStatusChanges => this.playerStatusNotificationCts != null && !this.playerStatusNotificationCts.IsCancellationRequested;
 
     public PlayersConfig? LastPlayerConfig { get; internal set; }

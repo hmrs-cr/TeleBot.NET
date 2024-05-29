@@ -1,4 +1,5 @@
-﻿using TeleBotService.Core.Model;
+﻿using TeleBotService.Core;
+using TeleBotService.Core.Model;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -6,6 +7,9 @@ namespace TeleBotService.Extensions;
 
 public static class MessageExtensions
 {
+    public static TResult GetCommandContextData<TResult>(this Message message, TelegramCommand command) where TResult : class, new() =>
+        message.GetContext().GetCommandContextData<TResult>(command);
+
     public static TelegramChatContext GetContext(this Message message) => TelegramChatContext.GetContext(message.Chat);
 
     public static Task Reply(this TelegramBotClient botClient, Message message, string replyMessage, CancellationToken cancellationToken = default) => botClient.SendTextMessageAsync(
