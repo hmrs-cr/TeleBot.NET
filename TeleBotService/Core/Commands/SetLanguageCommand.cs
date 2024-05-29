@@ -1,8 +1,7 @@
-﻿using TeleBotService.Core;
-using TeleBotService.Extensions;
+﻿using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
-namespace TeleBotService;
+namespace TeleBotService.Core.Commands;
 
 public class SetLanguageCommand : TelegramCommand
 {

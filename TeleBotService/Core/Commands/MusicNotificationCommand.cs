@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;

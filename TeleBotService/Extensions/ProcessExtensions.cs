@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 
-namespace TeleBotService;
+namespace TeleBotService.Extensions;
 
 public static class ProcessExtensions
 {

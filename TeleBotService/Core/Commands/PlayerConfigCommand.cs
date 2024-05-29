@@ -1,11 +1,10 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
-using TeleBotService.Core.Commands;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
-namespace TeleBotService;
+namespace TeleBotService.Core.Commands;
 
 public class PlayerConfigCommand : MusicPlayerCommandBase
 {

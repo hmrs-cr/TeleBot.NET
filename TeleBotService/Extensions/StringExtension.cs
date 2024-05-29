@@ -2,7 +2,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace TeleBotService;
+namespace TeleBotService.Extensions;
 
 public static partial class StringExtension
 {

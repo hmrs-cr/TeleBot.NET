@@ -1,9 +1,9 @@
-﻿using TeleBotService.Core;
-using TeleBotService.Model;
+﻿using TeleBotService.Core.Model;
+using TeleBotService.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace TeleBotService;
+namespace TeleBotService.Core.Commands;
 
 public class SpeedTestCommand : TelegramCommand
 {

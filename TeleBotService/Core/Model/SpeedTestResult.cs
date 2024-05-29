@@ -1,4 +1,4 @@
-﻿namespace TeleBotService.Model;
+﻿namespace TeleBotService.Core.Model;
 
 public record SpeedtestResult
 {

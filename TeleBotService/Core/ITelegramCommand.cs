@@ -1,5 +1,4 @@
-﻿using TeleBotService.Localization;
-using Telegram.Bot.Types;
+﻿using Telegram.Bot.Types;
 
 namespace TeleBotService.Core;
 

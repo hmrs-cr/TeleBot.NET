@@ -1,10 +1,8 @@
-﻿using System.Reflection;
-using System.Text;
-using TeleBotService.Core;
+﻿using System.Text;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
-namespace TeleBotService;
+namespace TeleBotService.Core.Commands;
 
 public class InternalInfoCommand : TelegramCommand
 {

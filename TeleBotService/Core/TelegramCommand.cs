@@ -2,7 +2,6 @@
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
-using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core;

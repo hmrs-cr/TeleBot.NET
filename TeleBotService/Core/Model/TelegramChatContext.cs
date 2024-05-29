@@ -4,7 +4,7 @@ using Linkplay.HttpApi.Model;
 using TeleBotService.Config;
 using Telegram.Bot.Types;
 
-namespace TeleBotService.Model;
+namespace TeleBotService.Core.Model;
 
 public class TelegramChatContext
 {
