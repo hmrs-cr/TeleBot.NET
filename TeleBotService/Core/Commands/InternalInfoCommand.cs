@@ -10,7 +10,7 @@ public class InternalInfoCommand : TelegramCommand
 {
     public override bool CanExecuteCommand(Message message) => ContainsText(message, "/info");
 
-    public override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         var myInfo = await this.BotClient.GetMeAsync();
         var internalInfo = GetInternalInfoString(myInfo);

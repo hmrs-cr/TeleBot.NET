@@ -2,12 +2,16 @@
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
+using Telegram.Bot.Requests;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core;
 
 public abstract class TelegramCommand : ITelegramCommand
 {
+    private readonly Task<bool> TaskTrueResult = Task.FromResult(true);
+    private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
+
     [JsonIgnore]
     public TelegramBotClient BotClient { get; protected set; }
 
@@ -19,24 +23,64 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual string Usage => string.Empty;
 
+    public virtual bool CanBeExecuteConcurrently => false;
+
 [   JsonIgnore]
     public ILocalizationResolver? LocalizationResolver { get; protected set; }
 
-    public abstract Task Execute(Message message, CancellationToken cancellationToken = default);
     public abstract bool CanExecuteCommand(Message message);
 
-    protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
+    public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
+    {
+        var canExecute = await this.StartExecuting(message, cancellationToken);
+        try
+        {
+            if (canExecute)
+            {
+                var task = this.Execute(message, cancellationToken);
+                message.GetContext().AddExecutingTask(task);
+                await task;
+                return true;
+            }
+        }
+        finally
+        {
+            if (canExecute)
+            {
+                await this.EndExecuting(message, cancellationToken);
+                message.GetContext().RemoveFinishedTasks();
+            }
+        }
+
+        return canExecute;
+    }
+
+    protected virtual Task<bool> StartExecuting(Message message, CancellationToken token)
+    {
+        if (!this.CanBeExecuteConcurrently && message.GetContext().GetExecutingTaskCount() > 0)
+        {
+            return TaskFalseResult;
+        }
+
+        return TaskTrueResult;
+    }
+
+    protected abstract Task Execute(Message message, CancellationToken cancellationToken = default);
+
+    protected virtual Task EndExecuting(Message message, CancellationToken token) => Task.CompletedTask;
+
+    protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                 chatId: message.Chat.Id,
                 text: Localize(message, replyMessage),
                 replyToMessageId: message.MessageId,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
-    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
+    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                chatId: message.Chat.Id,
                text: replyMessage,
                replyToMessageId: message.MessageId,
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-               cancellationToken: cancellationToken);
+               cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
     protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 

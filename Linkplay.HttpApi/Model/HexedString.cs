@@ -7,8 +7,9 @@ public struct HexedString
 {
     private readonly string value;
 
-    public HexedString(string hexedValue)
+    public HexedString(string? hexedValue)
     {
+        hexedValue ??= string.Empty;
         try
         {
             this.value = HexedToString(hexedValue);
@@ -39,7 +40,7 @@ public struct HexedString
 
     public override int GetHashCode() => EqualityComparer<string>.Default.GetHashCode(this.value);
 
-    public override bool Equals(object obj) => obj is HexedString @enum && this.Equals(@enum);
+    public override bool Equals(object? obj) => obj is HexedString other && this.Equals(other);
 
     public override string ToString() => this.value;
 

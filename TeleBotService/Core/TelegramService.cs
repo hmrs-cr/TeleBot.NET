@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Security.Cryptography;
+using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
@@ -93,21 +94,36 @@ public class TelegramService : ITelegramService
             return;
         }
 
-        var chatId = message.Chat.Id;
-        Console.WriteLine($"Received '{messageText}' message in chat {chatId}.");
+        Console.WriteLine($"Received '{messageText}' message in chat {message.Chat.Id}.");
+        _ = HandleCommands(message, cancellationToken);
+    }
 
+    private async Task HandleCommands(Message message, CancellationToken cancellationToken)
+    {
         var executedCommandCount = 0;
+        var failedCommandCount = 0;
+        var refusedCommandCount = 0;
+        var executed = false;
         var commands = this.GetCommands(message);
         foreach (var command in commands)
         {
             try
             {
-                await command.Execute(message, cts.Token);
-                Console.WriteLine($"Executed '{command.GetType().Name}' commnad in chat {chatId}.");
-                executedCommandCount++;
+                executed = await command.HandleCommand(message, cancellationToken);
+                if (executed)
+                {
+                    Console.WriteLine($"Executed '{command.GetType().Name}' command in chat {message.Chat.Id}.");
+                    executedCommandCount++;
+                }
+                else
+                {
+                    Console.WriteLine($"Refused execution of '{command.GetType().Name}' command in chat {message.Chat.Id}.");
+                    refusedCommandCount++;
+                }
             }
             catch (Exception e)
             {
+                failedCommandCount++;
                 Console.WriteLine($"Unhandled error while executing command {command.Name}: {e.Message}");
                 Console.WriteLine(e.StackTrace);
             }
@@ -115,11 +131,11 @@ public class TelegramService : ITelegramService
 
         if (executedCommandCount > 0)
         {
-            Console.WriteLine($"Executed {executedCommandCount} commands: '{messageText}', chat {chatId}.");
+            Console.WriteLine($"Executed {executedCommandCount} commands: '{message.Text}', chat {message.Chat.Id}.");
         }
-        else
+        else if (failedCommandCount == 0 && refusedCommandCount == 0)
         {
-            Console.WriteLine($"No commands found for message '{messageText}', chat {chatId}.");
+            Console.WriteLine($"No commands found for message '{message.Text}', chat {message.Chat.Id}.");
             await this.Reply(message, "I didn't understand you", cancellationToken);
         }
     }

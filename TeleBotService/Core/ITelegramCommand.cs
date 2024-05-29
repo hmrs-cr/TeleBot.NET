@@ -5,6 +5,6 @@ namespace TeleBotService.Core;
 
 public interface ITelegramCommand : ICommand
 {
-    Task Execute(Message message, CancellationToken cancellationToken = default);
+    Task<bool> HandleCommand(Message message, CancellationToken cancellationToken = default);
     bool CanExecuteCommand(Message message);
 }

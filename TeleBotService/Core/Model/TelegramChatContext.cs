@@ -8,6 +8,9 @@ namespace TeleBotService.Model;
 
 public class TelegramChatContext
 {
+    private object executingTasksLock = new();
+    private List<Task> executingTasks = new();
+
     private static ConcurrentDictionary<ChatContextKey, TelegramChatContext> currentChats = [];
 
     private readonly ChatContextKey key;
@@ -32,7 +35,7 @@ public class TelegramChatContext
 
     public override bool Equals(object? obj) => this.key.Equals(obj);
 
-    public static TelegramChatContext GetContext(Chat chat) => currentChats.GetOrAdd(new (chat), (key) => new TelegramChatContext(key));
+    public static TelegramChatContext GetContext(Chat chat) => currentChats.GetOrAdd(new(chat), (key) => new TelegramChatContext(key));
 
     public async Task NotifyPlayerStatusChanges(LinkplayHttpApiClient client, Action<LinkplayHttpApiClient, PlayerStatus?, PlayerStatus?>? notify)
     {
@@ -90,6 +93,38 @@ public class TelegramChatContext
         }
     }
 
+    internal void AddExecutingTask(Task task)
+    {
+        if (!task.IsCompleted && !task.IsCanceled && !task.IsFaulted && task.Status != TaskStatus.RanToCompletion)
+        {
+            lock (this.executingTasksLock)
+            {
+                this.executingTasks.Add(task);
+            }
+
+            Console.WriteLine($"Added Task. Total tasks tracked for {this.key}: {this.executingTasks.Count}");
+        }
+    }
+
+    internal int GetExecutingTaskCount()
+    {
+        int result;
+        lock (this.executingTasksLock)
+        {
+            result = this.executingTasks.Count;
+        }
+        return result;
+    }
+
+    internal void RemoveFinishedTasks()
+    {
+        lock (this.executingTasksLock)
+        {
+            this.executingTasks.RemoveAll(t => t.IsCanceled || t.IsCompleted || t.IsFaulted || t.Status == TaskStatus.RanToCompletion);
+            Console.WriteLine($"Removed Tasks. Total tasks tracked for {this.key}: {this.executingTasks.Count}");
+        }
+    }
+
     private class ChatContextKey
     {
         public Chat Chat { get; }
@@ -104,5 +139,7 @@ public class TelegramChatContext
         public bool Equals(ChatContextKey? other) => other?.Chat?.Id == this.Chat?.Id && other?.Chat?.Username == this.Chat?.Username;
 
         public override int GetHashCode() => HashCode.Combine(this.Chat?.Id, this.Chat?.Username);
+
+        public override string ToString() => $"{this.Chat.Username}.{this.Chat.Id}";
     }
 }

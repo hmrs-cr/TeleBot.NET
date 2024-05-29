@@ -12,5 +12,11 @@ RUN dotnet publish /p:Version=$(date "+%y").$(date "+%m%d").$(date "+%H%M").$(da
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /App
 COPY --from=build /src/out .
+
+RUN apt-get update \
+    && apt-get install -y curl \
+    && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
+    && apt-get install speedtest
+
 ENTRYPOINT ["dotnet", "TeleBotService.dll"]
 

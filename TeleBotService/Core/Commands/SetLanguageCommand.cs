@@ -8,7 +8,7 @@ public class SetLanguageCommand : TelegramCommand
 {
     public override bool CanExecuteCommand(Message message) => message.Text?.StartsWith("/setlang") == true;
 
-    public override Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         var lang = new { lang = message.GetLastString() };
         if (lang.lang is { } && this.LocalizationResolver?.DefinedLanguages?.Contains(lang.lang) == true)

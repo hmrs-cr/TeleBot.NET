@@ -14,7 +14,7 @@ public class HelpCommand : TelegramCommand
 
     public override bool CanExecuteCommand(Message message) => ContainsText(message, "help");
 
-    public override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         var sb = new StringBuilder();
         foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage)))

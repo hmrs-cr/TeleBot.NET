@@ -28,7 +28,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         this.tapoConfig = tapoConfig.Value;
     }
 
-    public override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         message.Text = message.Text?.Trim();
         var text = message.Text;
