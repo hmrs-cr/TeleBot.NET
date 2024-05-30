@@ -16,7 +16,9 @@ COPY --from=build /src/out .
 RUN apt-get update \
     && apt-get install -y curl \
     && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
-    && apt-get install speedtest
+    && apt-get install -y speedtest
+
+RUN apt-get install -y --no-install-recommends alsa-utils
 
 ENTRYPOINT ["dotnet", "TeleBotService.dll"]
 

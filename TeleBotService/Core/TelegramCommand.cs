@@ -81,6 +81,19 @@ public abstract class TelegramCommand : ITelegramCommand
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
+    protected async Task AudioReply(Message message, string audioFileName, string? title = null, int? duration = null, bool deleteFile = false)
+    {
+        using var file = System.IO.File.OpenRead(audioFileName);
+        await this.AudioReply(message, file, title, duration);
+        if (deleteFile)
+        {
+            System.IO.File.Delete(audioFileName);
+        }
+    }
+
+     protected Task AudioReply(Message message, Stream audioStream, string? title = null, int? duration = null) =>
+        this.BotClient.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+
     protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 
     protected bool ContainsText(Message message, string text, bool ignoreSpaces = false)

@@ -71,6 +71,7 @@ public static class TelebotServiceApp
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
+                .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddCommandTextMappings(configuration)

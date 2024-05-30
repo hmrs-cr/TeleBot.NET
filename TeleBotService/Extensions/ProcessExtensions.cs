@@ -20,10 +20,9 @@ public static class ProcessExtensions
 
     public static async Task<string?> ExecuteProcess(this Process process, CancellationToken cancellationToken = default)
     {
-        process.Start();
-        await process.WaitForExitAsync(cancellationToken);
+        var exitCode = await process.StartAndAwaitUntilExit(cancellationToken);
         var result = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        return process.ExitCode == 0 ? result : null;
+        return exitCode == 0 ? result : null;
     }
 
     public static Process CreateProcessCommand(string command, string arguments) => new()
@@ -37,6 +36,14 @@ public static class ProcessExtensions
             RedirectStandardError = true,
         }
     };
+
+    public static async Task<int> StartAndAwaitUntilExit(this Process process, CancellationToken cancellationToken = default)
+    {
+        Console.WriteLine($"Executing command: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
+        process.Start();
+        await process.WaitForExitAsync(cancellationToken);
+        return process.ExitCode;
+    }
 
     public static async Task<string?> ExecuteProcessCommand(string command, string arguments, CancellationToken cancellationToken = default)
     {

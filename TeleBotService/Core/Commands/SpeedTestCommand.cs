@@ -1,4 +1,6 @@
-﻿using TeleBotService.Core.Model;
+﻿using Microsoft.Extensions.Options;
+using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -11,9 +13,9 @@ public class SpeedTestCommand : TelegramCommand
 
     private readonly string speedTestExecPath;
 
-    public SpeedTestCommand(IConfiguration configuration)
+    public SpeedTestCommand(IOptions<ExternalToolsConfig> config)
     {
-        this.speedTestExecPath = configuration.GetValue<string>("SpeedTestExecPath") ?? "/usr/bin/speedtest";
+        this.speedTestExecPath = config.Value.SpeedTest ?? "/usr/bin/speedtest";
     }
 
     public override bool CanExecuteCommand(Message message) => message.Text?.Contains("speedtest", StringComparison.InvariantCultureIgnoreCase) == true;
