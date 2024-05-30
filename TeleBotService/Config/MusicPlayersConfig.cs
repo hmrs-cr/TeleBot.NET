@@ -6,16 +6,16 @@ public class PlayersConfig
 {
     private LinkplayHttpApiClient? client = null;
 
-    public string? Name { get; set; }
-    public string? Host { get; set; }
+    public string? Name { get; init; }
+    public string? Host { get; init; }
 
-    public int Timeout { get; set; } = 5;
+    public int Timeout { get; init; } = 5;
 
-    public IReadOnlyList<MusicPlayersPresetConfig>? Presets { get; set; }
+    public IReadOnlyList<MusicPlayersPresetConfig>? Presets { get; init; }
 
     public LinkplayHttpApiClient Client => this.client ??= this.SetTimeOut(new LinkplayHttpApiClient(this.Host));
 
-    public int TapoDevice { get; set; }
+    public int TapoDevice { get; init; }
 
     private LinkplayHttpApiClient SetTimeOut(LinkplayHttpApiClient linkplayHttpApiClient)
     {
@@ -32,10 +32,10 @@ public class PlayersConfig
 
 public record MusicPlayersPresetConfig
 {
-    public string? Name { get; set; }
-    public uint Index { get; set; }
+    public string? Name { get; init; }
+    public uint Index { get; init; }
 
-    public Uri? Url { get; set; }
+    public Uri? Url { get; init; }
 }
 
 public record MusicPlayersConfig
@@ -43,7 +43,7 @@ public record MusicPlayersConfig
     private IReadOnlyDictionary<string, PlayersConfig>? playersDict;
 
     public const string MusicPlayersConfigName = "MusicPlayers";
-    public IReadOnlyList<PlayersConfig>? Players { get; set; }
+    public IReadOnlyList<PlayersConfig>? Players { get; init; }
 
     public IReadOnlyDictionary<string, PlayersConfig>? PlayersDict => this.playersDict ??= this.Players?.ToDictionary(p => p.Name);
 
