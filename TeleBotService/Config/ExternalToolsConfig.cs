@@ -7,4 +7,6 @@ public record ExternalToolsConfig
     public string? SpeedTest { get; init; }
 
     public string? ARecord { get; init; }
+    public string? OpusEnc { get; init; }
+    public string? MKFifo { get; init; }
 }

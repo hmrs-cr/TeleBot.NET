@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Extensions;
@@ -10,13 +11,42 @@ namespace TeleBotService.Core.Commands;
 public class RecordAudioCommand : TelegramCommand
 {
     private readonly string arecordExecPath;
+    private readonly string opusencExecPath;
+    public readonly string mkfifoExecPath;
+
 
     public RecordAudioCommand(IOptions<ExternalToolsConfig> config)
     {
         this.arecordExecPath = config.Value.ARecord ?? "/usr/bin/arecord";
+        this.opusencExecPath = config.Value.OpusEnc ?? "/usr/bin/opusenc";
+        this.mkfifoExecPath = config.Value.MKFifo ?? "/usr/bin/mkfifo";
     }
 
-    public override bool CanExecuteCommand(Message message) => this.ContainsText(message, "/arecord");
+    public override string CommandString => "arecord";
+
+    public override string Description => "Record audio from the server mic";
+
+    public override string Usage => $"{base.Usage}\n{this.CommandString}_voice";
+
+    protected override async Task<bool> StartExecuting(Message message, CancellationToken token)
+    {
+        var canExecute = await base.StartExecuting(message, token);
+        if (!canExecute)
+        {
+            return false;
+        }
+
+        var everthingIsSetup = System.IO.File.Exists(this.arecordExecPath) &&
+                               System.IO.File.Exists(this.opusencExecPath) &&
+                               System.IO.File.Exists(this.mkfifoExecPath);
+
+        if (!everthingIsSetup)
+        {
+            await this.Reply(message, "Can not record audio. Missing audio tools.");
+        }
+
+        return everthingIsSetup;
+    }
 
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
@@ -24,6 +54,10 @@ public class RecordAudioCommand : TelegramCommand
 
         var count = 1;
         var duration = 30;
+        var isVoice = this.ContainsText(message, "voice");
+
+        int maxCount = 100;
+        int maxDuration = isVoice ? 900 : 150;
 
         if (parameters.Count >= 1)
         {
@@ -34,34 +68,56 @@ public class RecordAudioCommand : TelegramCommand
             }
         }
 
-        if (count > 100)
+        if (count > maxCount)
         {
-            count = 100;
+            count = maxCount;
         }
 
-        if (duration > 150)
+        if (duration > maxDuration)
         {
-            duration = 150;
+            duration = maxDuration;
         }
 
         var replyTasks = new List<Task>(count);
         for (var c = 1; c <= count; c++)
         {
             var fileName = Path.GetTempFileName();
-            var process = new Process
+            var intermediateFileName = $"{fileName}.fifo";
+
+
+            Process? oggencProcess = null;
+            var arecordProcess = new Process
             {
                 StartInfo = new()
                 {
                     FileName = this.arecordExecPath,
                     UseShellExecute = false,
-                    Arguments = $"-f dat -t wav -d {duration} {fileName}",
+                    Arguments = $"-f dat -t wav -d {duration} {(isVoice ? intermediateFileName : fileName)}",
                 }
             };
 
-            var recordDateTime = DateTime.Now;
-            await process.StartAndAwaitUntilExit(cancellationToken);
+            if (isVoice)
+            {
+                await ProcessExtensions.ExecuteProcessCommand(this.mkfifoExecPath, intermediateFileName);
+                oggencProcess = new Process
+                {
+                    StartInfo = new()
+                    {
+                        FileName = this.opusencExecPath,
+                        UseShellExecute = false,
+                        Arguments = $"{intermediateFileName} {fileName}",
+                    }
+                };
+            }
 
-            replyTasks.Add(this.AudioReply(message, fileName, $"{recordDateTime:s}", duration, true));
+            var recordDateTime = DateTime.Now;
+            var recordProcessTask = arecordProcess.StartAndAwaitUntilExit(cancellationToken);
+            var oggencProcessTask = oggencProcess != null ? oggencProcess.StartAndAwaitUntilExit(cancellationToken: cancellationToken) : Task.CompletedTask;
+
+            await Task.WhenAll(recordProcessTask, oggencProcessTask);
+            System.IO.File.Delete(intermediateFileName);
+
+            replyTasks.Add(this.AudioReply(message, fileName, title: isVoice ? "voice-memo" : $"{recordDateTime:s}", duration: duration, deleteFile: true));
         }
 
         await Task.WhenAll(replyTasks);

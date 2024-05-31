@@ -45,6 +45,12 @@ public static class ProcessExtensions
         return process.ExitCode;
     }
 
+    public static Task<int> ExecuteProcessCommand(string command, string arguments)
+    {
+        var process = CreateProcessCommand(command, arguments);
+        return process.StartAndAwaitUntilExit();
+    }
+
     public static async Task<string?> ExecuteProcessCommand(string command, string arguments, CancellationToken cancellationToken = default)
     {
         using var process = CreateProcessCommand(command, arguments);

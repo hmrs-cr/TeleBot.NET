@@ -18,7 +18,7 @@ RUN apt-get update \
     && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
     && apt-get install -y speedtest
 
-RUN apt-get install -y --no-install-recommends alsa-utils
+RUN apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools
 
 ENTRYPOINT ["dotnet", "TeleBotService.dll"]
 
