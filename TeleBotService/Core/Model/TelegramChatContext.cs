@@ -47,6 +47,7 @@ public class TelegramChatContext
     public bool IsNotifingPlayerStatusChanges => this.playerStatusNotificationCts != null && !this.playerStatusNotificationCts.IsCancellationRequested;
 
     public PlayersConfig? LastPlayerConfig { get; internal set; }
+    public Message? LastPromptMessage { get; internal set; }
 
     public override int GetHashCode() => this.key.GetHashCode();
 

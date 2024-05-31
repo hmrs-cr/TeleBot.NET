@@ -6,7 +6,7 @@ namespace TeleBotService.Core.Commands;
 
 public class InternalInfoCommand : TelegramCommand
 {
-    public override bool CanExecuteCommand(Message message) => ContainsText(message, "/info");
+    public override string CommandString => "info";
 
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {

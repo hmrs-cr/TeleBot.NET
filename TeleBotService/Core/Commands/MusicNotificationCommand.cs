@@ -11,7 +11,12 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
     {
     }
 
-    public override bool CanExecuteCommand(Message message) => ContainsText(message, "/musicnotify") && (ContainsText(message, "begin") || ContainsText(message, "end"));
+    public override bool CanExecuteCommand(Message message) => ContainsText(message, "musicnotify") && (ContainsText(message, "begin") || ContainsText(message, "end"));
+
+    public override string Usage => "musicnotify_begin\nmusicnotify_end";
+
+    public override string Description => "Enable/disable music notifications";
+
     protected override Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playersConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
     {
         if (ContainsText(message, "begin"))

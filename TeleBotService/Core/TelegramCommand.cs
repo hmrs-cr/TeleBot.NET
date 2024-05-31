@@ -20,14 +20,16 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual string Description => string.Empty;
 
-    public virtual string Usage => string.Empty;
+    public virtual string Usage => this.CommandString;
 
     public virtual bool CanBeExecuteConcurrently => false;
+
+    public virtual string CommandString => string.Empty;
 
 [   JsonIgnore]
     public ILocalizationResolver? LocalizationResolver { get; protected set; }
 
-    public abstract bool CanExecuteCommand(Message message);
+    public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
 
     public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
     {
@@ -74,6 +76,12 @@ public abstract class TelegramCommand : ITelegramCommand
                 replyToMessageId: message.MessageId,
                 cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
+    protected Task ReplyPrompt(Message message, string prompt, CancellationToken cancellationToken = default)
+    {
+        message.GetContext().LastPromptMessage = message;
+        return this.Reply(message, prompt, cancellationToken);
+    }
+
     protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                chatId: message.Chat.Id,
                text: replyMessage,
@@ -91,8 +99,16 @@ public abstract class TelegramCommand : ITelegramCommand
         }
     }
 
-     protected Task AudioReply(Message message, Stream audioStream, string? title = null, int? duration = null) =>
-        this.BotClient.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+    protected Task AudioReply(Message message, Stream audioStream, string? title = null, int? duration = null)
+    {
+        if (title == "voice-memo")
+        {
+            return this.BotClient.SendVoiceAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
+        }
+
+        return this.BotClient.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+
+    }
 
     protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 

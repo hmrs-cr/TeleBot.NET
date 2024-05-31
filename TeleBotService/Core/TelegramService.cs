@@ -155,7 +155,17 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private IEnumerable<ITelegramCommand> GetCommands(Message message) => this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message));
+    private IEnumerable<ITelegramCommand> GetCommands(Message message)
+    {
+        var lastPromptMessage = message.GetContext().LastPromptMessage;
+        if (!string.IsNullOrEmpty(lastPromptMessage?.Text) && !string.IsNullOrEmpty(message.Text))
+        {
+            message.Text = $"{lastPromptMessage.Text} {message.Text}";
+            message.GetContext().LastPromptMessage = null;
+        }
+
+        return this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message));
+    }
 
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
