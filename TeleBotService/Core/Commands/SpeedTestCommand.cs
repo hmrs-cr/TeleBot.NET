@@ -18,7 +18,24 @@ public class SpeedTestCommand : TelegramCommand
         this.speedTestExecPath = config.Value.SpeedTest ?? "/usr/bin/speedtest";
     }
 
-    public override bool CanExecuteCommand(Message message) => message.Text?.Contains("speedtest", StringComparison.InvariantCultureIgnoreCase) == true;
+    public override string CommandString => "speedtest";
+
+    protected override async Task<bool> StartExecuting(Message message, CancellationToken token)
+    {
+        var canExecute = await base.StartExecuting(message, token);
+        if (!canExecute)
+        {
+            return false;
+        }
+
+        var everthingIsSetup = System.IO.File.Exists(this.speedTestExecPath);
+        if (!everthingIsSetup)
+        {
+            await this.Reply(message, "Can not run speedtest. Missing speedtest tools.");
+        }
+
+        return everthingIsSetup;
+    }
 
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
