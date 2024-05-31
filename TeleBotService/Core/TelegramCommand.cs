@@ -12,7 +12,7 @@ public abstract class TelegramCommand : ITelegramCommand
     private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
 
     [JsonIgnore]
-    public TelegramBotClient BotClient { get; protected set; }
+    public TelegramBotClient BotClient { get; init; }
 
     public virtual bool IsEnabled => true;
 
@@ -27,7 +27,7 @@ public abstract class TelegramCommand : ITelegramCommand
     public virtual string CommandString => string.Empty;
 
 [   JsonIgnore]
-    public ILocalizationResolver? LocalizationResolver { get; protected set; }
+    public ILocalizationResolver? LocalizationResolver { get; init; }
 
     public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
 

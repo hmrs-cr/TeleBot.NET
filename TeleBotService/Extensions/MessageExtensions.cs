@@ -14,13 +14,13 @@ public static class MessageExtensions
 
     public static TelegramChatContext GetContext(this Message message) => TelegramChatContext.GetContext(message.Chat);
 
-    public static Task Reply(this TelegramBotClient botClient, Message message, string replyMessage, CancellationToken cancellationToken = default) => botClient.SendTextMessageAsync(
+    public static Task Reply(this ITelegramBotClient botClient, Message message, string replyMessage, CancellationToken cancellationToken = default) => botClient.SendTextMessageAsync(
                 chatId: message.Chat.Id,
                 text: replyMessage,
                 replyToMessageId: message.MessageId,
                 cancellationToken: cancellationToken);
 
-    public static Task ReplyFormated(this TelegramBotClient botClient, Message message, string replyMessage, CancellationToken cancellationToken = default) => botClient.SendTextMessageAsync(
+    public static Task ReplyFormated(this ITelegramBotClient botClient, Message message, string replyMessage, CancellationToken cancellationToken = default) => botClient.SendTextMessageAsync(
                chatId: message.Chat.Id,
                text: replyMessage,
                replyToMessageId: message.MessageId,

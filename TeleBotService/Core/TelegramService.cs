@@ -13,7 +13,7 @@ namespace TeleBotService.Core;
 
 public class TelegramService : ITelegramService
 {
-    private readonly TelegramBotClient botClient;
+    private readonly ITelegramBotClient botClient;
     private readonly TelegramConfig config;
     private readonly CancellationTokenSource cts = new();
     private readonly ReceiverOptions receiverOptions = new()
