@@ -180,7 +180,7 @@ public class TelegramService : ITelegramService
         return Task.CompletedTask;
     }
 
-    internal IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
+    private IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
         TelegramCommandRegistrationExtensions.CommandTypes.Select(t =>
         {
             ;
