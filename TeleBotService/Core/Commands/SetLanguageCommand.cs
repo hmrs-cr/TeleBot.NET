@@ -19,8 +19,7 @@ public class SetLanguageCommand : TelegramCommand
         }
         else if (lang.lang is null)
         {
-            var localizedText = this.Localize(message, "Choose your language");
-            this.ReplyPrompt(message, $"{localizedText} : /{(string.Join(" /", definedLanguages))}", cancellationToken);
+            this.ReplyPrompt(message, "Choose your language", definedLanguages, cancellationToken);
         }
         else
         {

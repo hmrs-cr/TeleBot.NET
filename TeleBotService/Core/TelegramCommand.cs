@@ -76,10 +76,11 @@ public abstract class TelegramCommand : ITelegramCommand
                 replyToMessageId: message.MessageId,
                 cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
-    protected Task ReplyPrompt(Message message, string prompt, CancellationToken cancellationToken = default)
+    protected Task ReplyPrompt(Message message, string prompt, IEnumerable<string> choices, CancellationToken cancellationToken = default)
     {
         message.GetContext().LastPromptMessage = message;
-        return this.Reply(message, prompt, cancellationToken);
+        prompt = Localize(message, prompt);
+        return this.Reply(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
     }
 
     protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
