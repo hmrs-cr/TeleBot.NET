@@ -1,6 +1,6 @@
-﻿using Linkplay.HttpApi.Model;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -10,7 +10,7 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
     public override string Description => "Turn on/off music system";
     public override string Usage => "{turn off} {music}\n{turn on} {music}";
 
-    public MusicPlayerTurnOnOffCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayerTurnOnOffCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayerTurnOnOffCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override bool CanExecuteCommand(Message message) =>
         ContainsText(message, "music") && (ContainsText(message, "turn on", true) || ContainsText(message, "turn off", true));
@@ -41,8 +41,7 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
             }
             catch (Exception e)
             {
-                error = $"Error tuning {(isShutDown ? "off" : "on")} '{playerConfig.Name}': {e.Message}";
-                Console.WriteLine(error);
+               this.LogWarning(e, "Error tuning {state} '{playerConfigName}'", isShutDown ? "off" : "on", playerConfig.Name);
             }
         }
 

@@ -3,10 +3,11 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Linkplay.HttpApi.Json;
 using Linkplay.HttpApi.Model;
+using Microsoft.Extensions.Logging;
 
 namespace Linkplay.HttpApi;
 
-public class LinkplayHttpApiClient
+public class LinkplayHttpApiClient : ILinkplayHttpApiClient
 {
     private const string CommandPath = "/httpapi.asp";
     private readonly string host;
@@ -14,9 +15,11 @@ public class LinkplayHttpApiClient
 
     public TimeSpan RequestTimeout { get => this.httpClient.Timeout; set => this.httpClient.Timeout = value; }
 
+    public ILogger? Logger { get ; set; }
+
     private readonly JsonSerializerOptions jsonOptions = new()
     {
-        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString,
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 
@@ -94,7 +97,7 @@ public class LinkplayHttpApiClient
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            this.Logger?.LogWarning(e, "Error executing command {command}", command);
             return default;
         }
     }
@@ -111,7 +114,11 @@ public class LinkplayHttpApiClient
 
     private T Log<T>(T value)
     {
-        Console.WriteLine(value);
+        if (value is { } && this.Logger != null)
+        {
+            this.Logger.LogDebug(value.ToString());
+        }
+
         return value;
     }
 }

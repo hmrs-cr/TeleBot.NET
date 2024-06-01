@@ -8,8 +8,11 @@ namespace TeleBotService.Core;
 
 public abstract class TelegramCommand : ITelegramCommand
 {
+    private readonly Task<bool> TaskTrueResult = Task.FromResult(true);
+    private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
+
     [JsonIgnore]
-    public TelegramBotClient BotClient { get; protected set; }
+    public TelegramBotClient? BotClient { get; init; }
 
     public virtual bool IsEnabled => true;
 
@@ -17,26 +20,98 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual string Description => string.Empty;
 
-    public virtual string Usage => string.Empty;
+    public virtual string Usage => this.CommandString;
+
+    public virtual bool CanBeExecuteConcurrently => false;
+
+    public virtual string CommandString => string.Empty;
 
 [   JsonIgnore]
-    public ILocalizationResolver? LocalizationResolver { get; protected set; }
+    public ILocalizationResolver? LocalizationResolver { get; init; }
 
-    public abstract Task Execute(Message message, CancellationToken cancellationToken = default);
-    public abstract bool CanExecuteCommand(Message message);
+    public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
 
-    protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
+    protected ILogger? Logger { get; init; }
+
+    public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
+    {
+        var canExecute = await this.StartExecuting(message, cancellationToken);
+        try
+        {
+            if (canExecute)
+            {
+                var task = this.Execute(message, cancellationToken);
+                message.GetContext().AddExecutingTask(task);
+                await task;
+                return true;
+            }
+        }
+        finally
+        {
+            if (canExecute)
+            {
+                await this.EndExecuting(message, cancellationToken);
+                message.GetContext().RemoveFinishedTasks();
+            }
+        }
+
+        return canExecute;
+    }
+
+    protected virtual Task<bool> StartExecuting(Message message, CancellationToken token)
+    {
+        if (!this.CanBeExecuteConcurrently && message.GetContext().GetExecutingTaskCount() > 0)
+        {
+            return TaskFalseResult;
+        }
+
+        return TaskTrueResult;
+    }
+
+    protected abstract Task Execute(Message message, CancellationToken cancellationToken = default);
+
+    protected virtual Task EndExecuting(Message message, CancellationToken token) => Task.CompletedTask;
+
+    protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                 chatId: message.Chat.Id,
                 text: Localize(message, replyMessage),
                 replyToMessageId: message.MessageId,
-                cancellationToken: cancellationToken);
+                cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
-    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient.SendTextMessageAsync(
+    protected Task ReplyPrompt(Message message, string prompt, IEnumerable<string> choices, CancellationToken cancellationToken = default)
+    {
+        message.GetContext().LastPromptMessage = message;
+        prompt = Localize(message, prompt);
+        return this.Reply(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
+    }
+
+    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                chatId: message.Chat.Id,
                text: replyMessage,
                replyToMessageId: message.MessageId,
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
-               cancellationToken: cancellationToken);
+               cancellationToken: cancellationToken) ?? Task.CompletedTask;
+
+    protected async Task AudioReply(Message message, string audioFileName, string? title = null, int? duration = null, bool deleteFile = false)
+    {
+        using var file = System.IO.File.OpenRead(audioFileName);
+        await this.AudioReply(message, file, title, duration);
+        if (deleteFile)
+        {
+            System.IO.File.Delete(audioFileName);
+        }
+    }
+
+    protected Task AudioReply(Message message, Stream audioStream, string? title = null, int? duration = null)
+    {
+        if (title == "voice-memo")
+        {
+            return this.BotClient!.SendVoiceAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
+        }
+
+        return this.BotClient!.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+
+    }
 
     protected string Localize(Message message, string text) => this.LocalizationResolver?.GetLocalizedString(message.GetContext().LanguageCode, text) ?? text;
 
@@ -54,6 +129,19 @@ public abstract class TelegramCommand : ITelegramCommand
 
         return result;
     }
+
+    public void LogDebug(string message, params object?[] args) => this.Logger?.LogDebug(message, args);
+    public void LogDebug(string message) => this.Logger?.LogDebug(message);
+    public void LogInformation(string message, params object?[] args) => this.Logger?.LogInformation(message, args);
+    public void LogInformation(string message) => this.Logger?.LogInformation(message);
+    public void LogWarning(string message, params object?[] args) => this.Logger?.LogWarning(message, args);
+    public void LogWarning(Exception e, string message, params object?[] args) => this.Logger?.LogWarning(e, message, args);
+    public void LogWarning(Exception e, string message) => this.Logger?.LogWarning(e, message);
+    public void LogWarning(string message) => this.Logger?.LogWarning(message);
+    public void LogError(string message, params object?[] args) => this.Logger?.LogError(message, args);
+    public void LogError(Exception e, string message, params object?[] args) => this.Logger?.LogError(e, message, args);
+    public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
+    public void LogError(string message) => this.Logger?.LogError(message);
 }
 
 public static class TelegramCommandRegistrationExtensions

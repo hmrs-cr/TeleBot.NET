@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Primitives;
 
 namespace TeleBotService.Localization;
 
@@ -9,6 +10,15 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
     public const string DefaulLanguage = "en";
 
     private CaseInsensitiveTextMappingDictionary? localizedTextMappings = null;
+
+    public SimpleLocalizationResolver(ILogger? logger)
+    {
+        this.Logger = logger;
+    }
+
+    public SimpleLocalizationResolver() { }
+
+    public ILogger? Logger { get; set; }
 
     public IEnumerable<string>? DefinedLanguages => localizedTextMappings?.Values.SelectMany(v => v.Keys).Append(DefaulLanguage).Distinct();
 
@@ -41,7 +51,7 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error loading localized strings: {e.Message}");
+            this.Logger?.LogWarning(e, "Error loading localized strings");
         }
     }
 
@@ -63,17 +73,5 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
     private class CaseInsensitiveTextMappingDictionary : Dictionary<string, Dictionary<string, string[]>>
     {
         public CaseInsensitiveTextMappingDictionary() : base(StringComparer.OrdinalIgnoreCase) {}
-    }
-}
-
-public static class ResgistrationExtensions
-{
-    public static IServiceCollection AddCommandTextMappings(this IServiceCollection services, IConfiguration config)
-    {
-        var fileName = config.GetValue<string>("LocalizedStringMappingFile");
-        var instance = new SimpleLocalizationResolver();
-        instance.LoadStringMappings(fileName);
-        services.AddSingleton<ILocalizationResolver>(instance);
-        return services;
     }
 }

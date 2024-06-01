@@ -1,4 +1,6 @@
+using System.Runtime.CompilerServices;
 using System.Text;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -12,25 +14,46 @@ public class HelpCommand : TelegramCommand
         this.telegramService = telegramService;
     }
 
-    public override bool CanExecuteCommand(Message message) => ContainsText(message, "help");
+    public override string CommandString => "help";
 
-    public override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         var sb = new StringBuilder();
-        foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage)))
+        foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description)))
         {
             sb.Append("<b>").Append(Localize(message, command.Description)).Append(':').Append("</b>")
               .AppendLine();
 
-            foreach (var cmd in command.Usage.Split('\n'))
-            {
-                var cmdLocalized = Localize(message, cmd);
-                sb.Append("<i>").Append(cmdLocalized).Append("\t==>\t</i>/").Append(cmdLocalized.Replace(" ", string.Empty));
-                sb.AppendLine();
-            }
+            this.AddCommandUssage(command, message, sb);
             sb.AppendLine();
         }
 
+        var otherCommands = this.telegramService.GetCommands().Where(c => !string.IsNullOrEmpty(c.Usage) && string.IsNullOrEmpty(c.Description)).ToList();
+        if (otherCommands.Count > 0)
+        {
+            sb.Append("<b>").Append(Localize(message, "Other Commands")).Append(':').Append("</b>")
+              .AppendLine();
+
+            foreach (var command in otherCommands)
+            {
+                this.AddCommandUssage(command, message, sb);
+            }
+        }
+
         await this.ReplyFormated(message, sb.RemoveAccents().ToString(), cancellationToken);
+    }
+
+    private void AddCommandUssage(ITelegramCommand command, Message message, StringBuilder sb)
+    {
+        foreach (var cmd in command.Usage.Split('\n'))
+        {
+            var cmdLocalized = Localize(message, cmd);
+            sb.Append("<i>").Append(cmdLocalized).Append("</i>");
+            if (!cmdLocalized.StartsWith('/'))
+            {
+                sb.Append("\t==>\t/").Append(cmdLocalized.Replace(" ", string.Empty));
+            }
+            sb.AppendLine();
+        }
     }
 }

@@ -1,12 +1,12 @@
 ﻿namespace Linkplay.HttpApi.Model;
 
-public class NetworkStatus
+public record NetworkStatus
 {
-    public NetworkState Wifi { get; set; }
-    public NetworkState Eth { get; set; }
-    public string? EthStaticIP { get; set; }
-    public string? EthStaticMask { get; set; }
-    public string? EthStaticGateway { get; set; }
-    public string? EthStaticDNS1 { get; set; }
-    public string? EthStaticDNS2 { get; set; }
+    public NetworkState Wifi { get; init; }
+    public NetworkState Eth { get; init; }
+    public string? EthStaticIP { get; init; }
+    public string? EthStaticMask { get; init; }
+    public string? EthStaticGateway { get; init; }
+    public string? EthStaticDNS1 { get; init; }
+    public string? EthStaticDNS2 { get; init; }
 }

@@ -2,21 +2,21 @@
 
 public record PlayerStatus
 {
-    public PlayerType Type { get; set; }
-    public Channels Ch { get; set; }
-    public PlaybackMode Mode { get; set; }
-    public ShuffleMode Loop { get; set; }
-    public int Eq { get; set; }
-    public string Status { get; set; }
-    public int Curpos { get; set; }
-    public int OffsetPts { get; set; }
-    public int Totlen { get; set; }
-    public HexedString Title { get; set; }
-    public HexedString Artist { get; set; }
-    public HexedString Album { get; set; }
-    public int AlarmFlag { get; set; }
-    public int Plicount { get; set; }
-    public int Plicurr { get; set; }
-    public int Vol { get; set; }
-    public bool Mute { get; set; }
+    public PlayerType Type { get; init; }
+    public Channels Ch { get; init; }
+    public PlaybackMode Mode { get; init; }
+    public ShuffleMode Loop { get; init; }
+    public int Eq { get; init; }
+    public string? Status { get; init; }
+    public int Curpos { get; init; }
+    public int OffinitPts { get; init; }
+    public int Totlen { get; init; }
+    public HexedString Title { get; init; }
+    public HexedString Artist { get; init; }
+    public HexedString Album { get; init; }
+    public int AlarmFlag { get; init; }
+    public int Plicount { get; init; }
+    public int Plicurr { get; init; }
+    public int Vol { get; init; }
+    public bool Mute { get; init; }
 }
