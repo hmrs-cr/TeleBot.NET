@@ -17,7 +17,7 @@ public class StringEnum
 
     public override int GetHashCode() => EqualityComparer<string>.Default.GetHashCode(this.value);
 
-    public override bool Equals(object obj) => obj is StringEnum @enum && this.Equals(@enum);
+    public override bool Equals(object? obj) => obj is StringEnum @enum && this.Equals(@enum);
 
     public bool Equals(StringEnum other) => EqualityComparer<string>.Default.Equals(value, other.value);
 

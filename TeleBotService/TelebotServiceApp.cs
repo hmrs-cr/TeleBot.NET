@@ -155,8 +155,8 @@ public static class RegistrationExtensions
                 });
 
 
-                ////var client = new LinkplayHttpApiClient("192.168.100.104");
-                ////return client.GetDeviceStatus();
+                var client = new LinkplayHttpApiClient("192.168.100.104");
+                return client.GetDeviceStatus();
 
             }).WithName("GetNetworkStatus").WithOpenApi();
         }
