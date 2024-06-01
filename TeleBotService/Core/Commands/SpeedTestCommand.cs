@@ -41,11 +41,11 @@ public class SpeedTestCommand : TelegramCommand
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
         var isAcceptanceMessage = this.ContainsText(message, AcceptanceMessage);
-       if (!isAcceptanceMessage && !message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted)
-       {
+        if (!isAcceptanceMessage && !message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted)
+        {
             await this.Reply(message, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
             return;
-       }
+        }
 
         try
         {
@@ -56,7 +56,7 @@ public class SpeedTestCommand : TelegramCommand
                 message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted = true;
             }
 
-            var result = await ProcessExtensions.ExecuteJsonProcessCommand<SpeedtestResult>(this.speedTestExecPath, arguments, cancellationToken);
+            var result = await ProcessExtensions.ExecuteJsonProcessCommand<SimpleSpeedTestResult>(this.speedTestExecPath, arguments, cancellationToken);
             if (result?.Result?.Url is { })
             {
                 var image = InputFile.FromString($"{result.Result.Url}.png");
@@ -78,5 +78,15 @@ public class SpeedTestCommand : TelegramCommand
     private record ContextData
     {
         public bool SpeedTestLicenceAccepted { get; set; }
+    }
+
+    private class SimpleSpeedTestResult
+    {
+        public ResultData? Result { get; init; }
+
+        public class ResultData
+        {
+            public string? Url { get; init; }
+        }
     }
 }
