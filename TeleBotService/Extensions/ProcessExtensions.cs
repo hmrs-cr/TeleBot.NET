@@ -5,6 +5,8 @@ namespace TeleBotService.Extensions;
 
 public static class ProcessExtensions
 {
+    public static ILogger? Logger { get; set; } = TelebotServiceApp.Logger;
+
     private static JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
     {
         NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowReadingFromString,
@@ -39,7 +41,7 @@ public static class ProcessExtensions
 
     public static async Task<int> StartAndAwaitUntilExit(this Process process, CancellationToken cancellationToken = default)
     {
-        Console.WriteLine($"Executing command: {process.StartInfo.FileName} {process.StartInfo.Arguments}");
+        Logger?.LogInformation("Executing command: {command} {arguments}", process.StartInfo.FileName, process.StartInfo.Arguments);
         process.Start();
         await process.WaitForExitAsync(cancellationToken);
         return process.ExitCode;
@@ -56,11 +58,10 @@ public static class ProcessExtensions
         using var process = CreateProcessCommand(command, arguments);
         var result = await ExecuteProcess(process, cancellationToken);
         var errorResult = await process.StandardError.ReadToEndAsync(cancellationToken);
-        Console.WriteLine($"{command} {arguments}\n{result}");
+        Logger?.LogInformation("{command} {arguments}\n{result}", command, arguments, result);
         if (!string.IsNullOrEmpty(errorResult))
         {
-            Console.WriteLine();
-            Console.WriteLine(errorResult);
+            Logger?.LogInformation(errorResult);
         }
         return result;
     }

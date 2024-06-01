@@ -24,8 +24,13 @@ public class TelegramService : ITelegramService
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
+    private readonly ILogger<TelegramService> logger;
 
-    public TelegramService(IOptions<TelegramConfig> confif, ILocalizationResolver localizationResolver, IServiceProvider serviceProvider)
+    public TelegramService(
+        IOptions<TelegramConfig> confif,
+        ILocalizationResolver localizationResolver,
+        IServiceProvider serviceProvider,
+        ILogger<TelegramService> logger)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
         {
@@ -36,6 +41,7 @@ public class TelegramService : ITelegramService
         this.config = confif.Value;
         this.localizationResolver = localizationResolver;
         this.serviceProvider = serviceProvider;
+        this.logger = logger;
     }
 
     public Task<User> GetInfo() => this.botClient.GetMeAsync();
@@ -89,12 +95,12 @@ public class TelegramService : ITelegramService
 
         if (!this.config.AllowedUsers.Contains(message.Chat.Username))
         {
-            Console.WriteLine($"Forbidden {message.Chat.Username}:{message.Chat.Id}");
+            this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
             _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
             return Task.CompletedTask;
         }
 
-        Console.WriteLine($"Received '{messageText}' message in chat {message.Chat.Id}.");
+        this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
         _ = HandleCommands(message, cancellationToken);
 
         return Task.CompletedTask;
@@ -114,30 +120,29 @@ public class TelegramService : ITelegramService
                 executed = await command.HandleCommand(message, cancellationToken);
                 if (executed)
                 {
-                    Console.WriteLine($"Executed '{command.GetType().Name}' command in chat {message.Chat.Id}.");
+                    this.logger.LogInformation("Executed '{commandName}' command in chat {messageChatId}.", command.Name, message.Chat.Id);
                     executedCommandCount++;
                 }
                 else
                 {
-                    Console.WriteLine($"Refused execution of '{command.GetType().Name}' command in chat {message.Chat.Id}.");
+                    this.logger.LogInformation("Refused execution of '{commandName}' command in chat {messageChatId}.", command.Name, message.Chat.Id);
                     refusedCommandCount++;
                 }
             }
             catch (Exception e)
             {
                 failedCommandCount++;
-                Console.WriteLine($"Unhandled error while executing command {command.Name}: {e.Message}");
-                Console.WriteLine(e.StackTrace);
+                this.logger.LogWarning(e, "Unhandled error while executing command {command.Name}", command.Name);
             }
         }
 
         if (executedCommandCount > 0)
         {
-            Console.WriteLine($"Executed {executedCommandCount} commands: '{message.Text}', chat {message.Chat.Id}.");
+            this.logger.LogInformation("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, message.Text, message.Chat.Id);
         }
         else if (failedCommandCount == 0 && refusedCommandCount == 0)
         {
-            Console.WriteLine($"No commands found for message '{message.Text}', chat {message.Chat.Id}.");
+            this.logger.LogInformation("No commands found for message '{messageText}', chat {messageChatId}.", message.Text, message.Chat.Id);
             await this.Reply(message, "I didn't understand you", cancellationToken);
         }
     }
@@ -169,14 +174,7 @@ public class TelegramService : ITelegramService
 
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        var ErrorMessage = exception switch
-        {
-            ApiRequestException apiRequestException
-                => $"Telegram API Error:\n[{apiRequestException.ErrorCode}]\n{apiRequestException.Message}",
-            _ => exception.ToString()
-        };
-
-        Console.WriteLine(ErrorMessage);
+        this.logger.LogWarning(exception, "Telegram API Error");
         return Task.CompletedTask;
     }
 

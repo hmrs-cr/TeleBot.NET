@@ -7,7 +7,7 @@ namespace TeleBotService.Core.Commands;
 
 public class MusicPlayersPlayMusicCommand : MusicPlayerCommandBase
 {
-    public MusicPlayersPlayMusicCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayersPlayMusicCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayersPlayMusicCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override bool CanExecuteCommand(Message message) => ContainsText(message, "play") && ContainsText(message, "music");
 

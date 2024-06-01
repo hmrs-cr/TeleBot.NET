@@ -3,36 +3,41 @@ using System.Text.Json.Serialization;
 using Linkplay.HttpApi;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
+using Onvif.Core.Client;
 using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Localization;
 
 namespace TeleBotService;
 
-public static class TelebotServiceApp
+public class TelebotServiceApp
 {
+    private TelebotServiceApp() { }
+
     private static Version? version = null;
 
     public static Version? Version => version ??= Assembly.GetExecutingAssembly().GetName().Version;
     public static string? VersionLabel { get; private set; }
     public static string? VersionHash { get; private set; }
 
+    public static ILogger? Logger { get; private set; }
+
     public static WebApplication? App { get; private set; }
     public static bool IsDev { get; private set; }
 
     public static void Run(string[] args)
     {
-        Console.WriteLine($"Starting service V{Version}");
-
         var builder = WebApplication.CreateBuilder(args);
-        builder.Services
-               .AddSwagger()
-               .AddTelegramServiceInfrastructure(builder.Configuration);
+        builder.AddCustomLogger()
+               .AddServices();
 
         App = builder.Build()
                      .AddUseSwaggerForDevelopment()
                      .AddEndpoints()
                      .AddDevOnlyEndpoints();
+
+        Logger = App.Services.GetRequiredService<ILogger<TelebotServiceApp>>();
+        LogInformation("Starting service V{Version}", Version);
 
         VersionHash = GetVersionHash();
         VersionLabel = builder.Configuration.GetValue<string>("ServiceVersionLabel");
@@ -44,11 +49,24 @@ public static class TelebotServiceApp
         catch (ApplicationException e)
         {
             Environment.ExitCode = 1;
-            Console.WriteLine($"Error: {e.Message}");
+            LogError(e, $"Error running the service");
         }
 
-        Console.WriteLine($"Exiting service V{Version}. Bye bye.");
+        LogInformation($"Exiting service V{Version}. Bye bye.");
     }
+
+    public static void LogDebug(string message, params object?[] args) => Logger?.LogDebug(message, args);
+    public static void LogDebug(string message) => Logger?.LogDebug(message);
+    public static void LogInformation(string message, params object?[] args) => Logger?.LogInformation(message, args);
+    public static void LogInformation(string message) => Logger?.LogInformation(message);
+    public static void LogWarning(string message, params object?[] args) => Logger?.LogWarning(message, args);
+    public static void LogWarning(Exception e, string message, params object?[] args) => Logger?.LogWarning(e, message, args);
+    public static void LogWarning(Exception e, string message) => Logger?.LogWarning(e, message);
+    public static void LogWarning(string message) => Logger?.LogWarning(message);
+    public static void LogError(string message, params object?[] args) => Logger?.LogError(message, args);
+    public static void LogError(Exception e, string message, params object?[] args) => Logger?.LogError(e, message, args);
+    public static void LogError(Exception e, string message) => Logger?.LogError(e, message);
+    public static void LogError(string message) => Logger?.LogError(message);
 
     private static string? GetVersionHash()
     {
@@ -64,8 +82,29 @@ public static class TelebotServiceApp
 
         return result;
     }
+}
 
+public static class RegistrationExtensions
+{
     public static IServiceCollection AddSwagger(this IServiceCollection services) => services.AddEndpointsApiExplorer().AddSwaggerGen();
+
+    public static IHostApplicationBuilder AddCustomLogger(this IHostApplicationBuilder builder)
+    {
+        builder.Logging
+               .ClearProviders()
+               .AddConsole();
+
+        return builder;
+    }
+
+    public static IHostApplicationBuilder AddServices(this IHostApplicationBuilder builder)
+    {
+        builder.Services
+               .AddSwagger()
+               .AddTelegramServiceInfrastructure(builder.Configuration);
+
+        return builder;
+    }
 
     public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfiguration configuration) =>
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
@@ -108,8 +147,16 @@ public static class TelebotServiceApp
         {
             app.MapGet("test", () =>
             {
-                var client = new LinkplayHttpApiClient("192.168.100.104");
-                return client.GetDeviceStatus();
+
+                var account = new Account("camera_ip", "camera_username", "camera_password");
+                var camera = Camera.Create(account, ex =>
+                {
+                    // exception
+                });
+
+
+                ////var client = new LinkplayHttpApiClient("192.168.100.104");
+                ////return client.GetDeviceStatus();
 
             }).WithName("GetNetworkStatus").WithOpenApi();
         }

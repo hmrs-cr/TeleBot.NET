@@ -7,7 +7,10 @@ namespace TeleBotService.Core.Commands;
 
 public class MusicNotificationCommand : MusicPlayerCommandBase
 {
-    public MusicNotificationCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig)
+    public MusicNotificationCommand(
+        IOptions<MusicPlayersConfig> config,
+        IOptions<TapoConfig> tapoConfig,
+        ILogger<MusicNotificationCommand> logger) : base(config, tapoConfig, logger)
     {
     }
 
@@ -26,7 +29,7 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
                 var same = prevStatus?.Title == currentStatus?.Title;
                 // TODO: Do not sent status if stopped
                 await ReplyPlayerStatus(message, playersConfig);
-                Console.WriteLine($"Player status New: {currentStatus?.Title}, Prev: {prevStatus?.Title}");
+                this.LogInformation("Player status New: {currentStatusTitle}, Prev: {prevStatusTitle}", currentStatus?.Title, prevStatus?.Title);
             });
         }
         else if (ContainsText(message, "end"))

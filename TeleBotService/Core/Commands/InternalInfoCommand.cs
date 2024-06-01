@@ -10,7 +10,7 @@ public class InternalInfoCommand : TelegramCommand
 
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
     {
-        var myInfo = await this.BotClient.GetMeAsync();
+        var myInfo = await this.BotClient!.GetMeAsync();
         var internalInfo = GetInternalInfoString(myInfo);
         await this.Reply(message, internalInfo);
     }

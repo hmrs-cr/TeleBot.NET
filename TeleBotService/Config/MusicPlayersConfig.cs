@@ -13,7 +13,7 @@ public class PlayersConfig
 
     public IReadOnlyList<MusicPlayersPresetConfig>? Presets { get; init; }
 
-    public LinkplayHttpApiClient Client => this.client ??= this.SetTimeOut(new LinkplayHttpApiClient(this.Host));
+    public LinkplayHttpApiClient Client => this.client ??= this.SetTimeOut(new LinkplayHttpApiClient(this.Host!, logger: TelebotServiceApp.Logger));
 
     public int TapoDevice { get; init; }
 
@@ -27,7 +27,7 @@ public class PlayersConfig
         return linkplayHttpApiClient;
     }
 
-    internal MusicPlayersPresetConfig? GetPreset(string? text) => this.Presets?.FirstOrDefault(p => text?.Contains(p.Name, StringComparison.InvariantCultureIgnoreCase) == true);
+    internal MusicPlayersPresetConfig? GetPreset(string? text) => this.Presets?.FirstOrDefault(p => text?.Contains(p.Name!, StringComparison.InvariantCultureIgnoreCase) == true);
 }
 
 public record MusicPlayersPresetConfig
@@ -45,6 +45,5 @@ public record MusicPlayersConfig
     public const string MusicPlayersConfigName = "MusicPlayers";
     public IReadOnlyList<PlayersConfig>? Players { get; init; }
 
-    public IReadOnlyDictionary<string, PlayersConfig>? PlayersDict => this.playersDict ??= this.Players?.ToDictionary(p => p.Name);
-
+    public IReadOnlyDictionary<string, PlayersConfig>? PlayersDict => this.playersDict ??= this.Players?.ToDictionary(p => p.Name!);
 }

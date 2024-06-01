@@ -13,9 +13,10 @@ public class SpeedTestCommand : TelegramCommand
 
     private readonly string speedTestExecPath;
 
-    public SpeedTestCommand(IOptions<ExternalToolsConfig> config)
+    public SpeedTestCommand(IOptions<ExternalToolsConfig> config, ILogger<SpeedTestCommand> logger)
     {
         this.speedTestExecPath = config.Value.SpeedTest ?? "/usr/bin/speedtest";
+        this.Logger = logger;
     }
 
     public override string CommandString => "speedtest";
@@ -59,7 +60,7 @@ public class SpeedTestCommand : TelegramCommand
             if (result?.Result?.Url is { })
             {
                 var image = InputFile.FromString($"{result.Result.Url}.png");
-                await this.BotClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: result.Result.Url, cancellationToken: cancellationToken);
+                await this.BotClient!.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: result.Result.Url, cancellationToken: cancellationToken);
             }
             else
             {
@@ -68,9 +69,9 @@ public class SpeedTestCommand : TelegramCommand
         }
         catch (Exception e)
         {
-            var error = $"Error executing speedtest: {e.Message}";
+            var error = "Error executing speedtest";
             await this.Reply(message, error, cancellationToken);
-            Console.WriteLine(error);
+            this.LogWarning(e, error);
         }
     }
 

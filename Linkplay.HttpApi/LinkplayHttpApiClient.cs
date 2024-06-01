@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Linkplay.HttpApi.Json;
 using Linkplay.HttpApi.Model;
+using Microsoft.Extensions.Logging;
 
 namespace Linkplay.HttpApi;
 
@@ -10,6 +11,7 @@ public class LinkplayHttpApiClient
 {
     private const string CommandPath = "/httpapi.asp";
     private readonly string host;
+    private readonly ILogger? logger;
     private readonly HttpClient httpClient;
 
     public TimeSpan RequestTimeout { get => this.httpClient.Timeout; set => this.httpClient.Timeout = value; }
@@ -22,9 +24,10 @@ public class LinkplayHttpApiClient
 
     };
 
-    public LinkplayHttpApiClient(string host, HttpClient? httpClient = null)
+    public LinkplayHttpApiClient(string host, ILogger? logger = null, HttpClient? httpClient = null)
     {
         this.host = host ?? throw new ArgumentNullException(nameof(host));
+        this.logger = logger;
         this.httpClient = httpClient ?? new HttpClient();
         this.jsonOptions.Converters.Add(new JsonStringEnumConverter());
         this.jsonOptions.Converters.Add(new HexedStringJsonConverter());
@@ -94,7 +97,7 @@ public class LinkplayHttpApiClient
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            this.logger?.LogWarning(e, "Error executing command {command}", command);
             return default;
         }
     }
@@ -111,7 +114,11 @@ public class LinkplayHttpApiClient
 
     private T Log<T>(T value)
     {
-        Console.WriteLine(value);
+        if (value is { } && this.logger != null)
+        {
+            this.logger.LogDebug(value.ToString());
+        }
+
         return value;
     }
 }

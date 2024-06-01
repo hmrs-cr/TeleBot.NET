@@ -16,16 +16,19 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     protected static readonly Task<int> DoNotReplyPlayerStatusTask = Task.FromResult(DoNotReplyPlayerStatus);
     protected static readonly Task<int> ReplyPlayerStatusDelayShortTask = Task.FromResult(ReplyPlayerStatusDelayShort);
 
-
     protected readonly IReadOnlyDictionary<string, PlayersConfig>? playersConfig;
     protected readonly TapoConfig tapoConfig;
 
     protected virtual bool CanAutoTurnOn => false;
 
-    protected MusicPlayerCommandBase(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig)
+    protected MusicPlayerCommandBase(
+        IOptions<MusicPlayersConfig> config,
+        IOptions<TapoConfig> tapoConfig,
+        ILogger logger)
     {
         this.playersConfig = config.Value?.PlayersDict;
         this.tapoConfig = tapoConfig.Value;
+        this.Logger = logger;
     }
 
     protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
@@ -51,8 +54,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
+               this.LogWarning(e, "Error executing message '{message}'", message.Text);
             }
         }
         else
@@ -76,7 +78,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 {
                     if (autoTurnon)
                     {
-                        Console.WriteLine($"{playerConfig.Name} is offline triying to turn it on");
+                        this.LogInformation("{playerConfigName} is offline triying to turn it on", playerConfig.Name);
                         await tapoDeviceClient.TurnOnAsync();
                         await Task.Delay(29000, cancellationToken);
                     }
@@ -89,13 +91,13 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
 
                     if (isConnected)
                     {
-                        Console.WriteLine($"{playerConfig.Name} connected! ({maxRetries - retries})");
+                        this.LogInformation("{playerConfigName} connected! ({count})", playerConfig.Name, maxRetries - retries);
                         await Task.Delay(15000, cancellationToken);
                     }
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine($"Error connecting {playerConfig.Name}: {e.Message}");
+                    this.LogWarning(e, "Error connecting {playerConfigName}", playerConfig.Name);
                 }
             }
         }
@@ -156,7 +158,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         }
         catch (Exception e)
         {
-            Console.WriteLine(e.Message);
+            this.LogWarning(e, "Error executing player command");
         }
 
         if (!success)

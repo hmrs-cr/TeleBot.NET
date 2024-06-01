@@ -10,6 +10,15 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
 
     private CaseInsensitiveTextMappingDictionary? localizedTextMappings = null;
 
+    public SimpleLocalizationResolver(ILogger? logger)
+    {
+        this.Logger = logger;
+    }
+
+    public SimpleLocalizationResolver() { }
+
+    public ILogger? Logger { get; set; }
+
     public IEnumerable<string>? DefinedLanguages => localizedTextMappings?.Values.SelectMany(v => v.Keys).Append(DefaulLanguage).Distinct();
 
     public CultureInfo? GetCultureInfo(string cultureName) => CultureInfo.GetCultureInfo(cultureName);
@@ -41,7 +50,7 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error loading localized strings: {e.Message}");
+            this.Logger?.LogWarning(e, "Error loading localized strings");
         }
     }
 
@@ -71,7 +80,7 @@ public static class ResgistrationExtensions
     public static IServiceCollection AddCommandTextMappings(this IServiceCollection services, IConfiguration config)
     {
         var fileName = config.GetValue<string>("LocalizedStringMappingFile");
-        var instance = new SimpleLocalizationResolver();
+        var instance = new SimpleLocalizationResolver(TelebotServiceApp.Logger);
         instance.LoadStringMappings(fileName);
         services.AddSingleton<ILocalizationResolver>(instance);
         return services;

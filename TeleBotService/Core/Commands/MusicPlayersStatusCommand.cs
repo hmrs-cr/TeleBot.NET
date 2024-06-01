@@ -6,7 +6,7 @@ namespace TeleBotService.Core.Commands;
 
 public class MusicPlayersStatusCommand : MusicPlayerCommandBase
 {
-    public MusicPlayersStatusCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayersStatusCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayersStatusCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override string Description => "Tell what's playing";
 

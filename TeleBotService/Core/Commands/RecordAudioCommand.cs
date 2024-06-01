@@ -1,9 +1,7 @@
 ﻿using System.Diagnostics;
-using System.Reflection.Metadata.Ecma335;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Extensions;
-using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;

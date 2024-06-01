@@ -8,7 +8,7 @@ namespace TeleBotService.Core.Commands;
 
 public class PlayerConfigCommand : MusicPlayerCommandBase
 {
-    public PlayerConfigCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig)
+    public PlayerConfigCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<PlayerConfigCommand> logger) : base(config, tapoConfig, logger)
     {
     }
 

@@ -30,6 +30,8 @@ public class TelegramChatContext
 
     public string LanguageCode { get; set; } = "es";
 
+    public ILogger? Logger { get; set; } = TelebotServiceApp.Logger;
+
     public TResult GetCommandContextData<TResult>(TelegramCommand command) where TResult : class, new()
     {
         var contextDataList = this.commandContextData.GetOrAdd(command.GetType(), k => []);
@@ -62,12 +64,12 @@ public class TelegramChatContext
             if (this.IsNotifingPlayerStatusChanges)
             {
                 this.playerStatusNotificationCts?.Cancel();
-                Console.WriteLine("Unregistered player status change notification");
+                this.Logger?.LogInformation("Unregistered player status change notification");
             }
         }
         else if (this.playerStatusNotificationCts == null || this.playerStatusNotificationCts.IsCancellationRequested)
         {
-            Console.WriteLine("Starting player status change notification");
+            this.Logger?.LogInformation("Starting player status change notification");
             this.playerStatusNotificationCts = new();
             PlayerStatus? prevPlayerStatus = null;
             while (!this.playerStatusNotificationCts.IsCancellationRequested)
@@ -98,7 +100,7 @@ public class TelegramChatContext
                         }
 
 
-                        Console.WriteLine($"Status notification delay: {delay / 1000}s");
+                        this.Logger?.LogInformation($"Status notification delay: {delay / 1000}s");
                         await Task.Delay(delay, this.playerStatusNotificationCts.Token);
                     }
                 }
@@ -108,7 +110,7 @@ public class TelegramChatContext
                 }
             }
 
-            Console.WriteLine("Ending player status change notification");
+            this.Logger?.LogInformation("Ending player status change notification");
         }
     }
 
@@ -121,7 +123,7 @@ public class TelegramChatContext
                 this.executingTasks.Add(task);
             }
 
-            Console.WriteLine($"Added Task. Total tasks tracked for {this.key}: {this.executingTasks.Count}");
+            this.Logger?.LogInformation("Added Task. Total tasks tracked for {key}: {executingTaskCount}", this.key, this.executingTasks.Count);
         }
     }
 
@@ -140,7 +142,7 @@ public class TelegramChatContext
         lock (this.executingTasksLock)
         {
             this.executingTasks.RemoveAll(t => t.IsCanceled || t.IsCompleted || t.IsFaulted || t.Status == TaskStatus.RanToCompletion);
-            Console.WriteLine($"Removed Tasks. Total tasks tracked for {this.key}: {this.executingTasks.Count}");
+            this.Logger?.LogInformation("Removed Tasks. Total tasks tracked for {key}: {executingTaskCount}", this.key, this.executingTasks.Count);
         }
     }
 

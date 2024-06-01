@@ -12,7 +12,7 @@ public abstract class TelegramCommand : ITelegramCommand
     private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
 
     [JsonIgnore]
-    public TelegramBotClient BotClient { get; init; }
+    public TelegramBotClient? BotClient { get; init; }
 
     public virtual bool IsEnabled => true;
 
@@ -30,6 +30,8 @@ public abstract class TelegramCommand : ITelegramCommand
     public ILocalizationResolver? LocalizationResolver { get; init; }
 
     public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
+
+    protected ILogger? Logger { get; init; }
 
     public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
     {
@@ -104,10 +106,10 @@ public abstract class TelegramCommand : ITelegramCommand
     {
         if (title == "voice-memo")
         {
-            return this.BotClient.SendVoiceAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
+            return this.BotClient!.SendVoiceAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
         }
 
-        return this.BotClient.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+        return this.BotClient!.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
 
     }
 
@@ -127,6 +129,19 @@ public abstract class TelegramCommand : ITelegramCommand
 
         return result;
     }
+
+    public void LogDebug(string message, params object?[] args) => this.Logger?.LogDebug(message, args);
+    public void LogDebug(string message) => this.Logger?.LogDebug(message);
+    public void LogInformation(string message, params object?[] args) => this.Logger?.LogInformation(message, args);
+    public void LogInformation(string message) => this.Logger?.LogInformation(message);
+    public void LogWarning(string message, params object?[] args) => this.Logger?.LogWarning(message, args);
+    public void LogWarning(Exception e, string message, params object?[] args) => this.Logger?.LogWarning(e, message, args);
+    public void LogWarning(Exception e, string message) => this.Logger?.LogWarning(e, message);
+    public void LogWarning(string message) => this.Logger?.LogWarning(message);
+    public void LogError(string message, params object?[] args) => this.Logger?.LogError(message, args);
+    public void LogError(Exception e, string message, params object?[] args) => this.Logger?.LogError(e, message, args);
+    public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
+    public void LogError(string message) => this.Logger?.LogError(message);
 }
 
 public static class TelegramCommandRegistrationExtensions

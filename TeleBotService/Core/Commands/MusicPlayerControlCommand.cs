@@ -21,7 +21,7 @@ public class MusicPlayerControlCommand : MusicPlayerCommandBase
     public override string Description => "Controls music playback";
     public override string Usage => "{next} {song}\n{stop} {music}\n{prev} {song}\n{pause} {music}\n{resume} {music}\n{onepause} {music}";
 
-    public MusicPlayerControlCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayerControlCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayerControlCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override bool CanExecuteCommand(Message message) =>
         (ContainsText(message, "music") || ContainsText(message, "song")) && commandMap.Any(c => ContainsText(message, c.Key));

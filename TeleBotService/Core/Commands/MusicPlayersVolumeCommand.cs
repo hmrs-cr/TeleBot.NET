@@ -6,7 +6,7 @@ namespace TeleBotService.Core.Commands;
 
 public class MusicPlayersVolumeCommand : MusicPlayerCommandBase
 {
-    public MusicPlayersVolumeCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayersVolumeCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayersVolumeCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override string Description => "Control music volume";
 

@@ -7,7 +7,7 @@ namespace TeleBotService.Core.Commands;
 
 public class MusicPlayerSeekCommand : MusicPlayerCommandBase
 {
-    public MusicPlayerSeekCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig) : base(config, tapoConfig) { }
+    public MusicPlayerSeekCommand(IOptions<MusicPlayersConfig> config, IOptions<TapoConfig> tapoConfig, ILogger<MusicPlayerSeekCommand> logger) : base(config, tapoConfig, logger) { }
 
     public override bool CanExecuteCommand(Message message) =>
         ContainsText(message, "song") && (ContainsText(message, "forward") || ContainsText(message, "backward"));
