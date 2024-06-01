@@ -57,7 +57,7 @@ public class TelegramChatContext
 
     public static TelegramChatContext GetContext(Chat chat) => currentChats.GetOrAdd(new(chat), (key) => new TelegramChatContext(key));
 
-    public async Task NotifyPlayerStatusChanges(LinkplayHttpApiClient client, Action<LinkplayHttpApiClient, PlayerStatus?, PlayerStatus?>? notify)
+    public async Task NotifyPlayerStatusChanges(ILinkplayHttpApiClient client, Action<ILinkplayHttpApiClient, PlayerStatus?, PlayerStatus?>? notify)
     {
         if (notify == null)
         {
