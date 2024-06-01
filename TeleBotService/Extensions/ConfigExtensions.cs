@@ -20,7 +20,7 @@ public static class ConfigExtensions
             {
                 if (deviceConfig.DeviceClient == null && !string.IsNullOrEmpty(deviceConfig.Host))
                 {
-                    var factory = tapoDeviceFactory.GetValueOrDefault(deviceConfig.Type, (tc, td) => TapoDevice.Create(td.Host!, tc.UserName!, tc.Password!));
+                    var factory = tapoDeviceFactory!.GetValueOrDefault(deviceConfig.Type, (tc, td) => TapoDevice.Create(td.Host!, tc.UserName!, tc.Password!));
                     deviceConfig.DeviceClient = factory(config, deviceConfig);
                 }
 
