@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using Linkplay.HttpApi;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
-using Onvif.Core.Client;
 using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Localization;
@@ -148,11 +147,11 @@ public static class RegistrationExtensions
             app.MapGet("test", () =>
             {
 
-                var account = new Account("camera_ip", "camera_username", "camera_password");
-                var camera = Camera.Create(account, ex =>
+                ///var account = new Account("camera_ip", "camera_username", "camera_password");
+                /*var camera = Camera.Create(account, ex =>
                 {
                     // exception
-                });
+                });*/
 
 
                 var client = new LinkplayHttpApiClient("192.168.100.104");
