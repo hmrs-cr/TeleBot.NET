@@ -1,6 +1,6 @@
 ﻿namespace Linkplay.HttpApi.Model;
 
-public record struct LocalPlayList
+public record LocalPlayList
 {
     public LocalPlayList() { }
 

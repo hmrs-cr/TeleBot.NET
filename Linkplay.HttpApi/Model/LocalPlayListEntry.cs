@@ -1,6 +1,6 @@
 namespace Linkplay.HttpApi.Model;
 
-public record struct LocalPlayListEntry
+public record LocalPlayListEntry
 {
     public HexedString File { get; init; }
 }
