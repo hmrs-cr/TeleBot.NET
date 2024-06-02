@@ -2,14 +2,12 @@ namespace TeleBotService.Localization;
 
 public static class ResgistrationExtensions
 {
-    private const string LocalizedStringMappingFileConfigName = "LocalizedStringMappingFile";
-
-    public static IServiceCollection AddCommandTextMappings(this IServiceCollection services, IConfiguration config)
+    public static IServiceCollection AddCommandTextMappings(this IServiceCollection services, IConfigurationManager config)
     {
-        var instance = new SimpleLocalizationResolver(TelebotServiceApp.Logger);
-        var fileName = config.GetValue<string>(LocalizedStringMappingFileConfigName);
-        instance.LoadStringMappings(fileName);
-        services.AddSingleton<ILocalizationResolver>(instance);
+        config.AddJsonFile("appsettings.LocalizedStrings.json", optional: true, reloadOnChange: false);
+        services.AddSingleton<ILocalizationResolver, SimpleLocalizationResolver>()
+                .Configure<LocalizedStringsConfig>(config.GetSection(LocalizedStringsConfig.LocalizedStringsConfigName));
+
         return services;
     }
 }

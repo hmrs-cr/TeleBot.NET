@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
 namespace TeleBotService.Localization;
@@ -9,16 +10,13 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
 {
     public const string DefaulLanguage = "en";
 
-    private CaseInsensitiveTextMappingDictionary? localizedTextMappings = null;
+    private readonly LocalizedStringsConfig localizedTextMappings;
 
-    public SimpleLocalizationResolver(ILogger? logger)
+    public SimpleLocalizationResolver(
+        IOptions<LocalizedStringsConfig> localizedTextMappings)
     {
-        this.Logger = logger;
+        this.localizedTextMappings = localizedTextMappings.Value;
     }
-
-    public SimpleLocalizationResolver() { }
-
-    public ILogger? Logger { get; set; }
 
     public IEnumerable<string>? DefinedLanguages => localizedTextMappings?.Values.SelectMany(v => v.Keys).Append(DefaulLanguage).Distinct();
 
@@ -42,19 +40,6 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
         return localizedStrings ?? Enumerable.Repeat(textValue, 1);
     }
 
-    internal void LoadStringMappings(string? fileName)
-    {
-        try
-        {
-            using var file = File.OpenRead(fileName ?? "localizedStrings.json");
-            this.localizedTextMappings = JsonSerializer.Deserialize<CaseInsensitiveTextMappingDictionary>(file);
-        }
-        catch (Exception e)
-        {
-            this.Logger?.LogWarning(e, "Error loading localized strings");
-        }
-    }
-
     internal static string ResolveTokens(string template, string cultureName, int idx, Dictionary<string, Dictionary<string, string[]>>? replacements)
     {
         if (template.Contains('{') && template.Contains('}'))
@@ -69,9 +54,4 @@ public partial class SimpleLocalizationResolver : ILocalizationResolver
 
     [GeneratedRegex(@"{(.*?)}")]
     private static partial Regex ResolveCurlyTokensRegex();
-
-    private class CaseInsensitiveTextMappingDictionary : Dictionary<string, Dictionary<string, string[]>>
-    {
-        public CaseInsensitiveTextMappingDictionary() : base(StringComparer.OrdinalIgnoreCase) {}
-    }
 }

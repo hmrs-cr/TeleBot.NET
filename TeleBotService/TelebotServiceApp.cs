@@ -102,19 +102,23 @@ public static class RegistrationExtensions
                .AddSwagger()
                .AddTelegramServiceInfrastructure(builder.Configuration);
 
-        builder.Configuration.AddJsonFile("appsettings.InternetRadio.json", optional: true, reloadOnChange: false);
-
         return builder;
     }
 
-    public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfiguration configuration) =>
+    public static IServiceCollection AddInternertRadioConfig(this IServiceCollection services, IConfigurationManager config)
+    {
+        config.AddJsonFile("appsettings.InternetRadio.json", optional: true, reloadOnChange: false);
+        return services.Configure<InternetRadioConfig>(config.GetSection(InternetRadioConfig.InternetRadioConfigName));
+    }
+
+    public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfigurationManager configuration) =>
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
-                .Configure<InternetRadioConfig>(configuration.GetSection(InternetRadioConfig.InternetRadioConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
+                .AddInternertRadioConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .ConfigureHttpJsonOptions(options =>
