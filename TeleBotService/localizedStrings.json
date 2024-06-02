@@ -112,5 +112,11 @@
     },
     "'[playerName]' does not respond": {
         "es": [ "'[playerName]' no responde" ]
+    },
+    "No radio stations configured": {
+        "es": "No hay radio emisoras configuradas"
+    },
+    "Can't find [radio]": {
+        "es": "No me encuentro [radio]"
     }
 }

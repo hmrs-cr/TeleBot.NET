@@ -102,6 +102,8 @@ public static class RegistrationExtensions
                .AddSwagger()
                .AddTelegramServiceInfrastructure(builder.Configuration);
 
+        builder.Configuration.AddJsonFile("appsettings.InternetRadio.json", optional: true, reloadOnChange: false);
+
         return builder;
     }
 
@@ -110,6 +112,7 @@ public static class RegistrationExtensions
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
+                .Configure<InternetRadioConfig>(configuration.GetSection(InternetRadioConfig.InternetRadioConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddCommandTextMappings(configuration)
@@ -154,8 +157,8 @@ public static class RegistrationExtensions
                 });*/
 
 
-                var client = new LinkplayHttpApiClient("192.168.100.104");
-                return client.GetDeviceStatus();
+                //var client = new LinkplayHttpApiClient("192.168.100.104");
+                //return client.GetDeviceStatus();
 
             }).WithName("GetNetworkStatus").WithOpenApi();
         }

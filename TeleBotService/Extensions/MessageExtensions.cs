@@ -66,9 +66,9 @@ public static class MessageExtensions
 
     public static Uri? ParseLastUrl(this Message message) => Uri.TryCreate(message.GetLastString(), default, out var result) ? result : null;
 
-    public static string? GetLastString(this Message message)
+    public static string? GetLastString(this Message message, string separator = " ")
     {
-        var i = message.Text?.LastIndexOf(' ');
-        return i > 0 ? message.Text?[(i.Value + 1)..] : null;
+        var i = message.Text?.LastIndexOf(separator);
+        return i > 0 ? message.Text?[(i.Value + separator.Length)..] : null;
     }
 }
