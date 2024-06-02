@@ -38,14 +38,22 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             var radioId = message.GetLastString("__")?.Replace('_', '-');
             var radio = this.radioConfig.Stations?.FirstOrDefault(s => s.Id == radioId);
             var url = await this.GetRadioUrl(radio);
-            if (url is { })
+            if (url?.Url is { })
             {
-                await playersConfig.Client.PlayUrl(url);
+                if (url.IsContainer == true)
+                {
+                    await playersConfig.Client.PlayPlaylist(url.Url);
+                }
+                else
+                {
+                    await playersConfig.Client.PlayUrl(url.Url);
+                }
+
                 await this.Reply(message, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
             }
             else
             {
-                await this.Reply(message, this.Localize(message, "Can't find [radio]").Format(new { radio }), cancellationToken);
+                await this.Reply(message, this.Localize(message, "Can't find [radio]").Format(new { radio = radio?.Name ?? radioId }), cancellationToken);
             }
         }
         else if (this.ContainsText(message, "list"))
@@ -71,17 +79,17 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         return DoNotReplyPlayerStatus;
     }
 
-    private async Task<Uri?> GetRadioUrl(InternetRadioStationConfig? radio)
+    private async Task<IUrlData?> GetRadioUrl(InternetRadioStationConfig? radio)
     {
         if (radio is { })
         {
-            return radio.Url ?? await this.DiscoverRadioUrl(radio.Id);
+            return radio.Url != null ? radio : await this.DiscoverRadioUrl(radio.Id);
         }
 
         return null;
     }
 
-    private async Task<Uri?> DiscoverRadioUrl(string? radioId)
+    private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(string? radioId)
     {
         if (this.radioConfig.DiscoverUrl == null)
         {
@@ -96,6 +104,8 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(this.radioConfig.DiscoverUserAgent);
         var response = await client.GetFromJsonAsync<RadioDiscoverResponse>(url);
         this.LogDebug("Getting DiscoverRadioUrl: {url} = {response}", url, response);
-        return response?.Result?.Streams?.FirstOrDefault(s => !s.IsContainer)?.Url;
+        var streamInfo = response?.Result?.Streams?.OrderBy(s => s.IsContainer).FirstOrDefault(s => s.MediaType != "HTML");
+        this.LogDebug("Returning stream info for radio {radio}: {streamInfo}", radioId, streamInfo);
+        return streamInfo;
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace TeleBotService.Core.Model;
+﻿using TeleBotService.Config;
+
+namespace TeleBotService.Core.Model;
 
 public record RadioDiscoverResponse
 {
@@ -8,9 +10,10 @@ public record RadioDiscoverResponse
     {
         public IReadOnlyList<Stream>? Streams { get; init; }
 
-        public record Stream
+        public record Stream : IUrlData
         {
-            public bool IsContainer { get; init; }
+            public string? MediaType { get; init; }
+            public bool? IsContainer { get; init; }
             public Uri? Url { get; init; }
         }
     }
