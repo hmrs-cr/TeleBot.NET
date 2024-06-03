@@ -35,8 +35,8 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
     {
         if (this.ContainsText(message, "play"))
         {
-            var radioId = message.GetLastString("__")?.Replace('_', '-');
-            var radio = this.radioConfig.Stations?.FirstOrDefault(s => s.Id == radioId);
+            var radioId = (message.GetLastString("__") ?? message.GetLastString(" "))?.Replace('_', '-');
+            var radio = this.radioConfig.Stations?.FirstOrDefault(s => s.Id == radioId) ?? (radioId == "random" ? this.radioConfig.Stations?[Random.Shared.Next(this.radioConfig.Stations.Count)] : null);
             var url = await this.GetRadioUrl(radio);
             if (url?.Url is { })
             {
