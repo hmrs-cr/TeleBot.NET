@@ -56,7 +56,7 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
         }
         else
         {
-            await this.Reply(message, "Not a valid musicc player name");
+            await this.Reply(message, "Not a valid music player name");
         }
 
         return DoNotReplyPlayerStatus;
