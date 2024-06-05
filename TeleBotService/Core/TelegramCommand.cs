@@ -35,13 +35,14 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
     {
+        var context = message.GetContext();
         var canExecute = await this.StartExecuting(message, cancellationToken);
         try
         {
             if (canExecute)
             {
                 var task = this.Execute(message, cancellationToken);
-                message.GetContext().AddExecutingTask(task);
+                context.AddExecutingTask(task);
                 await task;
                 return true;
             }
@@ -51,7 +52,8 @@ public abstract class TelegramCommand : ITelegramCommand
             if (canExecute)
             {
                 await this.EndExecuting(message, cancellationToken);
-                message.GetContext().RemoveFinishedTasks();
+                context.IsPromptReplyMessage = false;
+                context.RemoveFinishedTasks();
             }
         }
 
@@ -83,6 +85,18 @@ public abstract class TelegramCommand : ITelegramCommand
         message.GetContext().LastPromptMessage = message;
         prompt = Localize(message, prompt);
         return this.Reply(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
+    }
+
+    protected Task ReplyFormatedPrompt(Message message, string prompt, IEnumerable<string>? choices = null, CancellationToken cancellationToken = default)
+    {
+        message.GetContext().LastPromptMessage = message;
+        if (choices != null)
+        {
+            prompt = Localize(message, prompt);
+            return this.ReplyFormated(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
+        }
+
+         return this.ReplyFormated(message, prompt, cancellationToken);
     }
 
     protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(

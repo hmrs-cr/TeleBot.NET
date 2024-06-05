@@ -15,35 +15,48 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
     public override bool CanExecuteCommand(Message message) =>
         this.ContainsText(message, "music") && this.ContainsText(message, "config");
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playersConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
+    public override string Usage => "{music} {config}";
+
+    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig currentPlayerConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
     {
-        if (this.ContainsText(message, "set default"))
+        var context = message.GetContext();
+        var lastString = message.GetLastString()?.Replace('_', ' ').Trim('/') ?? string.Empty;
+        if (this.playersConfig?.GetValueOrDefault(lastString) is { } newDefPlayer)
         {
-            message.GetContext().LastPlayerConfig = playersConfig;
-            await this.Reply(message, $"New default player config: {playersConfig.Name}");
+            context.LastPlayerConfig = newDefPlayer;
+            await this.Reply(message, $"New default player config: {newDefPlayer.Name}");
         }
-        else
+        else if (!context.IsPromptReplyMessage)
         {
-            var deafultConfig = message.GetContext().LastPlayerConfig;
             var sb = new StringBuilder();
             if (this.playersConfig != null)
             {
-                foreach (var confifName in this.playersConfig.Values.Select(v => v.Name))
+                foreach (var confifName in this.playersConfig.Values.Select(v => v.Name).Where(cn => cn is { }))
                 {
-                    var isDefault = deafultConfig?.Name?.Equals(confifName, StringComparison.InvariantCultureIgnoreCase) == true;
+                    var isDefault = currentPlayerConfig.Name?.Equals(confifName, StringComparison.InvariantCultureIgnoreCase) == true;
                     if (isDefault)
                     {
                         sb.Append("<b>");
                     }
-                    sb.AppendLine(confifName);
+                    sb.Append(confifName);
                     if (isDefault)
                     {
                         sb.Append("</b>");
                     }
+
+                    sb.Append(" ==> /");
+
+                    var l = sb.Length;
+                    sb.AppendLine(confifName).Replace(' ', '_', l, confifName!.Length);
+
                 }
             }
 
-            await this.ReplyFormated(message, sb.ToString());
+            await this.ReplyFormatedPrompt(message, sb.ToString());
+        }
+        else
+        {
+            await this.Reply(message, "Not a valid musicc player name");
         }
 
         return DoNotReplyPlayerStatus;

@@ -45,8 +45,14 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                     await this.UntilOnline(playerConfig, true, cancellationToken);
                 }
 
+
+                var context = message.GetContext();
+                context.LastPlayerConfig = null;
                 var result = await this.ExecuteMusicPlayerCommand(message, playerConfig, preset, cancellationToken);
-                message.GetContext().LastPlayerConfig = playerConfig;
+                if (context.LastPlayerConfig == null)
+                {
+                   context.LastPlayerConfig = playerConfig;
+                }
                 if (result > 0)
                 {
                     await this.ReplyPlayerStatus(message, playerConfig, result);

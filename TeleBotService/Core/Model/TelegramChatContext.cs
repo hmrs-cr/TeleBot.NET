@@ -50,6 +50,7 @@ public class TelegramChatContext
 
     public PlayersConfig? LastPlayerConfig { get; internal set; }
     public Message? LastPromptMessage { get; internal set; }
+    public bool IsPromptReplyMessage { get; internal set; }
 
     public override int GetHashCode() => this.key.GetHashCode();
 

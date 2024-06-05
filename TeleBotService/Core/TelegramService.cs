@@ -162,11 +162,13 @@ public class TelegramService : ITelegramService
 
     private IEnumerable<ITelegramCommand> GetCommands(Message message)
     {
-        var lastPromptMessage = message.GetContext().LastPromptMessage;
+        var context = message.GetContext();
+        var lastPromptMessage = context.LastPromptMessage;
         if (!string.IsNullOrEmpty(lastPromptMessage?.Text) && !string.IsNullOrEmpty(message.Text))
         {
             message.Text = $"{lastPromptMessage.Text} {message.Text}";
-            message.GetContext().LastPromptMessage = null;
+            context.IsPromptReplyMessage = true;
+            context.LastPromptMessage = null;
         }
 
         return this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message));
