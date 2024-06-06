@@ -42,6 +42,8 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             {
                 if (this.CanAutoTurnOn)
                 {
+                    var localizedTemplate = this.Localize(message, "'[playerName]' is offline. Wait a minute, I'm trying to turn it on");
+                    _ = this.Reply(message, localizedTemplate.Format(new { playerName = playerConfig.Name }));
                     await this.UntilOnline(playerConfig, true, cancellationToken);
                 }
 

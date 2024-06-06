@@ -1,7 +1,11 @@
 namespace TeleBotService.Config;
 
-public class InternetRadioStationConfig : IUrlData
+public record InternetRadioStationConfig : IUrlData
 {
+    private static int internalId = 0;
+
+    public int InternalId { get; } = ++internalId;
+
     public string? Id { get; init; }
     public string? Name { get; init; }
     public Uri? Url { get; init; }

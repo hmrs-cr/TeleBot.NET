@@ -118,6 +118,7 @@ public static class RegistrationExtensions
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
+                .AddMemoryCache()
                 .AddInternertRadioConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
