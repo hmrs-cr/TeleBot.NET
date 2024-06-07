@@ -13,6 +13,9 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
     private readonly string host;
     private readonly HttpClient httpClient;
 
+    private Uri? currentNetMediaUrl;
+    private string? currentNetMediaName;
+
     public TimeSpan RequestTimeout { get => this.httpClient.Timeout; set => this.httpClient.Timeout = value; }
 
     public ILogger? Logger { get ; set; }
@@ -37,7 +40,7 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
 
     public async Task<string> Reboot() => await this.ExecuteCommand("reboot");
 
-    public async Task<PlayerStatus?> GetPlayerStatus() => await this.ExecuteCommand<PlayerStatus>("getPlayerStatus");
+    public async Task<PlayerStatus?> GetPlayerStatus() =>  this.SetNetMediaValues(await this.ExecuteCommand<PlayerStatus>("getPlayerStatus"));
 
     public async Task<NetworkStatus?> GetNetworkStatus() => await this.ExecuteCommand<NetworkStatus>("getStaticIP");
 
@@ -58,13 +61,18 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
 
     public async Task<bool> SetPlayerMode(PlayerMode playerMode) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:switchmode:{playerMode}"));
 
-    public async Task<bool> PlayUrl(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:play:{uri}"));
+    public async Task<bool> PlayUrl(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:play:{this.SetCurrentNetMediaUrl(uri)}"));
 
-    public async Task<bool> PlayPlaylist(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:m3u:play:{uri}"));
+    public async Task<bool> PlayPlaylist(Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:m3u:play:{this.SetCurrentNetMediaUrl(uri)}"));
 
-    public async Task<bool> PlayLocalList(uint index) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playLocalList:{index}"));
+    public async Task<bool> PlayUrl(string? name, Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:play:{this.SetCurrentNetMediaUrl(uri, name)}"));
 
-    public async Task<bool> PlayIndex(uint index) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playindex:{index}"));
+    public async Task<bool> PlayPlaylist(string? name, Uri uri) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:m3u:play:{this.SetCurrentNetMediaUrl(uri, name)}"));
+
+
+    public async Task<bool> PlayLocalList(uint index) => this.ClearCurrentNetMediaUrl(IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playLocalList:{index}")));
+
+    public async Task<bool> PlayIndex(uint index) => this.ClearCurrentNetMediaUrl(IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:playindex:{index}")));
 
     public async Task<bool> SetPlayerLoopMode(ShuffleMode mode) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:loopmode:{(int)mode}"));
 
@@ -79,7 +87,7 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
 
     public async Task<bool> PlayerSeek(uint positionInSeconds) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:seek:{positionInSeconds}"));
 
-    public async Task<bool> PlayPreset(uint preset) => IsOkResponse(await this.ExecuteCommand($"MCUKeyShortClick:{preset}"));
+    public async Task<bool> PlayPreset(uint preset) => this.ClearCurrentNetMediaUrl(IsOkResponse(await this.ExecuteCommand($"MCUKeyShortClick:{preset}")));
 
     public async Task<bool> PlayerSetVolume(uint vol) => IsOkResponse(await this.ExecuteCommand($"setPlayerCmd:vol:{vol}"));
 
@@ -100,6 +108,30 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
             this.Logger?.LogWarning(e, "Error executing command {command}", command);
             return default;
         }
+    }
+
+    private PlayerStatus? SetNetMediaValues(PlayerStatus? playerStatus)
+    {
+        if (playerStatus != null)
+        {
+            playerStatus.NetMediaName = this.currentNetMediaName;
+            playerStatus.Url = this.currentNetMediaUrl;
+        }
+
+        return playerStatus;
+    }
+
+    private Uri SetCurrentNetMediaUrl(Uri url, string? name = null)
+    {
+        this.currentNetMediaName = name;
+        return this.currentNetMediaUrl = url;
+    }
+
+    private T ClearCurrentNetMediaUrl<T>(T result)
+    {
+        this.currentNetMediaName = null;
+        this.currentNetMediaUrl = null;
+        return result;
     }
 
     public async Task<string> ExecuteCommand(string command) => this.Log(await this.httpClient.GetStringAsync(this.GetCommnadUrl(command)));

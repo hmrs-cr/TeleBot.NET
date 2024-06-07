@@ -18,6 +18,8 @@ public interface ILinkplayHttpApiClient
     Task<bool> PlayPreset(uint index);
     Task<bool> PlayUrl(Uri url);
     Task<bool> PlayPlaylist(Uri url);
+    Task<bool> PlayUrl(string? name, Uri url);
+    Task<bool> PlayPlaylist(string? name, Uri url);
     Task<bool> PlayerVolumeUp();
     Task<bool> PlayerVolumeDown();
     Task<bool> PlayerSetVolume(uint volume);

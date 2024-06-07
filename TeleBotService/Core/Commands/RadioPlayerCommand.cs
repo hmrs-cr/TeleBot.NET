@@ -69,17 +69,24 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             {
                 try
                 {
+                    var name = radio!.Name;
+                    if (name is { })
+                    {
+                        var radioLocalizedStr = Localize(message, "radio");
+                        name = name.Contains(radioLocalizedStr, StringComparison.OrdinalIgnoreCase) ? name : $"{radioLocalizedStr.Capitalize()} {name}";
+                    }
+
                     if (url.IsContainer == true)
                     {
-                        await playersConfig.Client.PlayPlaylist(url.Url);
+                        await playersConfig.Client.PlayPlaylist(name, url.Url);
                     }
                     else
                     {
-                        await playersConfig.Client.PlayUrl(url.Url);
+                        await playersConfig.Client.PlayUrl(name, url.Url);
                     }
 
                     await this.Reply(message, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
-                    return ReplyPlayerStatusDelayLong * 2;
+                    return ReplyPlayerStatusDelayLong;
                 }
                 catch (Exception)
                 {

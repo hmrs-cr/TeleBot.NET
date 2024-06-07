@@ -61,6 +61,19 @@ public static partial class StringExtension
         return result;
     }
 
+    public static string? Capitalize(this string? value)
+    {
+        if (string.IsNullOrEmpty(value) || char.IsUpper(value[0]))
+        {
+            return value;
+        }
+
+        var sb = new StringBuilder(value.Length);
+        sb.Append(char.ToUpper(value[0]));
+        sb.Append(value.AsSpan(1));
+        return sb.ToString();
+    }
+
     [GeneratedRegex(@"\[(.*?)\]")]
     private static partial Regex ResolveSquareTokensRegex();
 }

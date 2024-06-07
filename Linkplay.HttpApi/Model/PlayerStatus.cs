@@ -1,4 +1,6 @@
-﻿namespace Linkplay.HttpApi.Model;
+﻿using System;
+
+namespace Linkplay.HttpApi.Model;
 
 public record PlayerStatus
 {
@@ -19,4 +21,7 @@ public record PlayerStatus
     public int Plicurr { get; init; }
     public int Vol { get; init; }
     public bool Mute { get; init; }
+
+    public string? NetMediaName { get; internal set; }
+    public Uri? Url { get; internal set; }
 }

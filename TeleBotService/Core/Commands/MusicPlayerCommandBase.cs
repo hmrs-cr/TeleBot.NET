@@ -40,20 +40,19 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             var preset = playerConfig.GetPreset(text);
             try
             {
-                if (this.CanAutoTurnOn)
+                if (this.CanAutoTurnOn && !await playerConfig.Client.IsConnected())
                 {
                     var localizedTemplate = this.Localize(message, "'[playerName]' is offline. Wait a minute, I'm trying to turn it on");
                     _ = this.Reply(message, localizedTemplate.Format(new { playerName = playerConfig.Name }));
                     await this.UntilOnline(playerConfig, true, cancellationToken);
                 }
 
-
                 var context = message.GetContext();
                 context.LastPlayerConfig = null;
                 var result = await this.ExecuteMusicPlayerCommand(message, playerConfig, preset, cancellationToken);
                 if (context.LastPlayerConfig == null)
                 {
-                   context.LastPlayerConfig = playerConfig;
+                    context.LastPlayerConfig = playerConfig;
                 }
                 if (result > 0)
                 {
@@ -62,7 +61,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             }
             catch (Exception e)
             {
-               this.LogWarning(e, "Error executing message '{message}'", message.Text);
+                this.LogWarning(e, "Error executing message '{message}'", message.Text);
             }
         }
         else
@@ -131,15 +130,24 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             await Task.Delay(delay.Value, cancellationToken);
         }
 
+        var loadRetries = 50;
         var statusMessage = string.Empty;
-        var playerStatus = await playerConfig.Client.GetPlayerStatus();
+        PlayerStatus? playerStatus = null;
+        while (loadRetries-- > 0 && (playerStatus = await playerConfig.Client.GetPlayerStatus())?.Status == Status.Load)
+        {
+            await Task.Delay(250, cancellationToken);
+        }
+
+        this.LogDebug("Player Status: {playerStatus}", playerStatus);
         if (playerStatus == null)
         {
             statusMessage = $"'[playerName]' does not respond";
         }
-        else if (playerStatus.Status == "play")
+        else if (playerStatus.Status == Status.Play)
         {
-            statusMessage = "Playing '[songTitle]' by '[artist]' in '[playerName]' ([playerMode]). Volume at [volume]";
+            statusMessage = playerStatus.Mode == PlaybackMode.Network ?
+                            "Playing '[netMediaName]' ([url])" :
+                            "Playing '[title]' by '[artist]' in '[playerName]' ([playerMode]). Volume at [volume]";
         }
         else
         {
@@ -186,7 +194,9 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
 
         if (playerStatus != null)
         {
-            tokenValues["songTitle"] = playerStatus.Title.ToString();
+            tokenValues["netMediaName"] = playerStatus.NetMediaName ?? playerStatus.Title.ToString();
+            tokenValues["url"] = playerStatus.Url?.ToString() ?? "Unknown";
+            tokenValues["title"] = playerStatus.Title.ToString();
             tokenValues["artist"] = playerStatus.Artist.ToString();
             tokenValues["playerMode"] = $"{playerStatus.Mode}";
             tokenValues["volume"] = $"{(playerStatus.Mute ? 0 : playerStatus.Vol)}";
