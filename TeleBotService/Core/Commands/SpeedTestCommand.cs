@@ -9,6 +9,8 @@ namespace TeleBotService.Core.Commands;
 
 public class SpeedTestCommand : TelegramCommand
 {
+    private const string SpeedTestLicenceAccepted = "SpeedTestLicenceAccepted";
+
     private const string AcceptanceMessage = "/I_Accept_the_speedtestNET_licence";
 
     private readonly string speedTestExecPath;
@@ -42,7 +44,7 @@ public class SpeedTestCommand : TelegramCommand
     {
         var message = messageContext.Message;
         var isAcceptanceMessage = this.ContainsText(message, AcceptanceMessage);
-        if (!isAcceptanceMessage && !message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted)
+        if (!isAcceptanceMessage && !messageContext.User.GetBoolSetting(SpeedTestLicenceAccepted))
         {
             await this.Reply(message, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
             return;
@@ -54,7 +56,7 @@ public class SpeedTestCommand : TelegramCommand
             if (isAcceptanceMessage)
             {
                 arguments = "--accept-license --accept-gdpr --format json";
-                message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted = true;
+                messageContext.User.SetSetting(SpeedTestLicenceAccepted, true);
             }
 
             var result = await ProcessExtensions.ExecuteJsonProcessCommand<SimpleSpeedTestResult>(this.speedTestExecPath, arguments, cancellationToken);
@@ -74,11 +76,6 @@ public class SpeedTestCommand : TelegramCommand
             await this.Reply(message, error, cancellationToken);
             this.LogWarning(e, error);
         }
-    }
-
-    private record ContextData
-    {
-        public bool SpeedTestLicenceAccepted { get; set; }
     }
 
     private class SimpleSpeedTestResult
