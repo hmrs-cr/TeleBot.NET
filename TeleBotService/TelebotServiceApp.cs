@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using Linkplay.HttpApi;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Data;
@@ -122,6 +124,7 @@ public static class RegistrationExtensions
                 .AddSingleton<IUserSettingsRepository, UserSettingsRedisRepository>()
                 .AddSingleton<IInternetRadioRepository, InternetRadioRedisRepository>()
                 .AddSingleton<ITelegramService, TelegramService>()
+                .AddSingleton<LazyRedis>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddMemoryCache()
                 .AddInternertRadioConfig(configuration)

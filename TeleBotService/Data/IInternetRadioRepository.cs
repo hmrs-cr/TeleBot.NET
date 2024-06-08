@@ -2,5 +2,5 @@
 
 public interface IInternetRadioRepository
 {
-    void SaveDiscoveredUrl(string radioId, Uri? url);
+    ValueTask SaveDiscoveredUrl(string radioId, Uri? url);
 }

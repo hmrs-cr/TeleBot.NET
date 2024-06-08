@@ -32,24 +32,24 @@ public class UserData
         }
     }
 
-    public bool SaveSettings(Func<UserData, UserSettings, bool> saveAction)
+    public async ValueTask<bool> SaveSettings(Func<UserData, UserSettings, ValueTask<bool>> saveAction)
     {
         var saved = false;
 
         if (this.areSettingsDirty)
         {
-            saved = saveAction.Invoke(this, new(this.settings));
+            saved = await saveAction.Invoke(this, new(this.settings));
             this.areSettingsDirty = !saved;
         }
 
         return saved;
     }
 
-    public bool LoadSettings(Func<UserData, UserSettings> loadAction)
+    public async ValueTask<bool> LoadSettings(Func<UserData, ValueTask<UserSettings>> loadAction)
     {
         if (!this.areSettingsLoaded)
         {
-            var settings = loadAction.Invoke(this);
+            var settings = await loadAction.Invoke(this);
             foreach (var kvp in settings)
             {
                 this.settings[kvp.Key] = kvp.Value;

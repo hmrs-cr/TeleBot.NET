@@ -1,23 +1,22 @@
-﻿using Microsoft.Extensions.Options;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 using TeleBotService.Config;
 
 namespace TeleBotService.Data;
 
 public class UserSettingsRedisRepository : IUserSettingsRepository
 {
-    private readonly RedisConfig config;
+    private readonly LazyRedis redis;
     private readonly ILogger<UserSettingsRedisRepository> logger;
 
-    public UserSettingsRedisRepository(IOptions<RedisConfig> config, ILogger<UserSettingsRedisRepository> logger)
+    public UserSettingsRedisRepository(LazyRedis redis, ILogger<UserSettingsRedisRepository> logger)
     {
-        this.config = config.Value;
+        this.redis = redis;
         this.logger = logger;
     }
 
-    public bool SaveUserSettings(UserData user, UserSettings settings)
+    public async ValueTask<bool> SaveUserSettings(UserData user, UserSettings settings)
     {
-        if (string.IsNullOrEmpty(this.config.Host))
+        if (!this.redis.IsRedisConfigured)
         {
             this.logger.LogWarning("Can't save user settings. Redis host not set.");
             return false;
@@ -28,9 +27,8 @@ public class UserSettingsRedisRepository : IUserSettingsRepository
             var entries = settings.Select(s => new HashEntry(s.Key, s.Value)).ToArray();
             if (entries.Length > 0)
             {
-                using var redis = ConnectionMultiplexer.Connect(this.config.Host);
-                var database = redis.GetDatabase();
-                database.HashSet(GetHashKey(user), entries);
+                var database = await redis.GetDatabaseAsync();
+                await database.HashSetAsync(GetHashKey(user), entries);
             }
         }
         catch (Exception e)
@@ -41,27 +39,26 @@ public class UserSettingsRedisRepository : IUserSettingsRepository
         return true;
     }
 
-    public UserSettings GetUserSettings(UserData user)
+    public async ValueTask<UserSettings> GetUserSettings(UserData user)
     {
-        if (string.IsNullOrEmpty(this.config.Host))
+        if (!this.redis.IsRedisConfigured)
         {
             this.logger.LogWarning("Can't load user settings. Redis host not set.");
             return UserSettings.Empty;
         }
 
-         try
+        try
         {
-            using var redis = ConnectionMultiplexer.Connect(this.config.Host);
-            var database = redis.GetDatabase();
-            var values = database.HashGetAll(GetHashKey(user)).Select(h => new KeyValuePair<string, string?>(h.Name!, h.Value));
-            return new (values);
+            var database = await redis.GetDatabaseAsync();
+            var values = (await database.HashGetAllAsync(GetHashKey(user))).Select(h => new KeyValuePair<string, string?>(h.Name!, h.Value));
+            return new(values);
         }
         catch (Exception e)
         {
             this.logger.LogWarning(e, "An error ocurred while loading user settings");
         }
 
-        return UserSettings.Empty;;
+        return UserSettings.Empty;
     }
 
     private static string GetHashKey(UserData user) => $"telebot:user:{user.UserName}:settings";

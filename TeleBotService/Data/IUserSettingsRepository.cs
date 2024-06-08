@@ -4,6 +4,6 @@ namespace TeleBotService.Data;
 
 public interface IUserSettingsRepository
 {
-    bool SaveUserSettings(UserData user, UserSettings settings);
-    UserSettings GetUserSettings(UserData user);
+    ValueTask<bool> SaveUserSettings(UserData user, UserSettings settings);
+    ValueTask<UserSettings> GetUserSettings(UserData user);
 }

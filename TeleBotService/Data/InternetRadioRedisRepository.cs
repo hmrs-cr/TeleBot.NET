@@ -6,18 +6,18 @@ namespace TeleBotService.Data;
 
 public class InternetRadioRedisRepository : IInternetRadioRepository
 {
-    private readonly RedisConfig config;
+    private readonly LazyRedis redis;
     private readonly ILogger<InternetRadioRedisRepository> logger;
 
-    public InternetRadioRedisRepository(IOptions<RedisConfig> config, ILogger<InternetRadioRedisRepository> logger)
+    public InternetRadioRedisRepository(LazyRedis redis, ILogger<InternetRadioRedisRepository> logger)
     {
-        this.config = config.Value;
+        this.redis = redis;
         this.logger = logger;
     }
 
-    public void SaveDiscoveredUrl(string radioId, Uri? url)
+    public async ValueTask SaveDiscoveredUrl(string radioId, Uri? url)
     {
-        if (string.IsNullOrEmpty(this.config.Host))
+         if (!this.redis.IsRedisConfigured)
         {
             this.logger.LogWarning("Can't save radio URL. Redis host not set.");
             return;
@@ -31,9 +31,8 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         try
         {
             var entries = new[] { new HashEntry(url.ToString(), DateTime.UtcNow.ToString("s")) };
-            using var redis = ConnectionMultiplexer.Connect(this.config.Host);
-            var database = redis.GetDatabase();
-            database.HashSet(GetHashKey(radioId), entries);
+            var database = await redis.GetDatabaseAsync();
+            await database.HashSetAsync(GetHashKey(radioId), entries);
         }
         catch (Exception e)
         {

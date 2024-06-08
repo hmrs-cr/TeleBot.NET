@@ -143,7 +143,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     private IUrlData? SaveDicoveredUrl(InternetRadioStationConfig radio, RadioDiscoverResponse.ResultData.Stream? stream)
     {
-        this.internetRadioRepository.SaveDiscoveredUrl(radio.Id!, stream?.Url);
+        _ = this.internetRadioRepository.SaveDiscoveredUrl(radio.Id!, stream?.Url);
         return stream;
     }
 
