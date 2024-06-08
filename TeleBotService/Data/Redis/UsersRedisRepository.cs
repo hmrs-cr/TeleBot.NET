@@ -3,12 +3,12 @@ using TeleBotService.Config;
 
 namespace TeleBotService.Data.Redis;
 
-public class UserSettingsRedisRepository : IUserSettingsRepository
+public class UsersRedisRepository : IUsersRepository
 {
     private readonly LazyRedis redis;
-    private readonly ILogger<UserSettingsRedisRepository> logger;
+    private readonly ILogger<UsersRedisRepository> logger;
 
-    public UserSettingsRedisRepository(LazyRedis redis, ILogger<UserSettingsRedisRepository> logger)
+    public UsersRedisRepository(LazyRedis redis, ILogger<UsersRedisRepository> logger)
     {
         this.redis = redis;
         this.logger = logger;

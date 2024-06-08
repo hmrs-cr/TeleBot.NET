@@ -122,7 +122,7 @@ public static class RegistrationExtensions
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
                 .Configure<UsersConfig>(configuration.GetSection(UsersConfig.UsersConfigName))
                 .Configure<RedisConfig>(configuration.GetSection(RedisConfig.RedisConfigName))
-                .AddSingleton<IUserSettingsRepository, UserSettingsRedisRepository>()
+                .AddSingleton<IUsersRepository, UsersRedisRepository>()
                 .AddSingleton<IInternetRadioRepository, InternetRadioRedisRepository>()
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddSingleton<LazyRedis>()

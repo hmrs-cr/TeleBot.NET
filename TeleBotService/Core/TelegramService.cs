@@ -26,7 +26,7 @@ public class TelegramService : ITelegramService
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
-    private readonly IUserSettingsRepository userSettingsRepository;
+    private readonly IUsersRepository userSettingsRepository;
     private readonly UsersConfig users;
     private readonly ILogger<TelegramService> logger;
 
@@ -35,7 +35,7 @@ public class TelegramService : ITelegramService
         ILocalizationResolver localizationResolver,
         IServiceProvider serviceProvider,
         IOptions<UsersConfig> users,
-        IUserSettingsRepository userSettingsRepository,
+        IUsersRepository userSettingsRepository,
         ILogger<TelegramService> logger)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
