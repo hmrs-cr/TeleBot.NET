@@ -3,6 +3,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
+using TeleBotService.Data;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -12,16 +13,19 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 {
     private readonly InternetRadioConfig radioConfig;
     private readonly IMemoryCache memoryCache;
+    private readonly IInternetRadioRepository internetRadioRepository;
 
     public RadioPlayerCommand(
         IOptions<MusicPlayersConfig> config,
         IOptions<TapoConfig> tapoConfig,
         IOptions<InternetRadioConfig> radioConfig,
         ILogger<RadioPlayerCommand> logger,
-        IMemoryCache memoryCache) : base(config, tapoConfig, logger)
+        IMemoryCache memoryCache,
+        IInternetRadioRepository internetRadioRepository) : base(config, tapoConfig, logger)
     {
         this.radioConfig = radioConfig.Value;
         this.memoryCache = memoryCache;
+        this.internetRadioRepository = internetRadioRepository;
     }
 
     public override string Description => "Internet Radio";
@@ -130,11 +134,17 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             return radio.Url != null ? radio : await this.memoryCache.GetOrCreateAsync(radio, async (k) =>
             {
                 k.AbsoluteExpirationRelativeToNow =  TimeSpan.FromHours(12);
-                return await this.DiscoverRadioUrl(radio.Id);
+                return this.SaveDicoveredUrl(radio, await this.DiscoverRadioUrl(radio.Id));
             });
         }
 
         return null;
+    }
+
+    private IUrlData? SaveDicoveredUrl(InternetRadioStationConfig radio, RadioDiscoverResponse.ResultData.Stream? stream)
+    {
+        this.internetRadioRepository.SaveDiscoveredUrl(radio.Id!, stream?.Url);
+        return stream;
     }
 
     private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(string? radioId)

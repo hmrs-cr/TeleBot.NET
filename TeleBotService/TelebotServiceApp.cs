@@ -120,6 +120,7 @@ public static class RegistrationExtensions
                 .Configure<UsersConfig>(configuration.GetSection(UsersConfig.UsersConfigName))
                 .Configure<RedisConfig>(configuration.GetSection(RedisConfig.RedisConfigName))
                 .AddSingleton<IUserSettingsRepository, UserSettingsRedisRepository>()
+                .AddSingleton<IInternetRadioRepository, InternetRadioRedisRepository>()
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddMemoryCache()
