@@ -6,6 +6,8 @@ namespace TeleBotService.Data;
 
 public class InternetRadioRedisRepository : IInternetRadioRepository
 {
+    private static readonly DateTime startDateTimeCount = new(2024, 6, 8);
+
     private readonly LazyRedis redis;
     private readonly ILogger<InternetRadioRedisRepository> logger;
 
@@ -30,9 +32,8 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
 
         try
         {
-            var entries = new[] { new HashEntry(url.ToString(), DateTime.UtcNow.ToString("s")) };
             var database = await redis.GetDatabaseAsync();
-            await database.HashSetAsync(GetHashKey(radioId), entries);
+            await database.SortedSetAddAsync(GetHashKey(radioId), url.ToString(), -(DateTime.UtcNow - startDateTimeCount).TotalSeconds);
         }
         catch (Exception e)
         {
@@ -40,5 +41,5 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         }
     }
 
-    private RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}:discovered-urls";
+    private RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}:urls";
 }

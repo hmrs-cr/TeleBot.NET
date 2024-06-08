@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.Security.Cryptography;
+using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Commands;
 using TeleBotService.Core.Model;
@@ -124,7 +125,7 @@ public class TelegramService : ITelegramService
         var executed = false;
         var commands = this.GetCommands(messageContext);
 
-        this.LoadUserSettingsIfNeeded(messageContext);
+        await this.LoadUserSettingsIfNeeded(messageContext);
         foreach (var command in commands)
         {
             try
@@ -161,10 +162,10 @@ public class TelegramService : ITelegramService
     }
 
     private void SaveUserSettingsIfNeeded(MessageContext messageContext) =>
-        messageContext.User.SaveSettings(this.userSettingsRepository.SaveUserSettings);
+        _ = messageContext.User.SaveSettings(this.userSettingsRepository.SaveUserSettings);
 
-    private void LoadUserSettingsIfNeeded(MessageContext messageContext) =>
-        messageContext.User.LoadSettings(this.userSettingsRepository.GetUserSettings);
+    private async ValueTask LoadUserSettingsIfNeeded(MessageContext messageContext) =>
+        await messageContext.User.LoadSettings(this.userSettingsRepository.GetUserSettings);
 
     private Task Reply(Message message, string text, CancellationToken cancellationToken) =>
         this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
