@@ -1,7 +1,7 @@
 ﻿using StackExchange.Redis;
 using TeleBotService.Config;
 
-namespace TeleBotService.Data;
+namespace TeleBotService.Data.Redis;
 
 public class UserSettingsRedisRepository : IUserSettingsRepository
 {

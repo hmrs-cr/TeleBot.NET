@@ -8,6 +8,7 @@ using StackExchange.Redis;
 using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Data;
+using TeleBotService.Data.Redis;
 using TeleBotService.Localization;
 
 namespace TeleBotService;

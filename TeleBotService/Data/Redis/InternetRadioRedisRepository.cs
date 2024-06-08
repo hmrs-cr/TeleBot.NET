@@ -1,8 +1,6 @@
-﻿
-using Microsoft.Extensions.Options;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
-namespace TeleBotService.Data;
+namespace TeleBotService.Data.Redis;
 
 public class InternetRadioRedisRepository : IInternetRadioRepository
 {
