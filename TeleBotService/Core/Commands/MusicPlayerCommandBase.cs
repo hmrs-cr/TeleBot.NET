@@ -1,6 +1,7 @@
 ﻿using Linkplay.HttpApi.Model;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -31,8 +32,9 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         this.Logger = logger;
     }
 
-    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         message.Text = message.Text?.Trim();
         var text = message.Text;
         if (this.playersConfig?.Count > 0 && this.GetPlayerConfig(message) is { } playerConfig)
@@ -47,9 +49,9 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                     await this.UntilOnline(playerConfig, true, cancellationToken);
                 }
 
-                var context = message.GetContext();
+                var context = messageContext.Context;
                 context.LastPlayerConfig = null;
-                var result = await this.ExecuteMusicPlayerCommand(message, playerConfig, preset, cancellationToken);
+                var result = await this.ExecuteMusicPlayerCommand(messageContext, playerConfig, preset, cancellationToken);
                 if (context.LastPlayerConfig == null)
                 {
                     context.LastPlayerConfig = playerConfig;
@@ -111,7 +113,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     }
 
     protected abstract Task<int> ExecuteMusicPlayerCommand(
-        Message message,
+        MessageContext messageContext,
         PlayersConfig playersConfig,
         MusicPlayersPresetConfig? musicPlayersPresetConfig,
         CancellationToken cancellationToken = default);
@@ -146,7 +148,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         else if (playerStatus.Status == Status.Play)
         {
             statusMessage = playerStatus.Mode == PlaybackMode.Network ?
-                            "Playing '[netMediaName]' ([url])" :
+                            "Playing '[netMediaName]' ([url]) in '[playerName]'. Volume at [volume]" :
                             "Playing '[title]' by '[artist]' in '[playerName]' ([playerMode]). Volume at [volume]";
         }
         else
@@ -159,13 +161,13 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         await this.Reply(message, statusMessage);
     }
 
-    protected async Task<T?> ExecutePlayerClientCommand<T>(Message message, PlayersConfig playerConfig, Func<PlayersConfig, Task<T>> command)
+    protected async Task<T?> ExecutePlayerClientCommand<T>(MessageContext messageContext, PlayersConfig playerConfig, Func<MessageContext, Message, PlayersConfig, Task<T>> command)
     {
         var success = false;
         var result = default(T);
         try
         {
-            result = await command.Invoke(playerConfig);
+            result = await command.Invoke(messageContext, messageContext.Message, playerConfig);
             success = true;
             if (result is bool boolResult)
             {
@@ -179,7 +181,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
 
         if (!success)
         {
-            await this.Reply(message, "Something failed");
+            await this.Reply(messageContext.Message, "Something failed");
         }
 
         return result;

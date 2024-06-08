@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using TeleBotService.Core.Model;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -8,11 +9,11 @@ public class InternalInfoCommand : TelegramCommand
 {
     public override string CommandString => "info";
 
-    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
         var myInfo = await this.BotClient!.GetMeAsync();
         var internalInfo = GetInternalInfoString(myInfo);
-        await this.Reply(message, internalInfo);
+        await this.Reply(messageContext.Message, internalInfo);
     }
 
     public static string GetInternalInfoString(User user) => new StringBuilder()

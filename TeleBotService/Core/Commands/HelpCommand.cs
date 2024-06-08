@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -16,8 +17,9 @@ public class HelpCommand : TelegramCommand
 
     public override string CommandString => "help";
 
-    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         var sb = new StringBuilder();
         foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description)))
         {

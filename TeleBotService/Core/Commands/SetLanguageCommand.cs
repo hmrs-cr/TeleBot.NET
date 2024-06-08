@@ -1,4 +1,5 @@
-﻿using TeleBotService.Extensions;
+﻿using TeleBotService.Core.Model;
+using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -7,13 +8,14 @@ public class SetLanguageCommand : TelegramCommand
 {
     public override string CommandString => "setlang";
 
-    protected override Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         var lang = new { lang = message.GetLastString()?.Trim('/') };
         var definedLanguages = this.LocalizationResolver?.DefinedLanguages ?? [];
         if (lang.lang is { } && definedLanguages.Contains(lang.lang) == true)
         {
-            message.GetContext().LanguageCode = lang.lang;
+            messageContext.Context.LanguageCode = lang.lang;
             var localizedText = this.Localize(message, "Hello, the new language is '[lang]'");
             this.Reply(message, localizedText.Format(lang), cancellationToken);
         }

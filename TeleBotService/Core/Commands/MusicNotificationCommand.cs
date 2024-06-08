@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -20,11 +21,12 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
 
     public override string Description => "Enable/disable music notifications";
 
-    protected override Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playersConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
+    protected override Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playersConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         if (ContainsText(message, "begin"))
         {
-            _ = message.GetContext().NotifyPlayerStatusChanges(playersConfig.Client, async (client, prevStatus, currentStatus) =>
+            _ = messageContext.Context.NotifyPlayerStatusChanges(playersConfig.Client, async (client, prevStatus, currentStatus) =>
             {
                 var same = prevStatus?.Title == currentStatus?.Title;
                 // TODO: Do not sent status if stopped
@@ -34,7 +36,7 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
         }
         else if (ContainsText(message, "end"))
         {
-            _ = message.GetContext().NotifyPlayerStatusChanges(playersConfig.Client, null);
+            _ = messageContext.Context.NotifyPlayerStatusChanges(playersConfig.Client, null);
         }
 
         return DoNotReplyPlayerStatusTask;

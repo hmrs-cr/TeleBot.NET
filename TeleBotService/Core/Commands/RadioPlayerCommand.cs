@@ -28,17 +28,18 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     public override string Usage => "{play} {play}\n{list} {radio}";
 
-    protected override bool CanAutoTurnOn => false;
+    protected override bool CanAutoTurnOn => true;
 
     public override bool CanExecuteCommand(Message message) =>
         this.ContainsText(message, "radio") && (this.ContainsText(message, "play") || this.ContainsText(message, "list"));
 
     protected override async Task<int> ExecuteMusicPlayerCommand(
-        Message message,
+        MessageContext messageContext,
         PlayersConfig playersConfig,
         MusicPlayersPresetConfig? musicPlayersPresetConfig,
         CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         if (this.ContainsText(message, "play"))
         {
             var radioName = message.Text?.Replace(Localize(message, "play"), string.Empty, StringComparison.OrdinalIgnoreCase)

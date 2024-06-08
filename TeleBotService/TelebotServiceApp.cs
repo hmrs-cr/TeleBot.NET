@@ -116,6 +116,7 @@ public static class RegistrationExtensions
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
+                .Configure<UsersConfig>(configuration.GetSection(UsersConfig.UsersConfigName))
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddMemoryCache()

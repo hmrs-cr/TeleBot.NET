@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -26,9 +27,9 @@ public class RecordAudioCommand : TelegramCommand
 
     public override string Usage => $"{base.Usage}\n{this.CommandString}_voice";
 
-    protected override async Task<bool> StartExecuting(Message message, CancellationToken token)
+    protected override async Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
-        var canExecute = await base.StartExecuting(message, token);
+        var canExecute = await base.StartExecuting(messageContext, token);
         if (!canExecute)
         {
             return false;
@@ -40,19 +41,19 @@ public class RecordAudioCommand : TelegramCommand
 
         if (!everthingIsSetup)
         {
-            await this.Reply(message, "Can not record audio. Missing audio tools.");
+            await this.Reply(messageContext.Message, "Can not record audio. Missing audio tools.");
         }
 
         return everthingIsSetup;
     }
 
-    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
-        var parameters = message.ParseIntArray(' ');
+        var parameters = messageContext.Message.ParseIntArray(' ');
 
         var count = 1;
         var duration = 30;
-        var isVoice = this.ContainsText(message, "voice");
+        var isVoice = this.ContainsText(messageContext.Message, "voice");
 
         int maxCount = 100;
         int maxDuration = isVoice ? 900 : 150;
@@ -115,7 +116,7 @@ public class RecordAudioCommand : TelegramCommand
             await Task.WhenAll(recordProcessTask, oggencProcessTask);
             System.IO.File.Delete(intermediateFileName);
 
-            replyTasks.Add(this.AudioReply(message, fileName, title: isVoice ? "voice-memo" : $"{recordDateTime:s}", duration: duration, deleteFile: true));
+            replyTasks.Add(this.AudioReply(messageContext.Message, fileName, title: isVoice ? "voice-memo" : $"{recordDateTime:s}", duration: duration, deleteFile: true));
         }
 
         await Task.WhenAll(replyTasks);

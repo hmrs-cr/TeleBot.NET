@@ -1,6 +1,7 @@
 ﻿using Linkplay.HttpApi.Model;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -26,9 +27,9 @@ public class MusicPlayerControlCommand : MusicPlayerCommandBase
     public override bool CanExecuteCommand(Message message) =>
         (ContainsText(message, "music") || ContainsText(message, "song")) && commandMap.Any(c => ContainsText(message, c.Key));
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
+    protected override async Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
-        await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>
+        await this.ExecutePlayerClientCommand(messageContext, playerConfig, async (context, message, pc) =>
         {
             var command = commandMap.First(c => ContainsText(message, c.Key)).Value;
             var repeat = message.ParseLastInt().GetValueOrDefault(command.DefaultRepeat);

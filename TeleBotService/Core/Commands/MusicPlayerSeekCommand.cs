@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -15,9 +16,9 @@ public class MusicPlayerSeekCommand : MusicPlayerCommandBase
     public override string Description => "Backward/forward current song";
     public override string Usage => "{forward} {song} [{seconds}]\n{backward} {song} [{seconds}]";
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
+    protected override async Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
-        await this.ExecutePlayerClientCommand(message, playerConfig, async (pc) =>
+        await this.ExecutePlayerClientCommand(messageContext, playerConfig, async (context, message, pc) =>
         {
             int? newPos = null;
             var offsetPos = message.ParseLastInt().GetValueOrDefault(5);

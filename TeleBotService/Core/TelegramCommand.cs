@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
@@ -33,15 +34,15 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected ILogger? Logger { get; init; }
 
-    public async Task<bool> HandleCommand(Message message, CancellationToken cancellationToken)
+    public async Task<bool> HandleCommand(MessageContext messageContext, CancellationToken cancellationToken)
     {
-        var context = message.GetContext();
-        var canExecute = await this.StartExecuting(message, cancellationToken);
+        var context = messageContext.Context;
+        var canExecute = await this.StartExecuting(messageContext, cancellationToken);
         try
         {
             if (canExecute)
             {
-                var task = this.Execute(message, cancellationToken);
+                var task = this.Execute(messageContext, cancellationToken);
                 context.AddExecutingTask(task);
                 await task;
                 return true;
@@ -51,7 +52,7 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
-                await this.EndExecuting(message, cancellationToken);
+                await this.EndExecuting(messageContext, cancellationToken);
                 context.IsPromptReplyMessage = false;
                 context.RemoveFinishedTasks();
             }
@@ -60,9 +61,9 @@ public abstract class TelegramCommand : ITelegramCommand
         return canExecute;
     }
 
-    protected virtual Task<bool> StartExecuting(Message message, CancellationToken token)
+    protected virtual Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
-        if (!this.CanBeExecuteConcurrently && message.GetContext().GetExecutingTaskCount() > 0)
+        if (!this.CanBeExecuteConcurrently && messageContext.Context.GetExecutingTaskCount() > 0)
         {
             return TaskFalseResult;
         }
@@ -70,9 +71,9 @@ public abstract class TelegramCommand : ITelegramCommand
         return TaskTrueResult;
     }
 
-    protected abstract Task Execute(Message message, CancellationToken cancellationToken = default);
+    protected abstract Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default);
 
-    protected virtual Task EndExecuting(Message message, CancellationToken token) => Task.CompletedTask;
+    protected virtual Task EndExecuting(MessageContext messageContext, CancellationToken token) => Task.CompletedTask;
 
     protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                 chatId: message.Chat.Id,

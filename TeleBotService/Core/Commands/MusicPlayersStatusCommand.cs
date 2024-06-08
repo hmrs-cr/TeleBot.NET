@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
@@ -17,5 +18,5 @@ public class MusicPlayersStatusCommand : MusicPlayerCommandBase
     public override bool CanExecuteCommand(Message message) =>
         ContainsText(message, "Playing now", true);
 
-    protected override Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default) => ReplyPlayerStatusDelayShortTask;
+    protected override Task<int> ExecuteMusicPlayerCommand(MessageContext message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default) => ReplyPlayerStatusDelayShortTask;
 }

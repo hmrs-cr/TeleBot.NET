@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Commands;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
-using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -24,12 +24,14 @@ public class TelegramService : ITelegramService
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
+    private readonly UsersConfig users;
     private readonly ILogger<TelegramService> logger;
 
     public TelegramService(
         IOptions<TelegramConfig> confif,
         ILocalizationResolver localizationResolver,
         IServiceProvider serviceProvider,
+        IOptions<UsersConfig> users,
         ILogger<TelegramService> logger)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
@@ -41,6 +43,7 @@ public class TelegramService : ITelegramService
         this.config = confif.Value;
         this.localizationResolver = localizationResolver;
         this.serviceProvider = serviceProvider;
+        this.users = users.Value;
         this.logger = logger;
     }
 
@@ -93,7 +96,8 @@ public class TelegramService : ITelegramService
         if (message.Text is not { } messageText)
             return Task.CompletedTask;
 
-        if (!this.config.AllowedUsers.Contains(message.Chat.Username))
+        var user = this.users.GetUser(message.Chat.Username);
+        if (user is null || !user.Enabled)
         {
             this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
             _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
@@ -101,31 +105,33 @@ public class TelegramService : ITelegramService
         }
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
-        _ = HandleCommands(message, cancellationToken);
+
+        var messageContext = new MessageContext(message, user);
+        _ = HandleCommands(messageContext, cancellationToken);
 
         return Task.CompletedTask;
     }
 
-    private async Task HandleCommands(Message message, CancellationToken cancellationToken)
+    private async Task HandleCommands(MessageContext messageContext, CancellationToken cancellationToken)
     {
         var executedCommandCount = 0;
         var failedCommandCount = 0;
         var refusedCommandCount = 0;
         var executed = false;
-        var commands = this.GetCommands(message);
+        var commands = this.GetCommands(messageContext);
         foreach (var command in commands)
         {
             try
             {
-                executed = await command.HandleCommand(message, cancellationToken);
+                executed = await command.HandleCommand(messageContext, cancellationToken);
                 if (executed)
                 {
-                    this.logger.LogInformation("Executed '{commandName}' command in chat {messageChatId}.", command.Name, message.Chat.Id);
+                    this.logger.LogInformation("Executed '{commandName}' command in chat {messageChatId}.", command.Name, messageContext.Message.Chat.Id);
                     executedCommandCount++;
                 }
                 else
                 {
-                    this.logger.LogInformation("Refused execution of '{commandName}' command in chat {messageChatId}.", command.Name, message.Chat.Id);
+                    this.logger.LogInformation("Refused execution of '{commandName}' command in chat {messageChatId}.", command.Name, messageContext.Message.Chat.Id);
                     refusedCommandCount++;
                 }
             }
@@ -138,12 +144,12 @@ public class TelegramService : ITelegramService
 
         if (executedCommandCount > 0)
         {
-            this.logger.LogInformation("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, message.Text, message.Chat.Id);
+            this.logger.LogInformation("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, messageContext.Message.Text, messageContext.Message.Chat.Id);
         }
         else if (failedCommandCount == 0 && refusedCommandCount == 0)
         {
-            this.logger.LogInformation("No commands found for message '{messageText}', chat {messageChatId}.", message.Text, message.Chat.Id);
-            await this.Reply(message, "I didn't understand you", cancellationToken);
+            this.logger.LogInformation("No commands found for message '{messageText}', chat {messageChatId}.", messageContext.Message.Text, messageContext.Message.Chat.Id);
+            await this.Reply(messageContext.Message, "I didn't understand you", cancellationToken);
         }
     }
 
@@ -160,9 +166,10 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private IEnumerable<ITelegramCommand> GetCommands(Message message)
+    private IEnumerable<ITelegramCommand> GetCommands(MessageContext messageContext)
     {
-        var context = message.GetContext();
+        var message = messageContext.Message;
+        var context =messageContext.Context;
         var lastPromptMessage = context.LastPromptMessage;
         if (!string.IsNullOrEmpty(lastPromptMessage?.Text) && !string.IsNullOrEmpty(message.Text))
         {

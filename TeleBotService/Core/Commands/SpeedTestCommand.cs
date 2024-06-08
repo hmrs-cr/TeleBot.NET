@@ -21,9 +21,9 @@ public class SpeedTestCommand : TelegramCommand
 
     public override string CommandString => "speedtest";
 
-    protected override async Task<bool> StartExecuting(Message message, CancellationToken token)
+    protected override async Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
-        var canExecute = await base.StartExecuting(message, token);
+        var canExecute = await base.StartExecuting(messageContext, token);
         if (!canExecute)
         {
             return false;
@@ -32,14 +32,15 @@ public class SpeedTestCommand : TelegramCommand
         var everthingIsSetup = System.IO.File.Exists(this.speedTestExecPath);
         if (!everthingIsSetup)
         {
-            await this.Reply(message, "Can not run speedtest. Missing speedtest tools.");
+            await this.Reply(messageContext.Message, "Can not run speedtest. Missing speedtest tools.");
         }
 
         return everthingIsSetup;
     }
 
-    protected override async Task Execute(Message message, CancellationToken cancellationToken = default)
+    protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
+        var message = messageContext.Message;
         var isAcceptanceMessage = this.ContainsText(message, AcceptanceMessage);
         if (!isAcceptanceMessage && !message.GetCommandContextData<ContextData>(this).SpeedTestLicenceAccepted)
         {

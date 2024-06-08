@@ -1,9 +1,10 @@
-﻿using Telegram.Bot.Types;
+﻿using TeleBotService.Core.Model;
+using Telegram.Bot.Types;
 
 namespace TeleBotService.Core;
 
 public interface ITelegramCommand : ICommand
 {
-    Task<bool> HandleCommand(Message message, CancellationToken cancellationToken = default);
+    Task<bool> HandleCommand(MessageContext message, CancellationToken cancellationToken = default);
     bool CanExecuteCommand(Message message);
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -15,10 +16,10 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
     public override bool CanExecuteCommand(Message message) =>
         ContainsText(message, "music") && (ContainsText(message, "turn on", true) || ContainsText(message, "turn off", true));
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
+    protected override async Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
     {
         var tapoDeviceClient = this.tapoConfig.GetDeviceByConfigId(playerConfig.TapoDevice);
-        var isShutDown = ContainsText(message, "turn off", true);
+        var isShutDown = ContainsText(messageContext.Message, "turn off", true);
         string? error = null;
         if (tapoDeviceClient != null)
         {
@@ -48,13 +49,13 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
         var connected = await playerConfig.Client.IsConnected();
         if (isShutDown)
         {
-            await this.Reply(message, connected ? this.Localize(message, "Still on: [error]").Format(new { error }) : "Turned Off!");
+            await this.Reply(messageContext.Message, connected ? this.Localize(messageContext.Message, "Still on: [error]").Format(new { error }) : "Turned Off!");
         }
         else
         {
             if (error != null)
             {
-                await this.Reply(message, error);
+                await this.Reply(messageContext.Message, error);
             }
         }
 

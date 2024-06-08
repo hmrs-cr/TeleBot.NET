@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -17,9 +18,10 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
 
     public override string Usage => "{music} {config}";
 
-    protected override async Task<int> ExecuteMusicPlayerCommand(Message message, PlayersConfig currentPlayerConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
+    protected override async Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig currentPlayerConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
     {
-        var context = message.GetContext();
+        var context = messageContext.Context;
+        var message = messageContext.Message;
         var lastString = message.GetLastString()?.Replace('_', ' ').Trim('/') ?? string.Empty;
         if (this.playersConfig?.GetValueOrDefault(lastString) is { } newDefPlayer)
         {
