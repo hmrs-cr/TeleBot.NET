@@ -2,6 +2,7 @@
 using TeleBotService.Config;
 using TeleBotService.Core.Commands;
 using TeleBotService.Core.Model;
+using TeleBotService.Data;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
@@ -24,6 +25,7 @@ public class TelegramService : ITelegramService
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
+    private readonly IUserSettingsRepository userSettingsRepository;
     private readonly UsersConfig users;
     private readonly ILogger<TelegramService> logger;
 
@@ -32,6 +34,7 @@ public class TelegramService : ITelegramService
         ILocalizationResolver localizationResolver,
         IServiceProvider serviceProvider,
         IOptions<UsersConfig> users,
+        IUserSettingsRepository userSettingsRepository,
         ILogger<TelegramService> logger)
     {
         if (string.IsNullOrEmpty(confif.Value.BotToken) || confif.Value.BotToken.Length < 10)
@@ -43,6 +46,7 @@ public class TelegramService : ITelegramService
         this.config = confif.Value;
         this.localizationResolver = localizationResolver;
         this.serviceProvider = serviceProvider;
+        this.userSettingsRepository = userSettingsRepository;
         this.users = users.Value;
         this.logger = logger;
     }
@@ -119,6 +123,8 @@ public class TelegramService : ITelegramService
         var refusedCommandCount = 0;
         var executed = false;
         var commands = this.GetCommands(messageContext);
+
+        this.LoadUserSettingsIfNeeded(messageContext);
         foreach (var command in commands)
         {
             try
@@ -144,6 +150,7 @@ public class TelegramService : ITelegramService
 
         if (executedCommandCount > 0)
         {
+            this.SaveUserSettingsIfNeeded(messageContext);
             this.logger.LogInformation("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, messageContext.Message.Text, messageContext.Message.Chat.Id);
         }
         else if (failedCommandCount == 0 && refusedCommandCount == 0)
@@ -153,7 +160,14 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private Task Reply(Message message, string text, CancellationToken cancellationToken) => this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
+    private void SaveUserSettingsIfNeeded(MessageContext messageContext) =>
+        messageContext.User.SaveSettings(this.userSettingsRepository.SaveUserSettings);
+
+    private void LoadUserSettingsIfNeeded(MessageContext messageContext) =>
+        messageContext.User.LoadSettings(this.userSettingsRepository.GetUserSettings);
+
+    private Task Reply(Message message, string text, CancellationToken cancellationToken) =>
+        this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
 
     private async Task SentAdminMessage(string message, CancellationToken cancellationToken)
     {

@@ -1,30 +1,79 @@
+using System.Collections;
+
 namespace TeleBotService.Config;
 
 public class UserData
 {
+    private readonly Dictionary<string, string?> settings = [];
+    private bool areSettingsDirty;
+    private bool areSettingsLoaded;
+
     public string? UserName { get; internal set; }
 
     public bool IsAdmin { get; init; }
     public string? Language { get; init; }
     public bool Enabled { get; init; }
 
-    public Dictionary<string, string?>? Settings { get; init; }
-
     public int GetIntSetting(string key, int defaultValue = default) =>
-        this.Settings?.GetValueOrDefault(key) is { } strVal && int.TryParse(strVal, out var result) ? result : defaultValue;
+        this.settings?.GetValueOrDefault(key) is { } strVal && int.TryParse(strVal, out var result) ? result : defaultValue;
 
     public bool GetBoolSetting(string key, bool defaultValue = default) =>
-        this.Settings?.GetValueOrDefault(key) is { } strVal && bool.TryParse(strVal, out var result) ? result : defaultValue;
+        this.settings?.GetValueOrDefault(key) is { } strVal && bool.TryParse(strVal, out var result) ? result : defaultValue;
 
     public string? GeStringSetting(string key, string? defaultValue = default) =>
-        this.Settings?.GetValueOrDefault(key, defaultValue);
+        this.settings?.GetValueOrDefault(key, defaultValue);
 
     public void SetSetting<T>(string key, T? value)
-     {
-        if (this.Settings != null)
+    {
+        if (this.settings != null)
         {
-            this.Settings[key] = value?.ToString();
+            this.settings[key] = value?.ToString();
+            this.areSettingsDirty = true;
         }
-     }
+    }
 
+    public bool SaveSettings(Func<UserData, UserSettings, bool> saveAction)
+    {
+        var saved = false;
+
+        if (this.areSettingsDirty)
+        {
+            saved = saveAction.Invoke(this, new(this.settings));
+            this.areSettingsDirty = !saved;
+        }
+
+        return saved;
+    }
+
+    public bool LoadSettings(Func<UserData, UserSettings> loadAction)
+    {
+        if (!this.areSettingsLoaded)
+        {
+            var settings = loadAction.Invoke(this);
+            foreach (var kvp in settings)
+            {
+                this.settings[kvp.Key] = kvp.Value;
+            }
+
+            this.areSettingsLoaded = true;
+        }
+
+        return this.areSettingsLoaded;
+    }
+}
+
+public class UserSettings : IEnumerable<KeyValuePair<string, string?>>
+{
+    public static readonly UserSettings Empty = new ([]);
+
+    private readonly IEnumerable<KeyValuePair<string, string?>> settings;
+
+    public UserSettings(IEnumerable<KeyValuePair<string, string?>> settings)
+    {
+        this.settings = settings;
+    }
+
+    public IEnumerator<KeyValuePair<string, string?>> GetEnumerator() => this.settings.GetEnumerator();
+
+    IEnumerator IEnumerable.GetEnumerator() => this.settings.GetEnumerator();
 }

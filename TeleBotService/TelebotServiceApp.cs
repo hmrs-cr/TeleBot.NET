@@ -5,6 +5,7 @@ using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
 using TeleBotService.Config;
 using TeleBotService.Core;
+using TeleBotService.Data;
 using TeleBotService.Localization;
 
 namespace TeleBotService;
@@ -117,6 +118,8 @@ public static class RegistrationExtensions
                 .Configure<TapoConfig>(configuration.GetSection(TapoConfig.TapoConfigName))
                 .Configure<ExternalToolsConfig>(configuration.GetSection(ExternalToolsConfig.ExternalToolsConfigName))
                 .Configure<UsersConfig>(configuration.GetSection(UsersConfig.UsersConfigName))
+                .Configure<RedisConfig>(configuration.GetSection(RedisConfig.RedisConfigName))
+                .AddSingleton<IUserSettingsRepository, UserSettingsRedisRepository>()
                 .AddSingleton<ITelegramService, TelegramService>()
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddMemoryCache()

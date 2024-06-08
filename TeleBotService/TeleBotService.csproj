@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
+    <PackageReference Include="NRedisStack" Version="0.12.0" />
     <PackageReference Include="Smdn.TPSmartHomeDevices.Tapo" Version="2.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
@@ -19,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="buildinfo" Condition="Exists('buildinfo')" >
+    <Content Include="buildinfo" Condition="Exists('buildinfo')">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
