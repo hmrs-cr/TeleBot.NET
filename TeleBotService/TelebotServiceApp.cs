@@ -1,13 +1,9 @@
 ﻿using System.Reflection;
 using System.Text.Json.Serialization;
-using Linkplay.HttpApi;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 using TeleBotService.Config;
 using TeleBotService.Core;
-using TeleBotService.Data;
 using TeleBotService.Data.Redis;
 using TeleBotService.Localization;
 
@@ -56,6 +52,13 @@ public class TelebotServiceApp
         }
 
         LogInformation($"Exiting service V{Version}. Bye bye.");
+    }
+
+    public static async Task Stop(int exitCode)
+    {
+        await Task.Delay(2500);
+        Environment.ExitCode = exitCode;
+        await App!.StopAsync(TimeSpan.FromSeconds(5));
     }
 
     public static void LogDebug(string message, params object?[] args) => Logger?.LogDebug(message, args);

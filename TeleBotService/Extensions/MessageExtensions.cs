@@ -27,10 +27,10 @@ public static class MessageExtensions
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken);
 
-    public static int? ParseLastInt(this Message message)
+    public static int? ParseLastInt(this Message message, char separator = ' ')
     {
-        var i = message.Text?.LastIndexOf(' ');
-        if (i > 0 && int.TryParse(message.Text.AsSpan(i.Value), out var result))
+        var i = message.Text?.LastIndexOf(separator);
+        if (i > 0 && int.TryParse(message.Text.AsSpan(i.Value + 1), out var result))
         {
             return result;
         }

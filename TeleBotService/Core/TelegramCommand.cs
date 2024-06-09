@@ -17,6 +17,8 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual bool IsEnabled => true;
 
+    public virtual bool IsAdmin => false;
+
     public virtual string Name => this.GetType().Name;
 
     public virtual string Description => string.Empty;
@@ -64,6 +66,11 @@ public abstract class TelegramCommand : ITelegramCommand
     protected virtual Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
         if (!this.CanBeExecuteConcurrently && messageContext.Context.GetExecutingTaskCount() > 0)
+        {
+            return TaskFalseResult;
+        }
+
+        if (this.IsAdmin && !messageContext.User.IsAdmin)
         {
             return TaskFalseResult;
         }
