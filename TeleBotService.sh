@@ -6,7 +6,6 @@ then
     curl "$REMOTE_CONFIG_URL" -s -f -o "$LOCAL_REMOTE_CONFIG.temp" -w "Remote config server response: %{http_code}\n" \
          -H 'Cache-Control: no-cache' \
          -H "Authorization: Token $REMOTE_CONFIG_AUTH_TOKEN"  \
-         -H "User-Agent: TelebotService Remote Config Script"
          && mv "$LOCAL_REMOTE_CONFIG.temp" $LOCAL_REMOTE_CONFIG
 
     if [ "$?" != "0" ]

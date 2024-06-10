@@ -36,10 +36,11 @@ public class TelebotServiceApp
                      .AddDevOnlyEndpoints();
 
         Logger = App.Services.GetRequiredService<ILogger<TelebotServiceApp>>();
-        LogInformation("Starting service V{Version}", Version);
-
-        VersionHash = GetVersionHash();
+        var configVersion = builder.Configuration.GetValue<int>("ConfigVersion");
         VersionLabel = builder.Configuration.GetValue<string>("ServiceVersionLabel");
+
+        LogInformation("Starting service V{Version}-{VersionLabel}. Config version: '{configVersion}'", Version, VersionLabel, configVersion);
+        VersionHash = GetVersionHash();
         IsDev = App.Environment.IsDevelopment();
         try
         {
