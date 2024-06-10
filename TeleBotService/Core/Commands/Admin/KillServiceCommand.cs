@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using TeleBotService.Core.Model;
+﻿using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 
 namespace TeleBotService.Core.Commands.Admin;

@@ -205,7 +205,6 @@ public class TelegramService : ITelegramService
     private IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
         TelegramCommandRegistrationExtensions.CommandTypes.Select(t =>
         {
-            ;
             var instance = this.serviceProvider.GetService(t);
             typeof(TelegramCommand).GetProperty(nameof(TelegramCommand.BotClient))?.SetValue(instance, this.botClient);
             typeof(TelegramCommand).GetProperty(nameof(TelegramCommand.LocalizationResolver))?.SetValue(instance, this.localizationResolver);
