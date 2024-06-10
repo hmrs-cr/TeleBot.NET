@@ -118,6 +118,12 @@ public static class RegistrationExtensions
         return services.Configure<InternetRadioConfig>(config.GetSection(InternetRadioConfig.InternetRadioConfigName));
     }
 
+    public static IServiceCollection AddRemoteConfig(this IServiceCollection services, IConfigurationManager config)
+    {
+        config.AddJsonFile("appsettings.Remote.json", optional: true, reloadOnChange: false);
+        return services;
+    }
+
     public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfigurationManager configuration) =>
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
@@ -129,6 +135,7 @@ public static class RegistrationExtensions
                 .AddMemoryCache()
                 .AddRedisRepositories(configuration)
                 .AddInternertRadioConfig(configuration)
+                .AddRemoteConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .ConfigureHttpJsonOptions(options =>

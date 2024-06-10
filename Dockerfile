@@ -12,6 +12,8 @@ RUN dotnet publish /p:Version=$(date "+%y").$(date "+%m%d").$(date "+%H%M").$(da
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /App
 COPY --from=build /src/out .
+COPY --from=build /src/TeleBotService.sh .
+RUN chmod +x ./TeleBotService.sh
 
 RUN apt-get update \
     && apt-get install -y curl \
@@ -20,5 +22,5 @@ RUN apt-get update \
 
 RUN apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools
 
-ENTRYPOINT ["dotnet", "TeleBotService.dll"]
+ENTRYPOINT ["./TeleBotService.sh"]
 
