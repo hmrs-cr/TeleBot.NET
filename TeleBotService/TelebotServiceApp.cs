@@ -24,6 +24,8 @@ public class TelebotServiceApp
     public static WebApplication? App { get; private set; }
     public static bool IsDev { get; private set; }
 
+    public static string LocalConfigPath { get; } = Path.Combine(Directory.GetCurrentDirectory(), "local-config");
+
     public static void Run(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -119,6 +121,12 @@ public static class RegistrationExtensions
         return services.Configure<InternetRadioConfig>(config.GetSection(InternetRadioConfig.InternetRadioConfigName));
     }
 
+    public static IServiceCollection AddKeyPerFileConfig(this IServiceCollection services, IConfigurationManager config)
+    {
+        config.AddKeyPerFile(TelebotServiceApp.LocalConfigPath, true);
+        return services;
+    }
+
     public static IServiceCollection AddRemoteConfig(this IServiceCollection services, IConfigurationManager config)
     {
         config.AddJsonFile("appsettings.Remote.json", optional: true, reloadOnChange: false);
@@ -137,6 +145,7 @@ public static class RegistrationExtensions
                 .AddRedisRepositories(configuration)
                 .AddInternertRadioConfig(configuration)
                 .AddRemoteConfig(configuration)
+                .AddKeyPerFileConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .ConfigureHttpJsonOptions(options =>

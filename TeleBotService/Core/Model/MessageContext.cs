@@ -11,9 +11,9 @@ public class MessageContext
         this.Context = TelegramChatContext.GetContext(message.Chat);
         this.User = user;
 
-        if (!string.IsNullOrEmpty(this.User.Language))
+        if (this.User.GeStringSetting(nameof(UserData.Language), this.User.Language) is { } lang)
         {
-            this.Context.LanguageCode = this.User.Language;
+            this.Context.LanguageCode = lang;
         }
     }
 

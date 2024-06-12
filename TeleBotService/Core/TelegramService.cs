@@ -164,8 +164,11 @@ public class TelegramService : ITelegramService
     private void SaveUserSettingsIfNeeded(MessageContext messageContext) =>
         _ = messageContext.User.SaveSettings(this.userSettingsRepository.SaveUserSettings);
 
-    private async ValueTask LoadUserSettingsIfNeeded(MessageContext messageContext) =>
+    private async ValueTask LoadUserSettingsIfNeeded(MessageContext messageContext)
+    {
         await messageContext.User.LoadSettings(this.userSettingsRepository.GetUserSettings);
+        messageContext.Context.LanguageCode = messageContext.User.GeStringSetting(nameof(UserData.Language), messageContext.User.Language) ?? messageContext.Context.LanguageCode;
+    }
 
     private Task Reply(Message message, string text, CancellationToken cancellationToken) =>
         this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);

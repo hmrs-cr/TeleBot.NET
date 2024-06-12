@@ -1,4 +1,5 @@
-﻿using TeleBotService.Core.Model;
+﻿using TeleBotService.Config;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
@@ -16,6 +17,7 @@ public class SetLanguageCommand : TelegramCommand
         if (lang.lang is { } && definedLanguages.Contains(lang.lang) == true)
         {
             messageContext.Context.LanguageCode = lang.lang;
+            messageContext.User.SetSetting(nameof(UserData.Language), messageContext.Context.LanguageCode);
             var localizedText = this.Localize(message, "Hello, the new language is '[lang]'");
             this.Reply(message, localizedText.Format(lang), cancellationToken);
         }

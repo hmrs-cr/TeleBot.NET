@@ -7,3 +7,4 @@ TeleBotService/appsettings.Production.json
 .DS_Store
 TeleBotService/buildinfo
 TeleBotService/appsettings.InternetRadio.json
+/TeleBotService/local-config
