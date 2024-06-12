@@ -44,7 +44,8 @@ public class SpeedTestCommand : TelegramCommand
     {
         var message = messageContext.Message;
         var isAcceptanceMessage = this.ContainsText(message, AcceptanceMessage);
-        if (!isAcceptanceMessage && !messageContext.User.GetBoolSetting(SpeedTestLicenceAccepted))
+        var isLicenceAlreadyAccepted = messageContext.User.GetBoolSetting(SpeedTestLicenceAccepted);
+        if (!isAcceptanceMessage && !isLicenceAlreadyAccepted)
         {
             await this.Reply(message, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
             return;
@@ -52,6 +53,7 @@ public class SpeedTestCommand : TelegramCommand
 
         try
         {
+executeSpeedTest:
             var arguments = "--format json";
             if (isAcceptanceMessage)
             {
@@ -67,6 +69,12 @@ public class SpeedTestCommand : TelegramCommand
             }
             else
             {
+                if (!isAcceptanceMessage && isLicenceAlreadyAccepted)
+                {
+                    isAcceptanceMessage = true;
+                    goto executeSpeedTest;
+                }
+
                 await this.Reply(message, "An error happened.");
             }
         }
