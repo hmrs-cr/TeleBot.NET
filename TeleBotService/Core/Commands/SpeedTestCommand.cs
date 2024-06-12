@@ -9,9 +9,9 @@ namespace TeleBotService.Core.Commands;
 
 public class SpeedTestCommand : TelegramCommand
 {
-    private const string SpeedTestLicenceAccepted = "SpeedTestLicenceAccepted";
+    private const string SpeedTestLicenseAccepted = "SpeedTestLicenseAccepted";
 
-    private const string AcceptanceMessage = "/I_Accept_the_speedtestNET_licence";
+    private const string AcceptanceMessage = "/I_Accept_the_speedtestNET_license";
 
     private readonly string speedTestExecPath;
 
@@ -44,8 +44,8 @@ public class SpeedTestCommand : TelegramCommand
     {
         var message = messageContext.Message;
         var isAcceptanceMessage = this.ContainsText(message, AcceptanceMessage);
-        var isLicenceAlreadyAccepted = messageContext.User.GetBoolSetting(SpeedTestLicenceAccepted);
-        if (!isAcceptanceMessage && !isLicenceAlreadyAccepted)
+        var isLicenseAlreadyAccepted = messageContext.User.GetBoolSetting(SpeedTestLicenseAccepted);
+        if (!isAcceptanceMessage && !isLicenseAlreadyAccepted)
         {
             await this.Reply(message, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
             return;
@@ -58,7 +58,7 @@ executeSpeedTest:
             if (isAcceptanceMessage)
             {
                 arguments = "--accept-license --accept-gdpr --format json";
-                messageContext.User.SetSetting(SpeedTestLicenceAccepted, true);
+                messageContext.User.SetSetting(SpeedTestLicenseAccepted, true);
             }
 
             var result = await ProcessExtensions.ExecuteJsonProcessCommand<SimpleSpeedTestResult>(this.speedTestExecPath, arguments, cancellationToken);
@@ -69,7 +69,7 @@ executeSpeedTest:
             }
             else
             {
-                if (!isAcceptanceMessage && isLicenceAlreadyAccepted)
+                if (!isAcceptanceMessage && isLicenseAlreadyAccepted)
                 {
                     isAcceptanceMessage = true;
                     goto executeSpeedTest;
