@@ -121,7 +121,7 @@ public static class RegistrationExtensions
         return services.Configure<InternetRadioConfig>(config.GetSection(InternetRadioConfig.InternetRadioConfigName));
     }
 
-    public static IServiceCollection AddKeyPerFileConfig(this IServiceCollection services, IConfigurationManager config)
+    public static IServiceCollection AddLocalFileConfig(this IServiceCollection services, IConfigurationManager config)
     {
         config.AddKeyPerFile(TelebotServiceApp.LocalConfigPath, true);
         return services;
@@ -145,7 +145,7 @@ public static class RegistrationExtensions
                 .AddRedisRepositories(configuration)
                 .AddInternertRadioConfig(configuration)
                 .AddRemoteConfig(configuration)
-                .AddKeyPerFileConfig(configuration)
+                .AddLocalFileConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .ConfigureHttpJsonOptions(options =>
