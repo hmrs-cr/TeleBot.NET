@@ -104,8 +104,14 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
+            if (messageText == this.config.JoinBotServicesPassword)
+            {
+                _ = this.SentAdminMessage($"'{message.Chat.Username}' wants to join us.", cancellationToken);
+            }
+
             this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
             _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
+
             return Task.CompletedTask;
         }
 

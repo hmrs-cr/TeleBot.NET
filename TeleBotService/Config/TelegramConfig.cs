@@ -8,5 +8,5 @@ public class TelegramConfig
 
     public required string BotToken { get; init; }
 
-    public required IReadOnlyCollection<string> AllowedUsers { get; init; }
+    public string? JoinBotServicesPassword { get; init; }
 }
