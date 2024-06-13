@@ -30,7 +30,7 @@ public class HelpCommand : TelegramCommand
             sb.AppendLine();
         }
 
-        var otherCommands = this.telegramService.GetCommands().Where(c => !string.IsNullOrEmpty(c.Usage) && string.IsNullOrEmpty(c.Description)).ToList();
+        var otherCommands = this.telegramService.GetCommands().Where(c => !string.IsNullOrEmpty(c.Usage) && string.IsNullOrEmpty(c.Description) && !c.IsAdmin).ToList();
         if (otherCommands.Count > 0)
         {
             sb.Append("<b>").Append(Localize(message, "Other Commands")).Append(':').Append("</b>")
@@ -39,6 +39,22 @@ public class HelpCommand : TelegramCommand
             foreach (var command in otherCommands)
             {
                 this.AddCommandUssage(command, message, sb);
+            }
+        }
+
+        if (messageContext.User.IsAdmin)
+        {
+            sb.AppendLine();
+            var adminCommands = this.telegramService.GetCommands().Where(c => c.IsAdmin).ToList();
+            if (adminCommands.Count > 0)
+            {
+                sb.Append("<b>").Append(Localize(message, "Admin Commands")).Append(':').Append("</b>")
+                .AppendLine();
+
+                foreach (var command in adminCommands)
+                {
+                    this.AddCommandUssage(command, message, sb);
+                }
             }
         }
 

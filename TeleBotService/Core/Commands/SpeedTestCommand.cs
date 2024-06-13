@@ -23,6 +23,8 @@ public class SpeedTestCommand : TelegramCommand
 
     public override string CommandString => "speedtest";
 
+    public override bool IsAdmin => true;
+
     protected override async Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
         var canExecute = await base.StartExecuting(messageContext, token);
