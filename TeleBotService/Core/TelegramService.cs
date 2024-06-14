@@ -106,6 +106,7 @@ public class TelegramService : ITelegramService
             if (messageText == "/start" && this.config.JoinBotServicesWatchword != null)
             {
                 _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
+                this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
                 return Task.CompletedTask;
             }
             else
