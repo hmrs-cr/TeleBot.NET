@@ -9,4 +9,7 @@ public class TelegramConfig
     public required string BotToken { get; init; }
 
     public string? JoinBotServicesPassword { get; init; }
+    public string? JoinBotServicesWatchword { get; init; }
+    public Uri? FailedJoinPasswordImageUrl { get; init; }
+    public string? DefaultLanguageCode { get; init; }
 }

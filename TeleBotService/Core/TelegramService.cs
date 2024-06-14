@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Commands;
 using TeleBotService.Core.Model;
@@ -104,15 +103,34 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
-            if (messageText == this.config.JoinBotServicesPassword)
+            if (messageText == "/start" && this.config.JoinBotServicesWatchword != null)
             {
-                _ = this.SentAdminMessage($"'{message.Chat.Username}' wants to join us.", cancellationToken);
+                _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
+                return Task.CompletedTask;
             }
+            else
+            {
+                if (messageText.Equals(this.config.JoinBotServicesPassword, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    _ = this.SentAdminMessage($"'{message.Chat.Username}' wants to join us.", cancellationToken);
+                    _ = this.Reply(message, "Correct! The admin will let you know when you are accepted.", cancellationToken);
+                }
+                else
+                {
+                    if (this.config.FailedJoinPasswordImageUrl != null)
+                    {
+                        var image = InputFile.FromUri(this.config.FailedJoinPasswordImageUrl);
+                        this.botClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: "👎", cancellationToken: cancellationToken);
+                    }
+                    else
+                    {
+                        _ = this.Reply(message, "👎", cancellationToken);
+                    }
+                }
 
-            this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
-            _ = this.botClient.Reply(message, "Who are you?", cancellationToken);
-
-            return Task.CompletedTask;
+                this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
+                return Task.CompletedTask;
+            }
         }
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
@@ -173,7 +191,7 @@ public class TelegramService : ITelegramService
     private async ValueTask LoadUserSettingsIfNeeded(MessageContext messageContext)
     {
         await messageContext.User.LoadSettings(this.userSettingsRepository.GetUserSettings);
-        messageContext.Context.LanguageCode = messageContext.User.GeStringSetting(nameof(UserData.Language), messageContext.User.Language) ?? messageContext.Context.LanguageCode;
+        messageContext.Context.LanguageCode = messageContext.User.GeStringSetting(nameof(UserData.Language), messageContext.User.Language) ?? this.config.DefaultLanguageCode ?? messageContext.Context.LanguageCode;
     }
 
     private Task Reply(Message message, string text, CancellationToken cancellationToken) =>

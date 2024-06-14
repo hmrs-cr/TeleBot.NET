@@ -139,13 +139,13 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected bool ContainsText(Message message, string text, bool ignoreSpaces = false)
     {
-        var result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
+        var result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode!, text) ?? []).Append(text).Any(t =>
             message.Text?.Contains(t, StringComparison.InvariantCultureIgnoreCase) == true) == true;
 
         if (!result && ignoreSpaces)
         {
             // TODO: find a more efficient way to implement this
-            result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode, text) ?? []).Append(text).Any(t =>
+            result = (this.LocalizationResolver?.GetLocalizedStrings(message.GetContext().LanguageCode!, text) ?? []).Append(text).Any(t =>
                 message.Text?.Contains(t.Replace(" ", null), StringComparison.InvariantCultureIgnoreCase) == true) == true;
         }
 

@@ -28,7 +28,7 @@ public class TelegramChatContext
 
     public string? Username => this.key.Chat?.Username;
 
-    public string LanguageCode { get; set; } = "en";
+    public string? LanguageCode { get; set; }
 
     public ILogger? Logger { get; set; } = TelebotServiceApp.Logger;
 
