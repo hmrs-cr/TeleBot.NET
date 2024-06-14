@@ -30,7 +30,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     public override string Description => "Internet Radio";
 
-    public override string Usage => "{play} {play}\n{list} {radio}";
+    public override string Usage => "{play} {radio}\n{list} {radio}";
 
     protected override bool CanAutoTurnOn => true;
 
