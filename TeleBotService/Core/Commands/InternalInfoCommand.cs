@@ -20,14 +20,13 @@ public class InternalInfoCommand : TelegramCommand
           .Append(user.FirstName)
           .Append(" (")
           .Append(user.Username)
+          .Append('@')
+          .Append(TelebotServiceApp.HostName)
           .Append(") V")
           .Append(TelebotServiceApp.Version)
           .Append('-')
           .Append(TelebotServiceApp.VersionLabel)
           .Append('-')
           .Append(TelebotServiceApp.VersionHash)
-          .AppendLine()
-          .Append("Running at ")
-          .Append(TelebotServiceApp.HostName)
           .ToString();
 }
