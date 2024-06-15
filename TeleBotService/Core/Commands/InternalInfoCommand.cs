@@ -28,6 +28,6 @@ public class InternalInfoCommand : TelegramCommand
           .Append(TelebotServiceApp.VersionHash)
           .AppendLine()
           .Append("Running at ")
-          .Append(System.Net.Dns.GetHostName())
+          .Append(TelebotServiceApp.HostName)
           .ToString();
 }

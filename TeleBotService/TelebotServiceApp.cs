@@ -24,6 +24,8 @@ public class TelebotServiceApp
     public static WebApplication? App { get; private set; }
     public static bool IsDev { get; private set; }
 
+    public static string? HostName { get; private set; }
+
     public static string LocalConfigPath { get; } = Path.Combine(Directory.GetCurrentDirectory(), "local-config");
 
     public static void Run(string[] args)
@@ -40,6 +42,7 @@ public class TelebotServiceApp
         Logger = App.Services.GetRequiredService<ILogger<TelebotServiceApp>>();
         var configVersion = builder.Configuration.GetValue<int>("ConfigVersion");
         VersionLabel = builder.Configuration.GetValue<string>("ServiceVersionLabel");
+        HostName = builder.Configuration.GetValue<string>("HOSTNAME") ?? System.Net.Dns.GetHostName();
 
         LogInformation("Starting service V{Version}-{VersionLabel}. Config version: '{configVersion}'", Version, VersionLabel, configVersion);
         VersionHash = GetVersionHash();
