@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
@@ -30,12 +29,12 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     public override string Description => "Internet Radio";
 
-    public override string Usage => "{play} {radio}\n{list} {radio}";
+    public override string Usage => "{play} {radio}";
 
     protected override bool CanAutoTurnOn => true;
 
     public override bool CanExecuteCommand(Message message) =>
-        this.ContainsText(message, "radio") && (this.ContainsText(message, "play") || this.ContainsText(message, "list"));
+        this.ContainsText(message, "radio") && this.ContainsText(message, "play");
 
     protected override async Task<int> ExecuteMusicPlayerCommand(
         MessageContext messageContext,
@@ -44,85 +43,64 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         CancellationToken cancellationToken = default)
     {
         var message = messageContext.Message;
-        if (this.ContainsText(message, "play"))
+        var radioName = message.Text?.Replace(Localize(message, "play"), string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace("play", string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace(Localize(message, "radio"), string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace("radio", string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace('_', ' ')
+                                     .Trim('/')
+                                     .Trim('_')
+                                     .Trim();
+
+        InternetRadioStationConfig? radio = null;
+        if (string.IsNullOrEmpty(radioName) || "random".Equals(radioName, StringComparison.OrdinalIgnoreCase))
         {
-            var radioName = message.Text?.Replace(Localize(message, "play"), string.Empty, StringComparison.OrdinalIgnoreCase)
-                                         .Replace("play", string.Empty, StringComparison.OrdinalIgnoreCase)
-                                         .Replace(Localize(message, "radio"), string.Empty, StringComparison.OrdinalIgnoreCase)
-                                         .Replace("radio", string.Empty, StringComparison.OrdinalIgnoreCase)
-                                         .Replace('_', ' ')
-                                         .Trim('/')
-                                         .Trim('_')
-                                         .Trim();
-
-            InternetRadioStationConfig? radio = null;
-            if (string.IsNullOrEmpty(radioName) || "random".Equals(radioName, StringComparison.OrdinalIgnoreCase))
-            {
-                radio = this.radioConfig.Stations?[Random.Shared.Next(this.radioConfig.Stations.Count)];
-            }
-            else if (int.TryParse(radioName, out var internalId) && (radio = this.radioConfig.Stations?.FirstOrDefault(r => r.InternalId == internalId)) != null)
-            {
-                // ??
-            }
-            else
-            {
-                radio = this.radioConfig.Stations?.FirstOrDefault(s => s.Id?.Contains(radioName) == true || s.Name?.Contains(radioName, StringComparison.InvariantCultureIgnoreCase) == true);
-            }
-
-            var url = await this.GetRadioUrl(radio);
-            if (url?.Url is { })
-            {
-                try
-                {
-                    var name = radio!.Name;
-                    if (name is { })
-                    {
-                        var radioLocalizedStr = Localize(message, "radio");
-                        name = name.Contains(radioLocalizedStr, StringComparison.OrdinalIgnoreCase) ? name : $"{radioLocalizedStr.Capitalize()} {name}";
-                    }
-
-                    if (url.IsContainer == true)
-                    {
-                        await playersConfig.Client.PlayPlaylist(name, url.Url);
-                    }
-                    else
-                    {
-                        await playersConfig.Client.PlayUrl(name, url.Url);
-                    }
-
-                    await this.Reply(message, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
-                    return ReplyPlayerStatusDelayLong;
-                }
-                catch (Exception)
-                {
-                   return 1000;
-                }
-
-            }
-            else
-            {
-                await this.Reply(message, this.Localize(message, "Can't find [radio]").Format(new { radio = radio?.Name ?? radioName }), cancellationToken);
-            }
+            radio = this.radioConfig.Stations?[Random.Shared.Next(this.radioConfig.Stations.Count)];
         }
-        else if (this.ContainsText(message, "list"))
+        else if (int.TryParse(radioName, out var internalId) && (radio = this.radioConfig.Stations?.FirstOrDefault(r => r.InternalId == internalId)) != null)
         {
-            if (this.radioConfig.Stations?.Count > 0)
+            // ??
+        }
+        else
+        {
+            radio = this.radioConfig.Stations?.FirstOrDefault(s => s.Id?.Contains(radioName) == true || s.Name?.Contains(radioName, StringComparison.InvariantCultureIgnoreCase) == true);
+        }
+
+        var url = await this.GetRadioUrl(radio);
+        if (url?.Url is { })
+        {
+            try
             {
-                var sb = new StringBuilder();
-                foreach (var radio in this.radioConfig.Stations)
+                var name = radio!.Name;
+                if (name is { })
                 {
-                    sb.Append("<b>").Append(radio.Name).Append("</b> (<i>").Append(radio.Id).Append("</i>) ==> ")
-                      .Append('/').Append(this.Localize(message, "play")).Append(this.Localize(message, "radio")).Append('_').AppendFormat("{0:D2}", radio.InternalId)
-                      .AppendLine();
+                    var radioLocalizedStr = Localize(message, "radio");
+                    name = name.Contains(radioLocalizedStr, StringComparison.OrdinalIgnoreCase) ? name : $"{radioLocalizedStr.Capitalize()} {name}";
                 }
 
-                await this.ReplyFormated(message, sb.ToString(), cancellationToken);
+                if (url.IsContainer == true)
+                {
+                    await playersConfig.Client.PlayPlaylist(name, url.Url);
+                }
+                else
+                {
+                    await playersConfig.Client.PlayUrl(name, url.Url);
+                }
+
+                await this.Reply(message, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
+                return ReplyPlayerStatusDelayLong;
             }
-            else
+            catch (Exception)
             {
-                await this.Reply(message, "No radio stations configured", cancellationToken);
+                return 1000;
             }
+
         }
+        else
+        {
+            await this.Reply(message, this.Localize(message, "Can't find [radio]").Format(new { radio = radio?.Name ?? radioName }), cancellationToken);
+        }
+
 
         return DoNotReplyPlayerStatus;
     }
@@ -133,7 +111,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         {
             return radio.Url != null ? radio : await this.memoryCache.GetOrCreateAsync(radio, async (k) =>
             {
-                k.AbsoluteExpirationRelativeToNow =  TimeSpan.FromHours(12);
+                k.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
                 return this.SaveDicoveredUrl(radio, await this.DiscoverRadioUrl(radio.Id));
             });
         }
