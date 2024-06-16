@@ -21,6 +21,8 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
 
     public override string Description => "Enable/disable music notifications";
 
+    public override bool IsAdmin => true;
+
     protected override Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playersConfig, MusicPlayersPresetConfig? musicPlayersPresetConfig, CancellationToken cancellationToken = default)
     {
         var message = messageContext.Message;

@@ -23,7 +23,7 @@ public class HelpCommand : TelegramCommand
         var sb = new StringBuilder();
         foreach (var commandGroup in this.telegramService
                                     .GetCommands()
-                                    .Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description))
+                                    .Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description) && !c.IsAdmin)
                                     .GroupBy(c =>  c.Description))
         {
             sb.Append("<b>").Append(Localize(message, commandGroup.Key)).Append(':').Append("</b>")
