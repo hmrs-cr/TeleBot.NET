@@ -240,10 +240,10 @@ public class TelegramService : ITelegramService
         return this.GetCommands().Where(c => c?.IsEnabled == true && c.CanExecuteCommand(message));
     }
 
-    private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    private async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         this.logger.LogWarning(exception, "Telegram API Error");
-        return Task.CompletedTask;
+        await Task.Delay(5000);
     }
 
     private IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
