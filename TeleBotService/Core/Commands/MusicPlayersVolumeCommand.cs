@@ -11,10 +11,10 @@ public class MusicPlayersVolumeCommand : MusicPlayerCommandBase
 
     public override string Description => "Control music volume";
 
-    public override string Usage => "{music} {volume} {up}\n{music} {volume} {down}\n{music} {volume} {low}\n{music} {volume} {half}\n{music} {volume} {high}";
+    public override string Usage => "{volume} {up}\n{volume} {down}\n{volume} {low}\n{volume} {half}\n{volume} {high}";
 
     public override bool CanExecuteCommand(Message message) =>
-        ContainsText(message, "volume") && ContainsText(message, "music") &&
+        ContainsText(message, "volume") &&
         (ContainsText(message, "up") || ContainsText(message, "down") || ContainsText(message, "high") || ContainsText(message, "half") || ContainsText(message, "low"));
 
     protected override async Task<int> ExecuteMusicPlayerCommand(MessageContext messageContext, PlayersConfig playerConfig, MusicPlayersPresetConfig? preset, CancellationToken cancellationToken = default)
