@@ -21,12 +21,19 @@ public class HelpCommand : TelegramCommand
     {
         var message = messageContext.Message;
         var sb = new StringBuilder();
-        foreach (var command in this.telegramService.GetCommands().Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description)))
+        foreach (var commandGroup in this.telegramService
+                                    .GetCommands()
+                                    .Where(c => c.IsEnabled && !string.IsNullOrEmpty(c.Usage) && !string.IsNullOrEmpty(c.Description))
+                                    .GroupBy(c =>  c.Description))
         {
-            sb.Append("<b>").Append(Localize(message, command.Description)).Append(':').Append("</b>")
+            sb.Append("<b>").Append(Localize(message, commandGroup.Key)).Append(':').Append("</b>")
               .AppendLine();
 
-            this.AddCommandUssage(command, message, sb);
+            foreach(var command in commandGroup)
+            {
+                this.AddCommandUssage(command, message, sb);
+            }
+
             sb.AppendLine();
         }
 
