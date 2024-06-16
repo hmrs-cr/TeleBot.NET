@@ -11,5 +11,6 @@ public class TelegramConfig
     public string? JoinBotServicesPassword { get; init; }
     public string? JoinBotServicesWatchword { get; init; }
     public Uri? FailedJoinPasswordImageUrl { get; init; }
+    public Uri? WelcomeImageUrl { get; init; }
     public string? DefaultLanguageCode { get; init; }
 }

@@ -103,7 +103,7 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
-            if (messageText == "/start" && this.config.JoinBotServicesWatchword != null)
+            if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
             {
                 _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
                 this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
@@ -111,24 +111,13 @@ public class TelegramService : ITelegramService
             }
             else
             {
-                if (messageText.Equals(this.config.JoinBotServicesPassword, StringComparison.InvariantCultureIgnoreCase))
+                if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
                 {
-                    _ = this.SentAdminMessage($"'{message.Chat.Username}' wants to join us.", cancellationToken);
-                    _ = this.Reply(message, "Correct! The admin will let you know when you are accepted.", cancellationToken);
-                }
-                else
-                {
-                    if (this.config.FailedJoinPasswordImageUrl != null)
-                    {
-                        var image = InputFile.FromUri(this.config.FailedJoinPasswordImageUrl);
-                        this.botClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: "👎", cancellationToken: cancellationToken);
-                    }
-                    else
-                    {
-                        _ = this.Reply(message, "👎", cancellationToken);
-                    }
+                    this.AcceptNewUser(message, cancellationToken);
+                    return Task.CompletedTask;
                 }
 
+                _ = this.RejectNewUser(message, cancellationToken);
                 this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
                 return Task.CompletedTask;
             }
@@ -140,6 +129,33 @@ public class TelegramService : ITelegramService
         _ = HandleCommands(messageContext, cancellationToken);
 
         return Task.CompletedTask;
+    }
+
+    private async Task RejectNewUser(Message message, CancellationToken cancellationToken)
+    {
+        await Task.Delay(2500);
+        await this.ReplyPhotoUrl(message, "👎",this.config.FailedJoinPasswordImageUrl, cancellationToken);
+    }
+
+    private void AcceptNewUser(Message message, CancellationToken cancellationToken)
+    {
+        this.users.AddNewUser(message.Chat.Username!);
+        this.logger.LogInformation("New user '{userName}' added", message.Chat.Username);
+
+        _ = this.SentAdminMessage($"'{message.Chat.Username}' joined the bot services.", cancellationToken);
+        _ = this.ReplyPhotoUrl(message, "Welcome! Write /Help to see what you can do.", this.config.WelcomeImageUrl, cancellationToken);
+    }
+
+    private Task ReplyPhotoUrl(Message message, string messageText, Uri? imageUrl, CancellationToken cancellationToken)
+    {
+        if (imageUrl != null)
+        {
+            var image = InputFile.FromUri(imageUrl);
+            messageText = this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, messageText);
+            return this.botClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: messageText, cancellationToken: cancellationToken);
+        }
+
+        return this.Reply(message, messageText, cancellationToken);
     }
 
     private async Task HandleCommands(MessageContext messageContext, CancellationToken cancellationToken)
