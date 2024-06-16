@@ -14,6 +14,7 @@ WORKDIR /App
 COPY --from=build /src/out .
 COPY --from=build /src/TeleBotService.sh .
 RUN chmod +x ./TeleBotService.sh
+RUN mkdir ./local-config
 
 RUN apt-get update \
     && apt-get install -y curl \
@@ -21,6 +22,7 @@ RUN apt-get update \
     && apt-get install -y speedtest
 
 RUN apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools
+
 
 ENTRYPOINT ["./TeleBotService.sh"]
 

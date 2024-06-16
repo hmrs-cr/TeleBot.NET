@@ -48,6 +48,11 @@ public class UsersConfig : Dictionary<string, UserData>
             var value = property.GetValue(user)?.ToString();
             if (value is { })
             {
+                if (!Directory.Exists(TelebotServiceApp.LocalConfigPath))
+                {
+                    Directory.CreateDirectory(TelebotServiceApp.LocalConfigPath);
+                }
+
                 var path = Path.Combine(TelebotServiceApp.LocalConfigPath, $"Users__{user.UserName}__{property.Name}");
                 _ = File.WriteAllTextAsync(path, value);
             }
