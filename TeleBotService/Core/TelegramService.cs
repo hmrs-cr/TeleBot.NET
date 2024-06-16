@@ -139,7 +139,7 @@ public class TelegramService : ITelegramService
 
     private void AcceptNewUser(Message message, CancellationToken cancellationToken)
     {
-        this.users.AddNewUser(message.Chat.Username!);
+        this.users.AddNewUser(message.Chat.Username!, message.GetContext().LanguageCode ?? "en");
         this.logger.LogInformation("New user '{userName}' added", message.Chat.Username);
 
         _ = this.SentAdminMessage($"'{message.Chat.Username}' joined the bot services.", cancellationToken);
