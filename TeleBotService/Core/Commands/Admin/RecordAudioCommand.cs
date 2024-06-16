@@ -5,7 +5,7 @@ using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
-namespace TeleBotService.Core.Commands;
+namespace TeleBotService.Core.Commands.Admin;
 
 public class RecordAudioCommand : TelegramCommand
 {
@@ -20,6 +20,8 @@ public class RecordAudioCommand : TelegramCommand
         this.opusencExecPath = config.Value.OpusEnc ?? "/usr/bin/opusenc";
         this.mkfifoExecPath = config.Value.MKFifo ?? "/usr/bin/mkfifo";
     }
+
+    public override bool IsAdmin => true;
 
     public override string CommandString => "arecord";
 
