@@ -29,6 +29,8 @@ public class TelegramService : ITelegramService
     private readonly UsersConfig users;
     private readonly ILogger<TelegramService> logger;
 
+    private readonly Lazy<Task<User>> myInfo;
+
     public TelegramService(
         IOptions<TelegramConfig> confif,
         ILocalizationResolver localizationResolver,
@@ -49,9 +51,10 @@ public class TelegramService : ITelegramService
         this.userSettingsRepository = userSettingsRepository;
         this.users = users.Value;
         this.logger = logger;
+        this.myInfo = new(() => this.botClient.GetMeAsync());
     }
 
-    public Task<User> GetInfo() => this.botClient.GetMeAsync();
+    public Task<User> GetInfo() => this.myInfo.Value;
 
     public IEnumerable<ITelegramCommand> GetCommands() => this.commandInstances ??= this.GetCommandInstances();
 
@@ -64,31 +67,20 @@ public class TelegramService : ITelegramService
             cancellationToken: cts.Token
         );
 
-        _ = this.SetUpCommandsIfNeeded();
-
         if (!TelebotServiceApp.IsDev)
         {
-            _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", cancellationToken);
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (!TelebotServiceApp.IsDev)
+        if (!cts.IsCancellationRequested)
         {
-            await this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", default);
+            cts.Cancel();
+            cts.Dispose();
         }
-        cts.Cancel();
-        cts.Dispose();
-    }
-
-    private Task SetUpCommandsIfNeeded()
-    {
-        /*var commands = await this.botClient.GetMyCommandsAsync();
-        if (commands.Length == 0)
-        {
-        }*/
-        return Task.CompletedTask;
     }
 
     private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -134,7 +126,7 @@ public class TelegramService : ITelegramService
     private async Task RejectNewUser(Message message, CancellationToken cancellationToken)
     {
         await Task.Delay(2500);
-        await this.ReplyPhotoUrl(message, "👎",this.config.FailedJoinPasswordImageUrl, cancellationToken);
+        await this.ReplyPhotoUrl(message, "👎", this.config.FailedJoinPasswordImageUrl, cancellationToken);
     }
 
     private void AcceptNewUser(Message message, CancellationToken cancellationToken)
@@ -228,7 +220,7 @@ public class TelegramService : ITelegramService
     private IEnumerable<ITelegramCommand> GetCommands(MessageContext messageContext)
     {
         var message = messageContext.Message;
-        var context =messageContext.Context;
+        var context = messageContext.Context;
         var lastPromptMessage = context.LastPromptMessage;
         if (!string.IsNullOrEmpty(lastPromptMessage?.Text) && !string.IsNullOrEmpty(message.Text))
         {

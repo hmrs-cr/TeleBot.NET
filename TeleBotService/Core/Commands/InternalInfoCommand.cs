@@ -7,11 +7,18 @@ namespace TeleBotService.Core.Commands;
 
 public class InternalInfoCommand : TelegramCommand
 {
+    private readonly ITelegramService telegramService;
+
     public override string CommandString => "info";
+
+    public InternalInfoCommand(ITelegramService telegramService)
+    {
+        this.telegramService = telegramService;
+    }
 
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
-        var myInfo = await this.BotClient!.GetMeAsync();
+        var myInfo = await this.telegramService.GetInfo();
         var internalInfo = GetInternalInfoString(myInfo);
         await this.Reply(messageContext.Message, internalInfo);
     }
