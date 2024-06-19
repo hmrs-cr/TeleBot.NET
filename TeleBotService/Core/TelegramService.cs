@@ -88,6 +88,7 @@ public class TelegramService : ITelegramService
         // Only process Message updates: https://core.telegram.org/bots/api#message
         if (update.Message is not { } message)
             return Task.CompletedTask;
+
         // Only process text messages
         if (message.Text is not { } messageText)
             return Task.CompletedTask;
