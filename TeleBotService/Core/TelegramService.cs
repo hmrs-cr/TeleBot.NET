@@ -95,24 +95,8 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
-            if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
-            {
-                _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
-                this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
-                return Task.CompletedTask;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
-                {
-                    this.AcceptNewUser(message, cancellationToken);
-                    return Task.CompletedTask;
-                }
-
-                _ = this.RejectNewUser(message, cancellationToken);
-                this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
-                return Task.CompletedTask;
-            }
+            this.HandleUnknownUser(message, cancellationToken);
+            return Task.CompletedTask;
         }
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
@@ -121,6 +105,29 @@ public class TelegramService : ITelegramService
         _ = HandleCommands(messageContext, cancellationToken);
 
         return Task.CompletedTask;
+    }
+
+    private void HandleUnknownUser(Message message, CancellationToken cancellationToken)
+    {
+        var messageText = message.Text ?? string.Empty;
+        if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
+            {
+                _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
+                this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
+                return;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
+                {
+                    this.AcceptNewUser(message, cancellationToken);
+                    return;
+                }
+
+                _ = this.RejectNewUser(message, cancellationToken);
+                this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
+                return;
+            }
     }
 
     private async Task RejectNewUser(Message message, CancellationToken cancellationToken)
