@@ -29,6 +29,8 @@ public class TelegramService : ITelegramService
     private readonly UsersConfig users;
     private readonly ILogger<TelegramService> logger;
 
+    private readonly Lazy<Task<User>> myInfo;
+
     public TelegramService(
         IOptions<TelegramConfig> confif,
         ILocalizationResolver localizationResolver,
@@ -49,9 +51,10 @@ public class TelegramService : ITelegramService
         this.userSettingsRepository = userSettingsRepository;
         this.users = users.Value;
         this.logger = logger;
+        this.myInfo = new(() => this.botClient.GetMeAsync());
     }
 
-    public Task<User> GetInfo() => this.botClient.GetMeAsync();
+    public Task<User> GetInfo() => this.myInfo.Value;
 
     public IEnumerable<ITelegramCommand> GetCommands() => this.commandInstances ??= this.GetCommandInstances();
 
@@ -64,31 +67,20 @@ public class TelegramService : ITelegramService
             cancellationToken: cts.Token
         );
 
-        _ = this.SetUpCommandsIfNeeded();
-
         if (!TelebotServiceApp.IsDev)
         {
-            _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", cancellationToken);
         }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
-        if (!TelebotServiceApp.IsDev)
+        if (!cts.IsCancellationRequested)
         {
-            await this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.botClient.GetMeAsync())}", cancellationToken);
+            _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", default);
+            cts.Cancel();
+            cts.Dispose();
         }
-        cts.Cancel();
-        cts.Dispose();
-    }
-
-    private Task SetUpCommandsIfNeeded()
-    {
-        /*var commands = await this.botClient.GetMyCommandsAsync();
-        if (commands.Length == 0)
-        {
-        }*/
-        return Task.CompletedTask;
     }
 
     private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -96,6 +88,7 @@ public class TelegramService : ITelegramService
         // Only process Message updates: https://core.telegram.org/bots/api#message
         if (update.Message is not { } message)
             return Task.CompletedTask;
+
         // Only process text messages
         if (message.Text is not { } messageText)
             return Task.CompletedTask;
@@ -103,24 +96,8 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
-            if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
-            {
-                _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
-                this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
-                return Task.CompletedTask;
-            }
-            else
-            {
-                if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
-                {
-                    this.AcceptNewUser(message, cancellationToken);
-                    return Task.CompletedTask;
-                }
-
-                _ = this.RejectNewUser(message, cancellationToken);
-                this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
-                return Task.CompletedTask;
-            }
+            this.HandleUnknownUser(message, cancellationToken);
+            return Task.CompletedTask;
         }
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
@@ -131,10 +108,33 @@ public class TelegramService : ITelegramService
         return Task.CompletedTask;
     }
 
+    private void HandleUnknownUser(Message message, CancellationToken cancellationToken)
+    {
+        var messageText = message.Text ?? string.Empty;
+        if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
+            {
+                _ = botClient.SendTextMessageAsync(chatId: message.Chat.Id, text: this.config.JoinBotServicesWatchword, cancellationToken: cancellationToken);
+                this.logger.LogInformation("Unknown user {messageChatUsername}:{messageChatId} is starting bot", message.Chat.Username, message.Chat.Id);
+                return;
+            }
+            else
+            {
+                if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
+                {
+                    this.AcceptNewUser(message, cancellationToken);
+                    return;
+                }
+
+                _ = this.RejectNewUser(message, cancellationToken);
+                this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
+                return;
+            }
+    }
+
     private async Task RejectNewUser(Message message, CancellationToken cancellationToken)
     {
         await Task.Delay(2500);
-        await this.ReplyPhotoUrl(message, "👎",this.config.FailedJoinPasswordImageUrl, cancellationToken);
+        await this.ReplyPhotoUrl(message, "👎", this.config.FailedJoinPasswordImageUrl, cancellationToken);
     }
 
     private void AcceptNewUser(Message message, CancellationToken cancellationToken)
@@ -228,7 +228,7 @@ public class TelegramService : ITelegramService
     private IEnumerable<ITelegramCommand> GetCommands(MessageContext messageContext)
     {
         var message = messageContext.Message;
-        var context =messageContext.Context;
+        var context = messageContext.Context;
         var lastPromptMessage = context.LastPromptMessage;
         if (!string.IsNullOrEmpty(lastPromptMessage?.Text) && !string.IsNullOrEmpty(message.Text))
         {
