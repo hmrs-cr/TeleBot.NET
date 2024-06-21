@@ -39,5 +39,5 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         }
     }
 
-    private RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}:urls";
+    private static RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}:urls";
 }

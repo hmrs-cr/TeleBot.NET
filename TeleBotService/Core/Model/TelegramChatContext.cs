@@ -101,7 +101,7 @@ public class TelegramChatContext
                         }
 
 
-                        this.Logger?.LogInformation($"Status notification delay: {delay / 1000}s");
+                        this.Logger?.LogDebug($"Status notification delay: {delay / 1000}s");
                         await Task.Delay(delay, this.playerStatusNotificationCts.Token);
                     }
                 }
