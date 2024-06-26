@@ -43,10 +43,13 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         CancellationToken cancellationToken = default)
     {
         var message = messageContext.Message;
+        // Need to figure out a better way to implement this:
         var radioName = message.Text?.Replace(Localize(message, "play"), string.Empty, StringComparison.OrdinalIgnoreCase)
                                      .Replace("play", string.Empty, StringComparison.OrdinalIgnoreCase)
                                      .Replace(Localize(message, "radio"), string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace(Localize(message, " in "), string.Empty, StringComparison.OrdinalIgnoreCase)
                                      .Replace("radio", string.Empty, StringComparison.OrdinalIgnoreCase)
+                                     .Replace(playersConfig.Name!, string.Empty, StringComparison.OrdinalIgnoreCase)
                                      .Replace('_', ' ')
                                      .Trim('/')
                                      .Trim('_')
