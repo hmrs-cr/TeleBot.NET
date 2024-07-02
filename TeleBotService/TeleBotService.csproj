@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Linkplay.HttpApi\Linkplay.HttpApi.csproj" />
+    <ProjectReference Include="..\Omada.OpenApi.Client\Omada.OpenApi.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "QWzH6BF16b+ORWx7xcDPTJ9F3Mv7q7VDVPjQ9tnD25G5mHNywqx6MaUqiEgcrHYHeGOo+PrmMdufHm9gu1N+NQ==",
+  "success": true,
+  "projectFilePath": "/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/Omada.OpenApi.Client.csproj",
+  "expectedPackageFiles": [
+    "/Users/hectormauriciorodriguez/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/8.0.0/microsoft.extensions.dependencyinjection.abstractions.8.0.0.nupkg.sha512",
+    "/Users/hectormauriciorodriguez/.nuget/packages/microsoft.extensions.options/8.0.0/microsoft.extensions.options.8.0.0.nupkg.sha512",
+    "/Users/hectormauriciorodriguez/.nuget/packages/microsoft.extensions.primitives/8.0.0/microsoft.extensions.primitives.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

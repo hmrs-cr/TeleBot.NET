@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TeleBotService", "TeleBotSe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linkplay.HttpApi", "Linkplay.HttpApi\Linkplay.HttpApi.csproj", "{9EB24338-49E7-402D-95C7-AA6FCED59E78}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Omada.OpenApi.Client", "Omada.OpenApi.Client\Omada.OpenApi.Client.csproj", "{B2AF25CE-D8E5-4D65-8722-828D6B3DE611}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9EB24338-49E7-402D-95C7-AA6FCED59E78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2AF25CE-D8E5-4D65-8722-828D6B3DE611}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2AF25CE-D8E5-4D65-8722-828D6B3DE611}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2AF25CE-D8E5-4D65-8722-828D6B3DE611}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2AF25CE-D8E5-4D65-8722-828D6B3DE611}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

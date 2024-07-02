@@ -1,0 +1,13 @@
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/bin/Debug/net8.0/Omada.OpenApi.Client.deps.json
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/bin/Debug/net8.0/Omada.OpenApi.Client.dll
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/bin/Debug/net8.0/Omada.OpenApi.Client.pdb
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.csproj.AssemblyReference.cache
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.GeneratedMSBuildEditorConfig.editorconfig
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.AssemblyInfoInputs.cache
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.AssemblyInfo.cs
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.csproj.CoreCompileInputs.cache
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.sourcelink.json
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.dll
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/refint/Omada.OpenApi.Client.dll
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/Omada.OpenApi.Client.pdb
+/Users/hectormauriciorodriguez/Projects/TeleBot/Omada.OpenApi.Client/obj/Debug/net8.0/ref/Omada.OpenApi.Client.dll
