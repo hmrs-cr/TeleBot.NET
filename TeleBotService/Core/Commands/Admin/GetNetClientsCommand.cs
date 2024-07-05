@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Omada.OpenApi.Client;
+using Omada.OpenApi.Client.Responses;
 using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 
@@ -9,7 +10,7 @@ public class GetNetClientsCommand : TelegramCommand
 {
     private static string SignalLevels = "⁰¹²³⁴⁵";
 
-    private readonly IOmadaOpenApiClient omadaClient;
+    protected readonly IOmadaOpenApiClient omadaClient;
 
     public GetNetClientsCommand(IOmadaOpenApiClient omadaClient)
     {
@@ -17,9 +18,9 @@ public class GetNetClientsCommand : TelegramCommand
     }
 
     public override bool IsAdmin => true;
-    public override string CommandString => "/NetClients";
+    public override string CommandString => "/GetNetClients";
 
-    public override string Usage => "/NetClients\n/NetClients_All";
+    public override string Usage => "/GetNetClients\n/GetNetClients_All";
 
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
@@ -36,13 +37,7 @@ public class GetNetClientsCommand : TelegramCommand
                 sb.Append("<pre>");
                 foreach (var client in clients)
                 {
-                    sb.Append("<b>").Append(client.Name).Append("</b>")
-                      .AppendSpaces(maxClientNameLen - client.Name.Length + 1)
-                      .Append(" <i>[")
-                      .Append(client.Ssid ?? client.NetworkName)
-                      .Append('@').Append(client.ApName ?? client.SwitchName ?? client.GatewayName).Append("]</i>")
-                      .Append(client.Wireless ? SignalLevels[client.SignalRank] : string.Empty)
-                      .AppendLine();
+                    AppendClientData(sb, client, maxClientNameLen);
                 }
                 sb.Append("</pre>");
 
@@ -58,4 +53,13 @@ public class GetNetClientsCommand : TelegramCommand
             _ = this.Reply(messageContext.Message, response.Msg, cancellationToken);
         }
     }
+
+    protected static StringBuilder AppendClientData(StringBuilder sb, ClientData client, int maxClientNameLen) =>
+        sb.Append("<b>").Append(client.Name).Append("</b>")
+          .AppendSpaces(maxClientNameLen - client.Name.Length + 1)
+          .Append(" <i>[")
+          .Append(client.Ssid ?? client.NetworkName)
+          .Append('@').Append(client.ApName ?? client.SwitchName ?? client.GatewayName).Append("]</i>")
+          .Append(client.Wireless ? SignalLevels[client.SignalRank] : string.Empty)
+          .AppendLine();
 }
