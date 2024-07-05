@@ -138,13 +138,6 @@ public static class RegistrationExtensions
         return services;
     }
 
-     public static IServiceCollection AddOmadaOpenApiClient(this IServiceCollection services, IConfigurationManager config)
-    {
-        services.Configure<OmadaClientConfig>(config.GetSection(OmadaClientConfig.OmadaClientConfigName))
-                .AddSingleton<OmadaOpenApiClient>();
-        return services;
-    }
-
     public static IServiceCollection AddTelegramServiceInfrastructure(this IServiceCollection services, IConfigurationManager configuration) =>
         services.Configure<TelegramConfig>(configuration.GetSection(TelegramConfig.TelegramConfigName))
                 .Configure<MusicPlayersConfig>(configuration.GetSection(MusicPlayersConfig.MusicPlayersConfigName))
@@ -191,7 +184,7 @@ public static class RegistrationExtensions
     {
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("test", async ([FromServices]OmadaOpenApiClient omadaClient) =>
+            app.MapGet("test", async ([FromServices]IOmadaOpenApiClient omadaClient) =>
             {
 
                 ///var account = new Account("camera_ip", "camera_username", "camera_password");
@@ -204,7 +197,7 @@ public static class RegistrationExtensions
                 //var client = new LinkplayHttpApiClient("192.168.100.104");
                 //return client.GetDeviceStatus();
 
-                return await omadaClient.GetAuthorizeToken("client_credentials");
+                return await omadaClient.GetClients();
 
             }).WithName("GetAuthorizeToken").WithOpenApi();
         }
