@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Omada.OpenApi.Client.Responses;
 
 public record ClientData
@@ -21,27 +23,36 @@ public record ClientData
     public string? ApMac { get; init; }
     public int RadioId { get; init; }
     public int Channel { get; init; }
-    public int RxRate { get; init; }
-    public int TxRate { get; init; }
+    public long RxRate { get; init; }
+    public long TxRate { get; init; }
     public bool PowerSave { get; init; }
     public int Rssi { get; init; }
     public int Snr { get; init; }
     public int Vid { get; init; }
     public string? Dot1xIdentity { get; init; }
-    public int Activity { get; init; }
-    public int TrafficDown { get; init; }
-    public int TrafficUp { get; init; }
-    public int Uptime { get; init; }
+    public long Activity { get; init; }
+    public long TrafficDown { get; init; }
+    public long TrafficUp { get; init; }
+    public long Uptime { get; init; }
     public long LastSeen { get; init; }
     public int AuthStatus { get; init; }
     public bool Guest { get; init; }
     public bool Active { get; init; }
     public bool Manager { get; init; }
-    public int DownPacket { get; init; }
-    public int UpPacket { get; init; }
+    public long DownPacket { get; init; }
+    public long UpPacket { get; init; }
     public bool Support5g2 { get; init; }
     public string? GatewayMac { get; init; }
     public string? GatewayName { get; init; }
     public string? SwitchName { get; init; }
     public string? NetworkName { get; init; }
+
+    [JsonIgnore]
+    public int? Index { get; private set; }
+
+    public ClientData SetIndex(int i)
+    {
+        this.Index = i;
+        return this;
+    }
 }

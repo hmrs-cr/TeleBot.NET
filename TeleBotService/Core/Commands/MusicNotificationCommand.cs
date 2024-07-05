@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
-using TeleBotService.Extensions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;

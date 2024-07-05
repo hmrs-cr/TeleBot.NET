@@ -74,15 +74,7 @@ public static partial class StringExtension
         return sb.ToString();
     }
 
-    public static StringBuilder AppendSpaces(this StringBuilder sb, int count)
-    {
-        for (var c = 1; c <= count; c++)
-        {
-            sb.Append(' ');
-        }
-
-        return sb;
-    }
+    public static StringBuilder AppendSpaces(this StringBuilder sb, int count) => sb.Append(' ', count);
 
     [GeneratedRegex(@"\[(.*?)\]")]
     private static partial Regex ResolveSquareTokensRegex();

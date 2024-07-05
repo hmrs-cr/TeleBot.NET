@@ -104,13 +104,19 @@ public abstract class TelegramCommand : ITelegramCommand
             return this.ReplyFormated(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
         }
 
-         return this.ReplyFormated(message, prompt, cancellationToken);
+        return this.ReplyFormated(message, prompt, cancellationToken);
     }
 
     protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
                chatId: message.Chat.Id,
                text: replyMessage,
                replyToMessageId: message.MessageId,
+               parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
+               cancellationToken: cancellationToken) ?? Task.CompletedTask;
+    protected Task ReplyFormated(long chatId, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
+               chatId: chatId,
+               text: replyMessage,
+               replyToMessageId: null,
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
