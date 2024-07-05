@@ -9,3 +9,5 @@ TeleBotService/buildinfo
 TeleBotService/appsettings.InternetRadio.json
 /TeleBotService/local-config
 TeleBotService/appsettings.Staging.json
+/Omada.OpenApi.Client/bin
+/Omada.OpenApi.Client/obj

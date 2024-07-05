@@ -2,6 +2,8 @@
 using System.Text.Json.Serialization;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
+using Omada.OpenApi.Client;
+using Omada.OpenApi.Client.Config;
 using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Data.Redis;
@@ -146,6 +148,7 @@ public static class RegistrationExtensions
                 .AddHostedService(s => s.GetService<ITelegramService>()!)
                 .AddMemoryCache()
                 .AddRedisRepositories(configuration)
+                .AddOmadaOpenApiClient(configuration)
                 .AddInternertRadioConfig(configuration)
                 .AddRemoteConfig(configuration)
                 .AddLocalFileConfig(configuration)
@@ -181,7 +184,7 @@ public static class RegistrationExtensions
     {
         if (app.Environment.IsDevelopment())
         {
-            app.MapGet("test", () =>
+            app.MapGet("test", async ([FromServices]IOmadaOpenApiClient omadaClient) =>
             {
 
                 ///var account = new Account("camera_ip", "camera_username", "camera_password");
@@ -194,7 +197,9 @@ public static class RegistrationExtensions
                 //var client = new LinkplayHttpApiClient("192.168.100.104");
                 //return client.GetDeviceStatus();
 
-            }).WithName("GetNetworkStatus").WithOpenApi();
+                return await omadaClient.GetClients();
+
+            }).WithName("GetAuthorizeToken").WithOpenApi();
         }
 
         return app;
