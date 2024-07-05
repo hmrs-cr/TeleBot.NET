@@ -4,7 +4,7 @@ public record ClientData
 {
     public required string Mac { get; init; }
     public required string Name { get; init; }
-    public required string HostName { get; init; }
+    public string? HostName { get; init; }
     public required string DeviceType { get; init; }
     public required string Ip { get; init; }
     public IReadOnlyList<string>? Ipv6List { get; init; }
