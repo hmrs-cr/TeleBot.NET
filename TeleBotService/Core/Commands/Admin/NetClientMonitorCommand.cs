@@ -120,7 +120,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand
                 }
 
                 this.prevClientList = currClientList;
-                await Task.Delay(TimeSpan.FromSeconds(66));
+                await Task.Delay(TimeSpan.FromMinutes(6));
             }
             catch (Exception e)
             {
