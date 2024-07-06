@@ -24,14 +24,11 @@ public class GetNetClientsCommand : TelegramCommand
 
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
-        var response = await this.omadaClient.GetClients();
+       var response = await this.omadaClient.GetClients();
         if (response.IsOk)
         {
-            if (response?.Result is {} resul && resul.TotalRows > 0)
+            if (response?.Result is { } resul && resul.TotalRows > 0 && this.GetClientList(messageContext, resul) is { } clients && clients.Count > 0)
             {
-                var allClients = messageContext.Message.Text!.Contains("all", StringComparison.InvariantCultureIgnoreCase);
-
-                var clients = resul.Data.Where(c => allClients || this.omadaClient.IsTempClient(c)).OrderBy(c => c.Ssid).ThenBy(c => c.ApName).ToList();
                 var maxClientNameLen = clients.Max(c => c.Name.Length);
                 var sb = new StringBuilder();
                 sb.Append("<pre>");
@@ -45,13 +42,20 @@ public class GetNetClientsCommand : TelegramCommand
             }
             else
             {
-                 _ = this.Reply(messageContext.Message, "No connected clients", cancellationToken);
+                _ = this.Reply(messageContext.Message, "No connected clients", cancellationToken);
             }
         }
         else
         {
             _ = this.Reply(messageContext.Message, response.Msg, cancellationToken);
         }
+    }
+
+    private IReadOnlyList<BasicClientData> GetClientList(MessageContext messageContext, ClientsPagedResult resul)
+    {
+        var allClients = messageContext.Message.Text!.Contains("all", StringComparison.InvariantCultureIgnoreCase);
+        var clients = resul.Data.Where(c => allClients || this.omadaClient.IsTempClient(c)).OrderBy(c => c.Ssid).ThenBy(c => c.ApName).ToList();
+        return clients;
     }
 
     protected static StringBuilder AppendClientData(StringBuilder sb, BasicClientData client, int maxClientNameLen) =>
