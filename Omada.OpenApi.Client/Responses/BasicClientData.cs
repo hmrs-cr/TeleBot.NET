@@ -16,8 +16,6 @@ public record BasicClientData
     public string? SwitchName { get; init; }
     public string? NetworkName { get; init; }
 
-    public DateTimeOffset LastSeenDateTime => DateTimeOffset.FromUnixTimeMilliseconds(this.LastSeen);
-
     [JsonIgnore]
     public int? Index { get; private set; }
 
