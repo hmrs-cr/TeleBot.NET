@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using System.Text.Json;
 using Omada.OpenApi.Client;
 using Omada.OpenApi.Client.Responses;
 using TeleBotService.Core.Model;
@@ -87,10 +88,12 @@ public class NetClientMonitorCommand : GetNetClientsCommand
                     {
                         messageBuilder ??= new StringBuilder().Append("<pre>");
                         messageBuilder.AppendLine("NEWLY CONNECTED CLIENTS:");
+                        logger.LogDebug("NEWLY CONNECTED CLIENTS:");
                         maxClientNameLen = clientAdded.Name.Length;
                     }
 
                     AppendClientData(messageBuilder!, clientAdded, maxClientNameLen);
+                    this.logger.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                 }
 
                 foreach (var clientRemoved in removedClients)
@@ -104,18 +107,22 @@ public class NetClientMonitorCommand : GetNetClientsCommand
                         }
 
                         messageBuilder.AppendLine("JUST DISCONNECTED CLIENTS:");
+                        logger.LogDebug("JUST DISCONNECTED CLIENTS:");
                         maxClientNameLen = clientRemoved.Name.Length;
                     }
 
                     AppendClientData(messageBuilder!, clientRemoved, maxClientNameLen);
+                    this.logger.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                 }
 
                 if (messageBuilder?.Length > 0)
                 {
                     messageBuilder.Append("</pre>");
+                    var message = messageBuilder.ToString();
+
                     foreach (var chatId in monitorData.NotifyUserList)
                     {
-                        await this.ReplyFormated(chatId, messageBuilder.ToString());
+                        await this.ReplyFormated(chatId, message);
                     }
                 }
 
