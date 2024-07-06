@@ -5,5 +5,5 @@ namespace Omada.OpenApi.Client;
 public interface IOmadaOpenApiClient
 {
     Task<ClientsResponse> GetClients(int page = 1, int pageSize = 100);
-    bool IsTempClient(ClientData client);
+    bool IsTempClient(BasicClientData client);
 }

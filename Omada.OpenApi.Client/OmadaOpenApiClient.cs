@@ -90,7 +90,7 @@ public class OmadaOpenApiClient : IOmadaOpenApiClient
         return ClientsResponse.FailedResponse;
     }
 
-    public bool IsTempClient(ClientData client) => this.config.PermanentNetClients is { } permanentNetClients && !permanentNetClients.Contains(client.Mac);
+    public bool IsTempClient(BasicClientData client) => this.config.PermanentNetClients is { } permanentNetClients && !permanentNetClients.Contains(client.Mac);
 
     private Uri GetPagedRequestUrl(string endPoint, int page, int pageSize) => new UriBuilder(this.config.ClientConfig.BaseUrl)
     {
