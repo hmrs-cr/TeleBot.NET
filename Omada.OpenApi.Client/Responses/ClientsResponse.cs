@@ -9,7 +9,7 @@ public record ClientsResponse : OmadaResponse<ClientsPagedResult>
     };
 }
 
-public record ClientsPagedResult : PagedResult<ClientData>
+public record ClientsPagedResult : PagedResult<BasicClientData>
 {
     public required ClientStats ClientStat { get; init; }
 }

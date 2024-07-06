@@ -54,7 +54,7 @@ public class GetNetClientsCommand : TelegramCommand
         }
     }
 
-    protected static StringBuilder AppendClientData(StringBuilder sb, ClientData client, int maxClientNameLen) =>
+    protected static StringBuilder AppendClientData(StringBuilder sb, BasicClientData client, int maxClientNameLen) =>
         sb.Append("<b>").Append(client.Name).Append("</b>")
           .AppendSpaces(maxClientNameLen - client.Name.Length + 1)
           .Append(" <i>[")

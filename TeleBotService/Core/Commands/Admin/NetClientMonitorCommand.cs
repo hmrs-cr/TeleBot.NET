@@ -10,7 +10,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand
 {
     private static readonly object taskCreationLock = new();
 
-    private Dictionary<string, ClientData>? prevClientList;
+    private Dictionary<string, BasicClientData>? prevClientList;
     private readonly ILogger<NetClientMonitorCommand> logger;
 
     public NetClientMonitorCommand(IOmadaOpenApiClient omadaClient, ILogger<NetClientMonitorCommand> logger) : base(omadaClient)
