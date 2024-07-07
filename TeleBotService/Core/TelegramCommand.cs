@@ -15,7 +15,7 @@ public abstract class TelegramCommand : ITelegramCommand
     private bool isExecuting;
 
     [JsonIgnore]
-    public TelegramBotClient? BotClient { get; init; }
+    public ITelegramBotClient? BotClient { get; private set; }
 
     public virtual bool IsEnabled => true;
 
@@ -30,9 +30,11 @@ public abstract class TelegramCommand : ITelegramCommand
     public virtual string CommandString => string.Empty;
 
 [   JsonIgnore]
-    public ILocalizationResolver? LocalizationResolver { get; init; }
+    public ILocalizationResolver? LocalizationResolver { get; private set; }
 
     public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
+
+    public virtual void Configure(IConfiguration config) {  }
 
     protected ILogger? Logger { get; init; }
 
@@ -172,6 +174,14 @@ public abstract class TelegramCommand : ITelegramCommand
     public void LogError(Exception e, string message, params object?[] args) => this.Logger?.LogError(e, message, args);
     public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
     public void LogError(string message) => this.Logger?.LogError(message);
+
+    internal TelegramCommand Init(ITelegramBotClient botClient, ILocalizationResolver localizationResolver, IConfiguration configuration)
+    {
+        this.BotClient = botClient;
+        this.LocalizationResolver = localizationResolver;
+        this.Configure(configuration);
+        return this;
+    }
 }
 
 public static class TelegramCommandRegistrationExtensions
