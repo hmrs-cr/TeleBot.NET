@@ -83,29 +83,27 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         // Only process Message updates: https://core.telegram.org/bots/api#message
         if (update.Message is not { } message)
-            return Task.CompletedTask;
+            return ;
 
         // Only process text messages
         if (message.Text is not { } messageText)
-            return Task.CompletedTask;
+            return;
 
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
             this.HandleUnknownUser(message, cancellationToken);
-            return Task.CompletedTask;
+            return;
         }
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
 
         var messageContext = new MessageContext(message, user);
         _ = HandleCommands(messageContext, cancellationToken);
-
-        return Task.CompletedTask;
     }
 
     private void HandleUnknownUser(Message message, CancellationToken cancellationToken)

@@ -12,6 +12,8 @@ public abstract class TelegramCommand : ITelegramCommand
     private readonly Task<bool> TaskTrueResult = Task.FromResult(true);
     private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
 
+    private bool isExecuting;
+
     [JsonIgnore]
     public TelegramBotClient? BotClient { get; init; }
 
@@ -24,8 +26,6 @@ public abstract class TelegramCommand : ITelegramCommand
     public virtual string Description => string.Empty;
 
     public virtual string Usage => this.CommandString;
-
-    public virtual bool CanBeExecuteConcurrently => false;
 
     public virtual string CommandString => string.Empty;
 
@@ -44,6 +44,7 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
+                this.isExecuting = true;
                 var task = this.Execute(messageContext, cancellationToken);
                 context.AddExecutingTask(task);
                 await task;
@@ -54,6 +55,7 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
+                this.isExecuting = false;
                 await this.EndExecuting(messageContext, cancellationToken);
                 context.IsPromptReplyMessage = false;
                 context.RemoveFinishedTasks();
@@ -65,7 +67,7 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected virtual Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
-        if (!this.CanBeExecuteConcurrently && messageContext.Context.GetExecutingTaskCount() > 0)
+        if (this.isExecuting)
         {
             return TaskFalseResult;
         }
