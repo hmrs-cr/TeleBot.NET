@@ -1,17 +1,37 @@
-﻿using StackExchange.Redis;
+﻿using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 using TeleBotService.Config;
 
 namespace TeleBotService.Data.Redis;
 
 public class UsersRedisRepository : IUsersRepository
 {
+    private readonly UsersConfig users;
     private readonly LazyRedis redis;
     private readonly ILogger<UsersRedisRepository> logger;
 
-    public UsersRedisRepository(LazyRedis redis, ILogger<UsersRedisRepository> logger)
+    public UsersRedisRepository(
+        IOptions<UsersConfig> users,
+        LazyRedis redis,
+        ILogger<UsersRedisRepository> logger)
     {
+        this.users = users.Value;
         this.redis = redis;
         this.logger = logger;
+    }
+
+    public async IAsyncEnumerable<long> GetNetClientMonitorChatIds()
+    {
+        var database = await redis.GetDatabaseAsync();
+        var keys = users.Select(u => GetHashKey(u.Key));
+        foreach (var key in keys)
+        {
+            var value = await database.HashGetAsync(key, UserData.NetClientMonitorChatIdKeyName);
+            if (value is { } && value.HasValue)
+            {
+                yield return (long)value;
+            }
+        }
     }
 
     public async ValueTask<bool> SaveUserSettings(UserData user, UserSettings settings)
@@ -24,11 +44,21 @@ public class UsersRedisRepository : IUsersRepository
 
         try
         {
-            var entries = settings.Select(s => new HashEntry(s.Key, s.Value)).ToArray();
-            if (entries.Length > 0)
+            var entries = settings.Where(s => s.Value != UserData.DeleteSettingValue).Select(s => new HashEntry(s.Key, s.Value)).ToArray();
+            var deletedEntries = settings.Where(s => s.Value == UserData.DeleteSettingValue).Select(s => new RedisValue(s.Key)).ToArray();
+            if (entries.Length > 0 || deletedEntries.Length > 0)
             {
                 var database = await redis.GetDatabaseAsync();
-                await database.HashSetAsync(GetHashKey(user), entries);
+                var key = GetHashKey(user);
+                if (entries.Length > 0)
+                {
+                    await database.HashSetAsync(key, entries);
+                }
+
+                if (deletedEntries.Length > 0)
+                {
+                    await database.HashDeleteAsync(key, deletedEntries);
+                }
             }
         }
         catch (Exception e)
@@ -61,5 +91,7 @@ public class UsersRedisRepository : IUsersRepository
         return UserSettings.Empty;
     }
 
-    private static string GetHashKey(UserData user) => $"telebot:user:{user.UserName}:settings";
+    private static string GetHashKey(UserData user) => GetHashKey(user.UserName);
+
+    private static string GetHashKey(string? userName) => $"telebot:user:{userName}:settings";
 }

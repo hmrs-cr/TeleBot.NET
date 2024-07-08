@@ -20,6 +20,7 @@ public class OmadaOpenApiClient : IOmadaOpenApiClient
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
 
     };
+
     private string? defaultSiteId;
 
     public OmadaOpenApiClient(IOptions<OmadaConfig> config)

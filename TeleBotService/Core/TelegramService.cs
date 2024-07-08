@@ -19,7 +19,7 @@ public class TelegramService : ITelegramService
     private readonly CancellationTokenSource cts = new();
     private readonly ReceiverOptions receiverOptions = new()
     {
-        AllowedUpdates = Array.Empty<UpdateType>() // receive all update types except ChatMember related updates
+        AllowedUpdates = [] // receive all update types except ChatMember related updates
     };
 
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
@@ -73,6 +73,15 @@ public class TelegramService : ITelegramService
         if (!TelebotServiceApp.IsDev)
         {
             _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", cancellationToken);
+        }
+
+        if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
+        {
+            var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
+            await foreach (var id in ids)
+            {
+                netClientMonitor.StartNetClientMonitor(id);
+            }
         }
     }
 

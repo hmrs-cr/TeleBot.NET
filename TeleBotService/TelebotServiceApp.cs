@@ -200,6 +200,9 @@ public static class RegistrationExtensions
                 return await omadaClient.GetClients();
 
             }).WithName("GetAuthorizeToken").WithOpenApi();
+
+            app.MapGet("getclients", () => File.ReadAllText("/Users/hectormauriciorodriguez/Projects/TeleBot/TeleBotService/GetClientsResponse.json"));
+
         }
 
         return app;

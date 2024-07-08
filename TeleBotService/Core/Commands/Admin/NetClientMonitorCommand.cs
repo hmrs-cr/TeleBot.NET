@@ -2,13 +2,15 @@
 using System.Text.Json;
 using Omada.OpenApi.Client;
 using Omada.OpenApi.Client.Responses;
+using TeleBotService.Config;
 using TeleBotService.Core.Model;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands.Admin;
 
-public class NetClientMonitorCommand : GetNetClientsCommand
+public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 {
+    private static readonly NetClientsMonitorData MonitorData = new();
     private static readonly object taskCreationLock = new();
 
     private Dictionary<string, BasicClientData>? prevClientList;
@@ -25,6 +27,48 @@ public class NetClientMonitorCommand : GetNetClientsCommand
 
     public override bool CanExecuteCommand(Message message) => message.Text == "/NetClients_Monitor_Start" || message.Text == "/NetClients_Monitor_End";
 
+    public void StopNetClientMonitor(MessageContext messageContext)
+    {
+        lock (taskCreationLock)
+        {
+            var chatId = messageContext.Message.Chat.Id;
+            if (MonitorData.NotifyUserList.Remove(chatId))
+            {
+                this.logger.LogInformation("Ended NetClient Monitor for chat {chatId}", chatId);
+                if (MonitorData.NotifyUserList.Count == 0)
+                {
+                    messageContext.User.RemoveSetting(UserData.NetClientMonitorChatIdKeyName);
+                    MonitorData.CancellationTokenSource?.Cancel();
+                    MonitorData.NotifyTask = null;
+                    MonitorData.CancellationTokenSource = null;
+                }
+            }
+        }
+    }
+
+    public void StartNetClientMonitor(MessageContext messageContext)
+    {
+        if (this.StartNetClientMonitor(messageContext.Message.Chat.Id))
+        {
+            messageContext.User.SetSetting(UserData.NetClientMonitorChatIdKeyName, messageContext.Message.Chat.Id);
+        }
+    }
+
+    public bool StartNetClientMonitor(long chatId)
+    {
+        lock (taskCreationLock)
+        {
+            if (MonitorData.NotifyUserList.Add(chatId))
+            {
+                MonitorData.NotifyTask ??= this.StartNotifyTask(MonitorData);
+                this.logger.LogInformation("Starting monitor NetClient Monitor for chat {chatId}", chatId);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected override Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
         if (messageContext.Message.Text == "/NetClients_Monitor_Start")
@@ -39,36 +83,11 @@ public class NetClientMonitorCommand : GetNetClientsCommand
         return Task.CompletedTask;
     }
 
-    private void StopNetClientMonitor(MessageContext messageContext)
-    {
-        lock (taskCreationLock)
-        {
-            var monitorData = messageContext.Context.GetCommandContextData<NetClientsMonitorData>(this);
-            monitorData.NotifyUserList.Remove(messageContext.Message.Chat.Id);
-            if (monitorData.NotifyUserList.Count == 0)
-            {
-                monitorData.CancellationTokenSource?.Cancel();
-                monitorData.NotifyTask = null;
-                monitorData.CancellationTokenSource = null;
-            }
-        }
-    }
-
-    private void StartNetClientMonitor(MessageContext messageContext)
-    {
-        lock (taskCreationLock)
-        {
-            var monitorData = messageContext.Context.GetCommandContextData<NetClientsMonitorData>(this);
-            monitorData.NotifyUserList.Add(messageContext.Message.Chat.Id);
-            monitorData.NotifyTask ??= this.StartNotifyTask(monitorData);
-        }
-    }
-
     private async Task StartNotifyTask(NetClientsMonitorData monitorData)
     {
         monitorData.CancellationTokenSource ??= new CancellationTokenSource();
 
-        while (!monitorData.CancellationTokenSource.IsCancellationRequested)
+        while (monitorData.CancellationTokenSource != null && !monitorData.CancellationTokenSource.IsCancellationRequested)
         {
             try
             {
@@ -127,7 +146,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand
                 }
 
                 this.prevClientList = currClientList;
-                await Task.Delay(TimeSpan.FromMinutes(6));
+                await Task.Delay(TimeSpan.FromMinutes(1));
             }
             catch (Exception e)
             {
@@ -144,4 +163,10 @@ public class NetClientMonitorCommand : GetNetClientsCommand
 
         public HashSet<long> NotifyUserList { get; } = [];
     }
+}
+
+public static class NetClientMonitorExtensions
+{
+    public static IServiceCollection AddNetClientMonitor(this IServiceCollection services) =>
+        services.AddSingleton<INetClientMonitor>(sp => sp.GetService<NetClientMonitorCommand>()!);
 }

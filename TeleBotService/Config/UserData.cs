@@ -4,7 +4,11 @@ namespace TeleBotService.Config;
 
 public class UserData
 {
+    public const string DeleteSettingValue = "DELETED_\0\0\n\n\t\t\t\n\n\0\0_DELETED";
+    public const string NetClientMonitorChatIdKeyName = "NetClientMonitorChatId";
+
     private readonly Dictionary<string, string?> settings = [];
+
     private bool areSettingsDirty;
     private bool areSettingsLoaded;
 
@@ -21,13 +25,26 @@ public class UserData
         this.settings?.GetValueOrDefault(key) is { } strVal && bool.TryParse(strVal, out var result) ? result : defaultValue;
 
     public string? GeStringSetting(string key, string? defaultValue = default) =>
-        this.settings?.GetValueOrDefault(key, defaultValue);
+        this.settings?.GetValueOrDefault(key, defaultValue) is { } result && result != DeleteSettingValue ? result : defaultValue;
 
     public void SetSetting<T>(string key, T? value)
     {
         if (this.settings != null)
         {
             this.settings[key] = value?.ToString();
+            this.areSettingsDirty = true;
+        }
+    }
+
+    public void RemoveSetting(string key)
+    {
+        if (this.settings != null)
+        {
+            if (this.settings.ContainsKey(key))
+            {
+                this.settings[key] = DeleteSettingValue;
+            }
+
             this.areSettingsDirty = true;
         }
     }
