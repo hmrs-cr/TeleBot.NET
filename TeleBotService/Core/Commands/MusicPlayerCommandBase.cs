@@ -58,7 +58,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 }
                 if (result > 0)
                 {
-                    await this.ReplyPlayerStatus(message, playerConfig, result);
+                    _ = this.ReplyPlayerStatus(message, playerConfig, result);
                 }
             }
             catch (Exception e)

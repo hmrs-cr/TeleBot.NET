@@ -13,8 +13,6 @@ public class MusicPlayersStatusCommand : MusicPlayerCommandBase
 
     public override string Usage => "Playing now";
 
-    public override bool CanBeExecuteConcurrently => true;
-
     public override bool CanExecuteCommand(Message message) =>
         ContainsText(message, "Playing now", true);
 

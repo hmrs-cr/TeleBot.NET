@@ -12,8 +12,10 @@ public abstract class TelegramCommand : ITelegramCommand
     private readonly Task<bool> TaskTrueResult = Task.FromResult(true);
     private readonly Task<bool> TaskFalseResult = Task.FromResult(false);
 
+    private bool isExecuting;
+
     [JsonIgnore]
-    public TelegramBotClient? BotClient { get; init; }
+    public ITelegramBotClient? BotClient { get; private set; }
 
     public virtual bool IsEnabled => true;
 
@@ -25,14 +27,14 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual string Usage => this.CommandString;
 
-    public virtual bool CanBeExecuteConcurrently => false;
-
     public virtual string CommandString => string.Empty;
 
 [   JsonIgnore]
-    public ILocalizationResolver? LocalizationResolver { get; init; }
+    public ILocalizationResolver? LocalizationResolver { get; private set; }
 
     public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
+
+    public virtual void Configure(IConfiguration config) {  }
 
     protected ILogger? Logger { get; init; }
 
@@ -44,6 +46,7 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
+                this.isExecuting = true;
                 var task = this.Execute(messageContext, cancellationToken);
                 context.AddExecutingTask(task);
                 await task;
@@ -54,6 +57,7 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
+                this.isExecuting = false;
                 await this.EndExecuting(messageContext, cancellationToken);
                 context.IsPromptReplyMessage = false;
                 context.RemoveFinishedTasks();
@@ -65,7 +69,7 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected virtual Task<bool> StartExecuting(MessageContext messageContext, CancellationToken token)
     {
-        if (!this.CanBeExecuteConcurrently && messageContext.Context.GetExecutingTaskCount() > 0)
+        if (this.isExecuting)
         {
             return TaskFalseResult;
         }
@@ -170,6 +174,14 @@ public abstract class TelegramCommand : ITelegramCommand
     public void LogError(Exception e, string message, params object?[] args) => this.Logger?.LogError(e, message, args);
     public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
     public void LogError(string message) => this.Logger?.LogError(message);
+
+    internal TelegramCommand Init(ITelegramBotClient botClient, ILocalizationResolver localizationResolver, IConfiguration configuration)
+    {
+        this.BotClient = botClient;
+        this.LocalizationResolver = localizationResolver;
+        this.Configure(configuration);
+        return this;
+    }
 }
 
 public static class TelegramCommandRegistrationExtensions
