@@ -3,9 +3,9 @@ using System.Text.Json.Serialization;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
 using Omada.OpenApi.Client;
-using Omada.OpenApi.Client.Config;
 using TeleBotService.Config;
 using TeleBotService.Core;
+using TeleBotService.Core.Commands.Admin;
 using TeleBotService.Data.Redis;
 using TeleBotService.Localization;
 
@@ -154,6 +154,7 @@ public static class RegistrationExtensions
                 .AddLocalFileConfig(configuration)
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
+                .AddNetClientMonitor()
                 .ConfigureHttpJsonOptions(options =>
                 {
                     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -200,6 +201,7 @@ public static class RegistrationExtensions
                 return await omadaClient.GetClients();
 
             }).WithName("GetAuthorizeToken").WithOpenApi();
+
 
             app.MapGet("getclients", () => File.ReadAllText("/Users/hectormauriciorodriguez/Projects/TeleBot/TeleBotService/GetClientsResponse.json"));
 
