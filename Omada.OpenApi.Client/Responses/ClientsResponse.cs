@@ -11,5 +11,5 @@ public record ClientsResponse : OmadaResponse<ClientsPagedResult>
 
 public record ClientsPagedResult : PagedResult<BasicClientData>
 {
-    public required ClientStats ClientStat { get; init; }
+    //public required ClientStats ClientStat { get; init; }
 }

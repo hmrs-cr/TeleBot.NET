@@ -103,11 +103,11 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 StringBuilder? messageBuilder = null;
                 foreach (var clientAdded in addedClients)
                 {
+                    DisconectedClientsRemove(clientAdded);
                     if (clientAdded.Index == 0)
                     {
                         messageBuilder ??= new StringBuilder().Append("<pre>");
                         messageBuilder.AppendLine("NEWLY CONNECTED CLIENTS:");
-                        logger.LogDebug("NEWLY CONNECTED CLIENTS:");
                         maxClientNameLen = clientAdded.Name.Length;
                     }
 
@@ -117,6 +117,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
                 foreach (var clientRemoved in removedClients)
                 {
+                    DisconectedClientsAdd(clientRemoved);
                     if (clientRemoved.Index == 0)
                     {
                         messageBuilder ??= new StringBuilder().Append("<pre>");
@@ -126,7 +127,6 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                         }
 
                         messageBuilder.AppendLine("JUST DISCONNECTED CLIENTS:");
-                        logger.LogDebug("JUST DISCONNECTED CLIENTS:");
                         maxClientNameLen = clientRemoved.Name.Length;
                     }
 
