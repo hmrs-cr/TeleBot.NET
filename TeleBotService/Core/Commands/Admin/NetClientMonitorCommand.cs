@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using Omada.OpenApi.Client;
 using Omada.OpenApi.Client.Responses;
 using TeleBotService.Config;
@@ -14,10 +15,15 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     private static readonly object taskCreationLock = new();
 
     private Dictionary<string, BasicClientData>? prevClientList;
+    private readonly NetClientMonitorConfig config;
     private readonly ILogger<NetClientMonitorCommand> logger;
 
-    public NetClientMonitorCommand(IOmadaOpenApiClient omadaClient, ILogger<NetClientMonitorCommand> logger) : base(omadaClient)
+    public NetClientMonitorCommand(
+        IOptions<NetClientMonitorConfig> config,
+        IOmadaOpenApiClient omadaClient,
+        ILogger<NetClientMonitorCommand> logger) : base(omadaClient)
     {
+        this.config = config.Value;
         this.logger = logger;
     }
 
@@ -146,7 +152,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 }
 
                 this.prevClientList = currClientList;
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromSeconds(this.config?.MonitorFrequencyInSeconds ?? 60));
             }
             catch (Exception e)
             {
@@ -167,6 +173,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
 public static class NetClientMonitorExtensions
 {
-    public static IServiceCollection AddNetClientMonitor(this IServiceCollection services) =>
-        services.AddSingleton<INetClientMonitor>(sp => sp.GetService<NetClientMonitorCommand>()!);
+    public static IServiceCollection AddNetClientMonitor(this IServiceCollection services, IConfigurationManager configuration) =>
+        services.Configure<NetClientMonitorConfig>(configuration.GetSection(NetClientMonitorConfig.NetClientMonitorConfigKeyName))
+                .AddSingleton<INetClientMonitor>(sp => sp.GetService<NetClientMonitorCommand>()!);
 }

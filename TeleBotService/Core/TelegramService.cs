@@ -258,11 +258,11 @@ public class TelegramService : ITelegramService
         await Task.Delay(5000);
     }
 
-    private IReadOnlyCollection<ITelegramCommand> GetCommandInstances() =>
+    private List<TelegramCommand> GetCommandInstances() =>
         TelegramCommandRegistrationExtensions.CommandTypes.Select(t =>
         {
             var command = this.serviceProvider.GetService(t) as TelegramCommand;
-            return command?.Init(this.botClient, this.localizationResolver, this.configuration);
+            return command?.Init(this.botClient, this.localizationResolver);
 
         })
         .Where(i => i != null)

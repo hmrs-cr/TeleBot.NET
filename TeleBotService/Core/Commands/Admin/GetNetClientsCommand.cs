@@ -1,5 +1,4 @@
-﻿using System.Collections.Concurrent;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
 using Humanizer;
 using Omada.OpenApi.Client;
@@ -100,13 +99,15 @@ public class GetNetClientsCommand : TelegramCommand
         }
     }
 
-    private IReadOnlyCollection<BasicClientData>? FilterClientList(MessageContext messageContext, ClientsResponse response)
+    private List<BasicClientData>? FilterClientList(MessageContext messageContext, ClientsResponse response)
     {
         if (response?.Result is { } result && result.TotalRows > 0)
         {
-            var allClients = messageContext.Message.Text!.Contains("all", StringComparison.InvariantCultureIgnoreCase) || this.ContainsText(messageContext.Message, "Disconnected");
-            var clients = result.Data.Where(c => allClients || this.omadaClient.IsTempClient(c)).OrderBy(c => c.ApName).ThenBy(c => c.Ssid).ToList();
-            return clients;
+            var disconnected = this.ContainsText(messageContext.Message, "Disconnected");
+            var allClients = messageContext.Message.Text!.Contains("all", StringComparison.InvariantCultureIgnoreCase) || disconnected;
+            var clients = result.Data.Where(c => allClients || this.omadaClient.IsTempClient(c));
+            clients = disconnected ? clients.OrderByDescending(c => c.LastSeen) : clients.OrderBy(c => c.ApName).ThenBy(c => c.Ssid);
+            return clients.ToList();
         }
 
         return null;
@@ -139,11 +140,7 @@ public class GetNetClientsCommand : TelegramCommand
         {
             var dateTimeDisconection = DateTimeOffset.FromUnixTimeMilliseconds(client.LastSeen).ToLocalTime();
             var ago = DateTime.Now - dateTimeDisconection;
-            sb.Append(ago.Humanize()).Append(" ago ")
-              .Append('(')
-              .AppendFormat("{0:yyyy-MM-dd HH:mm:ss}", dateTimeDisconection)
-              .Append(')');
-
+            sb.Append(": ").Append(ago.Humanize()).Append(" ago ");
         }
         else
         {
