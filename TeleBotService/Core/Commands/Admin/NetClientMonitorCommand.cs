@@ -1,9 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 using Omada.OpenApi.Client;
 using Omada.OpenApi.Client.Responses;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
+using TeleBotService.Data;
+using TeleBotService.Data.Redis;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands.Admin;
@@ -14,11 +17,15 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     private static readonly object taskCreationLock = new();
 
     private Dictionary<string, BasicClientData>? prevClientList;
-    private readonly ILogger<NetClientMonitorCommand> logger;
+    private readonly NetClientMonitorConfig config;
 
-    public NetClientMonitorCommand(IOmadaOpenApiClient omadaClient, ILogger<NetClientMonitorCommand> logger) : base(omadaClient)
+    public NetClientMonitorCommand(
+        IOptions<NetClientMonitorConfig> config,
+        IOmadaOpenApiClient omadaClient,
+        INetClientRepository netClientRepository,
+        ILogger<NetClientMonitorCommand> logger) : base(omadaClient, netClientRepository, logger: logger)
     {
-        this.logger = logger;
+        this.config = config.Value;
     }
 
     public override string CommandString => string.Empty;
@@ -34,7 +41,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
             var chatId = messageContext.Message.Chat.Id;
             if (MonitorData.NotifyUserList.Remove(chatId))
             {
-                this.logger.LogInformation("Ended NetClient Monitor for chat {chatId}", chatId);
+                this.LogInformation("Ended NetClient Monitor for chat {chatId}", chatId);
                 if (MonitorData.NotifyUserList.Count == 0)
                 {
                     messageContext.User.RemoveSetting(UserData.NetClientMonitorChatIdKeyName);
@@ -61,7 +68,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
             if (MonitorData.NotifyUserList.Add(chatId))
             {
                 MonitorData.NotifyTask ??= this.StartNotifyTask(MonitorData);
-                this.logger.LogInformation("Starting monitor NetClient Monitor for chat {chatId}", chatId);
+                this.LogInformation("Starting monitor NetClient Monitor for chat {chatId}", chatId);
                 return true;
             }
         }
@@ -104,6 +111,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 foreach (var clientAdded in addedClients)
                 {
                     DisconectedClientsRemove(clientAdded);
+                    _ = this.netClientRepository.RemoveDisconnectedNetClientInfo(clientAdded);
                     if (clientAdded.Index == 0)
                     {
                         messageBuilder ??= new StringBuilder().Append("<pre>");
@@ -112,12 +120,13 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                     }
 
                     AppendClientData(messageBuilder!, clientAdded, maxClientNameLen);
-                    this.logger.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
+                    this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                 }
 
                 foreach (var clientRemoved in removedClients)
                 {
                     DisconectedClientsAdd(clientRemoved);
+                    _ = this.netClientRepository.SaveDisconnectedNetClientInfo(clientRemoved);
                     if (clientRemoved.Index == 0)
                     {
                         messageBuilder ??= new StringBuilder().Append("<pre>");
@@ -131,7 +140,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                     }
 
                     AppendClientData(messageBuilder!, clientRemoved, maxClientNameLen);
-                    this.logger.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
+                    this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                 }
 
                 if (messageBuilder?.Length > 0)
@@ -146,11 +155,11 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 }
 
                 this.prevClientList = currClientList;
-                await Task.Delay(TimeSpan.FromMinutes(1));
+                await Task.Delay(TimeSpan.FromSeconds(this.config?.MonitorFrequencyInSeconds ?? 60));
             }
             catch (Exception e)
             {
-                this.logger.LogWarning(e, "Unhandled error on StartNotifyTask");
+                this.LogWarning(e, "Unhandled error on StartNotifyTask");
             }
         }
     }
@@ -167,6 +176,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
 public static class NetClientMonitorExtensions
 {
-    public static IServiceCollection AddNetClientMonitor(this IServiceCollection services) =>
-        services.AddSingleton<INetClientMonitor>(sp => sp.GetService<NetClientMonitorCommand>()!);
+    public static IServiceCollection AddNetClientMonitor(this IServiceCollection services, IConfigurationManager configuration) =>
+        services.Configure<NetClientMonitorConfig>(configuration.GetSection(NetClientMonitorConfig.NetClientMonitorConfigKeyName))
+                .AddSingleton<INetClientMonitor>(sp => sp.GetService<NetClientMonitorCommand>()!)
+                .AddSingleton<INetClientRepository, NetClientRedisRepository>();
 }

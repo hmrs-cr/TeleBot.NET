@@ -17,4 +17,11 @@ public class LazyRedis : Lazy<Task<ConnectionMultiplexer>>
         var redis = this.Value.IsCompletedSuccessfully ? this.Value.Result : await this.Value.ConfigureAwait(false);
         return redis.GetDatabase();
     }
+
+    public async ValueTask<IServer> GetServerAsync()
+    {
+        var redis = this.Value.IsCompletedSuccessfully ? this.Value.Result : await this.Value.ConfigureAwait(false);
+        var servers =  redis.GetServers();
+        return servers.First();
+    }
 }

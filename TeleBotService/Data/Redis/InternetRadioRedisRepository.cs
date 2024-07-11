@@ -17,7 +17,7 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
 
     public async ValueTask SaveDiscoveredUrl(string radioId, Uri? url)
     {
-         if (!this.redis.IsRedisConfigured)
+        if (!this.redis.IsRedisConfigured)
         {
             this.logger.LogWarning("Can't save radio URL. Redis host not set.");
             return;

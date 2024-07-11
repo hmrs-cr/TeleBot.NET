@@ -34,8 +34,6 @@ public abstract class TelegramCommand : ITelegramCommand
 
     public virtual bool CanExecuteCommand(Message message) => !string.IsNullOrEmpty(this.CommandString) && this.ContainsText(message, this.CommandString);
 
-    public virtual void Configure(IConfiguration config) {  }
-
     protected ILogger? Logger { get; init; }
 
     public async Task<bool> HandleCommand(MessageContext messageContext, CancellationToken cancellationToken)
@@ -175,11 +173,10 @@ public abstract class TelegramCommand : ITelegramCommand
     public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
     public void LogError(string message) => this.Logger?.LogError(message);
 
-    internal TelegramCommand Init(ITelegramBotClient botClient, ILocalizationResolver localizationResolver, IConfiguration configuration)
+    internal TelegramCommand Init(ITelegramBotClient botClient, ILocalizationResolver localizationResolver)
     {
         this.BotClient = botClient;
         this.LocalizationResolver = localizationResolver;
-        this.Configure(configuration);
         return this;
     }
 }
