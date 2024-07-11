@@ -10,6 +10,7 @@ public static class RedisDataExtensions
         typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public)
                  .Where(p => p.CanRead)
                  .Where(p => propertyFilter == null || propertyFilter.Invoke(p))
-                 .Select(p => new HashEntry(p.Name, p.GetValue(obj)?.ToString()))
+                 .Where(p => p.GetValue(obj) is { })
+                 .Select(p => new HashEntry(p.Name, p.GetValue(obj)!.ToString()))
                  .ToArray();
 }

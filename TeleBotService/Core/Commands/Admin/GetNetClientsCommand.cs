@@ -4,6 +4,7 @@ using Humanizer;
 using Omada.OpenApi.Client;
 using Omada.OpenApi.Client.Responses;
 using TeleBotService.Core.Model;
+using TeleBotService.Data;
 using TeleBotService.Extensions;
 
 namespace TeleBotService.Core.Commands.Admin;
@@ -17,32 +18,32 @@ public class GetNetClientsCommand : TelegramCommand
     private static readonly Dictionary<string, BasicClientData> disconectedClients = [];
 
     private static ClientsResponse? disconnectedClientsResponse = null;
+    private bool disconnectedNetClientsInfoLoaded = false;
 
-    private static ClientsResponse DisconnectedClientsResponse
+    private async ValueTask<ClientsResponse> GetDisconnectedClientsResponse()
     {
-        get
+        ClientsResponse response;
+        await this.LoadDisconnectedNetClientsInfoIfNeeded();
+        lock (disconnectedClientsResponseLock)
         {
-            ClientsResponse response;
-            lock (disconnectedClientsResponseLock)
+            response = disconnectedClientsResponse ??= new()
             {
-                response = disconnectedClientsResponse ??= new()
+                Msg = string.Empty,
+                Result = new()
                 {
-                    Msg = string.Empty,
-                    Result = new()
-                    {
-                        TotalRows = disconectedClients.Count,
-                        CurrentPage = 1,
-                        CurrentSize = disconectedClients.Count,
-                        Data = disconectedClients.Select(c => c.Value).ToList().AsReadOnly()
-                    }
-                };
-            }
-
-            return response;
+                    TotalRows = disconectedClients.Count,
+                    CurrentPage = 1,
+                    CurrentSize = disconectedClients.Count,
+                    Data = disconectedClients.Select(c => c.Value).ToList().AsReadOnly()
+                }
+            };
         }
+
+        return response;
     }
 
     protected readonly IOmadaOpenApiClient omadaClient;
+    protected readonly INetClientRepository netClientRepository;
 
     protected readonly JsonSerializerOptions jsonSerializerOptions = new()
     {
@@ -50,9 +51,14 @@ public class GetNetClientsCommand : TelegramCommand
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public GetNetClientsCommand(IOmadaOpenApiClient omadaClient)
+    public GetNetClientsCommand(
+        IOmadaOpenApiClient omadaClient,
+        INetClientRepository netClientRepository,
+        ILogger<GetNetClientsCommand> logger)
     {
         this.omadaClient = omadaClient;
+        this.netClientRepository = netClientRepository;
+        this.Logger = logger;
     }
 
     public override bool IsAdmin => true;
@@ -63,7 +69,7 @@ public class GetNetClientsCommand : TelegramCommand
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
         var disconnected = this.ContainsText(messageContext.Message, "Disconnected");
-        var response = disconnected ? DisconnectedClientsResponse : await this.omadaClient.GetClients();
+        var response = disconnected ? await this.GetDisconnectedClientsResponse() : await this.omadaClient.GetClients();
         if (response.IsOk)
         {
             if (this.FilterClientList(messageContext, response) is { } clients && clients.Count > 0)
@@ -99,6 +105,42 @@ public class GetNetClientsCommand : TelegramCommand
         }
     }
 
+    private async ValueTask LoadDisconnectedNetClientsInfoIfNeeded()
+    {
+        if (!this.disconnectedNetClientsInfoLoaded)
+        {
+            ClientsResponse? connectedClients = null;
+            try
+            {
+                connectedClients = await this.omadaClient.GetClients();
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+
+            var connectedClientMacs = connectedClients?.Result?.Data.Select(c => c.Mac).ToHashSet() ?? [];
+
+            try
+            {
+                await foreach (var client in this.netClientRepository.GetDisconnectedNetClientsInfo())
+                {
+                    // If the client stored is not connected and if it is not yet disconnected then add it back to the list.
+                    if (!connectedClientMacs.Contains(client.Mac))
+                    {
+                        DisconectedClientsAdd(client, ifNotAlreadyTraked: true);
+                    }
+                }
+
+                this.disconnectedNetClientsInfoLoaded = true;
+            }
+            catch (Exception e)
+            {
+                this.LogError(e, "Error loading previously disconnected client info");
+            }
+        }
+    }
+
     private List<BasicClientData>? FilterClientList(MessageContext messageContext, ClientsResponse response)
     {
         if (response?.Result is { } result && result.TotalRows > 0)
@@ -122,12 +164,15 @@ public class GetNetClientsCommand : TelegramCommand
         }
     }
 
-    protected static void DisconectedClientsAdd(BasicClientData clientRemoved)
+    protected static void DisconectedClientsAdd(BasicClientData clientRemoved, bool ifNotAlreadyTraked = false)
     {
         lock  (disconnectedClientsResponseLock)
         {
-            disconectedClients[clientRemoved.Mac] = clientRemoved;
-            disconnectedClientsResponse = null;
+            if (!ifNotAlreadyTraked || !disconectedClients.ContainsKey(clientRemoved.Mac))
+            {
+                disconectedClients[clientRemoved.Mac] = clientRemoved;
+                disconnectedClientsResponse = null;
+            }
         }
     }
 
@@ -147,7 +192,7 @@ public class GetNetClientsCommand : TelegramCommand
             sb.Append("<i>[")
               .Append(client.Ssid ?? client.NetworkName)
               .Append('@').Append(client.ApName ?? client.SwitchName ?? client.GatewayName).Append("]</i>")
-              .Append(client.Wireless ? SignalLevels[client.SignalRank] : string.Empty);
+              .Append(client.Wireless ? SignalLevels[client.SignalRank.GetValueOrDefault()] : string.Empty);
         }
 
         return sb.AppendLine();

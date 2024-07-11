@@ -8,7 +8,7 @@ public record BasicClientData
     public required string Name { get; init; }
     public bool Wireless { get; init; }
     public string? Ssid { get; init; }
-    public int SignalRank { get; init; }
+    public int? SignalRank { get; init; }
     public string? ApName { get; init; }
     public long LastSeen { get; init; }
     public bool Active { get; init; }
