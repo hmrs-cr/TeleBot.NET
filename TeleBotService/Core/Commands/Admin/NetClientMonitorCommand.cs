@@ -34,7 +34,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
     public override bool CanExecuteCommand(Message message) => message.Text == "/NetClients_Monitor_Start" || message.Text == "/NetClients_Monitor_End";
 
-    public void StopNetClientMonitor(MessageContext messageContext)
+    public bool StopNetClientMonitor(MessageContext messageContext)
     {
         lock (taskCreationLock)
         {
@@ -49,16 +49,23 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                     MonitorData.NotifyTask = null;
                     MonitorData.CancellationTokenSource = null;
                 }
+
+                return true;
             }
         }
+
+        return false;
     }
 
-    public void StartNetClientMonitor(MessageContext messageContext)
+    public bool StartNetClientMonitor(MessageContext messageContext)
     {
-        if (this.StartNetClientMonitor(messageContext.Message.Chat.Id))
+        var started = this.StartNetClientMonitor(messageContext.Message.Chat.Id);
+        if (started)
         {
             messageContext.User.SetSetting(UserData.NetClientMonitorChatIdKeyName, messageContext.Message.Chat.Id);
         }
+
+        return started;
     }
 
     public bool StartNetClientMonitor(long chatId)
@@ -80,11 +87,13 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     {
         if (messageContext.Message.Text == "/NetClients_Monitor_Start")
         {
-            this.StartNetClientMonitor(messageContext);
+            var started = this.StartNetClientMonitor(messageContext);
+            _ = this.Reply(messageContext.Message, $"Started:{started}");
         }
         else if (messageContext.Message.Text == "/NetClients_Monitor_End")
         {
-            this.StopNetClientMonitor(messageContext);
+            var stoped = this.StopNetClientMonitor(messageContext);
+            _ = this.Reply(messageContext.Message, $"Stoped:{stoped}");
         }
 
         return Task.CompletedTask;
