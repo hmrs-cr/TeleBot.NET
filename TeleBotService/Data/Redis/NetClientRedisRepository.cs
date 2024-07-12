@@ -22,17 +22,17 @@ public class NetClientRedisRepository : INetClientRepository
             await foreach (var key in server.KeysAsync(pattern: KeyBase + "*"))
             {
                 var hashSet = await database.HashGetAllAsync(key);
-
+                var mac = key.ToString()[KeyBase.Length..];
                 yield return new BasicClientData
                 {
-                    Mac = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.Mac)).Value!,
+                    Mac = mac,
                     Name = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.Name)).Value!,
                     Active = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.Active)).Value == bool.TrueString,
                     ApName = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.ApName)).Value,
                     GatewayName = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.GatewayName)).Value,
                     LastSeen = (long)hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.LastSeen)).Value,
                     NetworkName = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.NetworkName)).Value,
-                    SignalRank = (int)hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.SignalRank)).Value,
+                    SignalRank = (int?)hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.SignalRank)).Value,
                     Ssid = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.Ssid)).Value,
                     SwitchName = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.SwitchName)).Value,
                     Wireless = hashSet.FirstOrDefault(v => v.Name == nameof(BasicClientData.Wireless)).Value == bool.TrueString,
@@ -61,7 +61,11 @@ public class NetClientRedisRepository : INetClientRepository
         }
 
         var database = await redis.GetDatabaseAsync();
-        var hashSet = clientData.ToRedisHashSet(pi => pi.CanWrite && pi.Name != nameof(BasicClientData.Active) && pi.Name != nameof(BasicClientData.Index));
+        var hashSet = clientData.ToRedisHashSet(pi =>
+                                        pi.CanWrite &&
+                                        pi.Name != nameof(BasicClientData.Active) &&
+                                        pi.Name != nameof(BasicClientData.Index) &&
+                                        pi.Name != nameof(BasicClientData.Mac));
         try
         {
             await database.HashSetAsync(KeyBase + clientData.Mac, hashSet);
