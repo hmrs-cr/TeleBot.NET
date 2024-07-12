@@ -22,7 +22,6 @@ public class TelegramService : ITelegramService
     };
 
     private IReadOnlyCollection<ITelegramCommand>? commandInstances;
-    private readonly IConfiguration configuration;
     private readonly ILocalizationResolver localizationResolver;
     private readonly IServiceProvider serviceProvider;
     private readonly IUsersRepository userSettingsRepository;
@@ -32,7 +31,6 @@ public class TelegramService : ITelegramService
     private readonly Lazy<Task<User>> myInfo;
 
     public TelegramService(
-        IConfiguration configuration,
         IOptions<TelegramConfig> confif,
         ILocalizationResolver localizationResolver,
         IServiceProvider serviceProvider,
@@ -47,7 +45,6 @@ public class TelegramService : ITelegramService
 
         this.botClient = new TelegramBotClient(confif.Value.BotToken);
         this.config = confif.Value;
-        this.configuration = configuration;
         this.localizationResolver = localizationResolver;
         this.serviceProvider = serviceProvider;
         this.userSettingsRepository = userSettingsRepository;
