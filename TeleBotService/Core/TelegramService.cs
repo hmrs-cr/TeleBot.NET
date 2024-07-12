@@ -59,6 +59,8 @@ public class TelegramService : ITelegramService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        await this.StartNetClientMonitor();
+
         this.botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
             pollingErrorHandler: HandlePollingErrorAsync,
@@ -70,15 +72,6 @@ public class TelegramService : ITelegramService
         {
             _ = this.SentAdminMessage($"Service started: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", cancellationToken);
         }
-
-        if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
-        {
-            var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
-            await foreach (var id in ids)
-            {
-                netClientMonitor.StartNetClientMonitor(id);
-            }
-        }
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -88,6 +81,25 @@ public class TelegramService : ITelegramService
             _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", default);
             cts.Cancel();
             cts.Dispose();
+        }
+    }
+
+    private async Task StartNetClientMonitor()
+    {
+        try
+        {
+            if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
+            {
+                var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
+                await foreach (var id in ids)
+                {
+                    netClientMonitor.StartNetClientMonitor(id);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            this.logger.LogWarning(e, "Error StartingNetClientMonitor");
         }
     }
 
