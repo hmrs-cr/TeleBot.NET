@@ -92,16 +92,16 @@ public class GetNetClientsCommand : TelegramCommand
                 sb.Append("</pre>");
 
 
-                await this.ReplyFormated(messageContext.Message, sb.ToString(), cancellationToken);
+                await this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
             }
             else
             {
-                _ = this.Reply(messageContext.Message, "No connected clients", cancellationToken);
+                _ = this.Reply(messageContext, "No connected clients", cancellationToken);
             }
         }
         else
         {
-            _ = this.Reply(messageContext.Message, response.Msg, cancellationToken);
+            _ = this.Reply(messageContext, response.Msg, cancellationToken);
         }
     }
 

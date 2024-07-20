@@ -49,13 +49,13 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
         var connected = await playerConfig.Client.IsConnected();
         if (isShutDown)
         {
-            await this.Reply(messageContext.Message, connected ? this.Localize(messageContext.Message, "Still on: [error]").Format(new { error }) : "Turned Off!");
+            await this.Reply(messageContext, connected ? this.Localize(messageContext.Message, "Still on: [error]").Format(new { error }) : "Turned Off!");
         }
         else
         {
             if (error != null)
             {
-                await this.Reply(messageContext.Message, error);
+                await this.Reply(messageContext, error);
             }
         }
 

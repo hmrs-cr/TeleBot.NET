@@ -93,7 +93,7 @@ public class TelegramService : ITelegramService
                 var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
                 await foreach (var id in ids)
                 {
-                    netClientMonitor.StartNetClientMonitor(id);
+                    netClientMonitor.StartNetClientMonitor(this.botClient, id);
                 }
             }
         }
@@ -122,7 +122,7 @@ public class TelegramService : ITelegramService
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
 
-        var messageContext = new MessageContext(message, user);
+        var messageContext = new MessageContext(botClient, message, user);
         _ = HandleCommands(messageContext, cancellationToken);
 
         return Task.CompletedTask;
@@ -270,7 +270,7 @@ public class TelegramService : ITelegramService
         TelegramCommandRegistrationExtensions.CommandTypes.Select(t =>
         {
             var command = this.serviceProvider.GetService(t) as TelegramCommand;
-            return command?.Init(this.botClient, this.localizationResolver);
+            return command?.Init(this.localizationResolver);
 
         })
         .Where(i => i != null)

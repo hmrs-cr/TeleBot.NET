@@ -14,9 +14,6 @@ public abstract class TelegramCommand : ITelegramCommand
 
     private bool isExecuting;
 
-    [JsonIgnore]
-    public ITelegramBotClient? BotClient { get; private set; }
-
     public virtual bool IsEnabled => true;
 
     public virtual bool IsAdmin => false;
@@ -84,62 +81,64 @@ public abstract class TelegramCommand : ITelegramCommand
 
     protected virtual Task EndExecuting(MessageContext messageContext, CancellationToken token) => Task.CompletedTask;
 
-    protected Task Reply(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
-                chatId: message.Chat.Id,
-                text: Localize(message, replyMessage),
-                replyToMessageId: message.MessageId,
+    protected Task Reply(MessageContext context, string replyMessage, CancellationToken cancellationToken = default) => context.BotClient?.SendTextMessageAsync(
+                chatId: context.Message.Chat.Id,
+                text: Localize(context.Message, replyMessage),
+                replyToMessageId: context.Message.MessageId,
                 cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
-    protected Task ReplyPrompt(Message message, string prompt, IEnumerable<string> choices, CancellationToken cancellationToken = default)
+    protected Task ReplyPrompt(MessageContext context, string prompt, IEnumerable<string> choices, CancellationToken cancellationToken = default)
     {
+        var message = context.Message;
         message.GetContext().LastPromptMessage = message;
         prompt = Localize(message, prompt);
-        return this.Reply(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
+        return this.Reply(context, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
     }
 
-    protected Task ReplyFormatedPrompt(Message message, string prompt, IEnumerable<string>? choices = null, CancellationToken cancellationToken = default)
+    protected Task ReplyFormatedPrompt(MessageContext context, string prompt, IEnumerable<string>? choices = null, CancellationToken cancellationToken = default)
     {
+        var message = context.Message;
         message.GetContext().LastPromptMessage = message;
         if (choices != null)
         {
             prompt = Localize(message, prompt);
-            return this.ReplyFormated(message, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
+            return this.ReplyFormated(context, $"{prompt} : /{string.Join(" /", choices)}", cancellationToken);
         }
 
-        return this.ReplyFormated(message, prompt, cancellationToken);
+        return this.ReplyFormated(context, prompt, cancellationToken);
     }
 
-    protected Task ReplyFormated(Message message, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
-               chatId: message.Chat.Id,
+    protected Task ReplyFormated(MessageContext context, string replyMessage, CancellationToken cancellationToken = default) => context.BotClient?.SendTextMessageAsync(
+               chatId: context.Message.Chat.Id,
                text: replyMessage,
-               replyToMessageId: message.MessageId,
+               replyToMessageId: context.Message.MessageId,
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken) ?? Task.CompletedTask;
-    protected Task ReplyFormated(long chatId, string replyMessage, CancellationToken cancellationToken = default) => this.BotClient?.SendTextMessageAsync(
+    protected Task ReplyFormated(ITelegramBotClient botClient, long chatId, string replyMessage, CancellationToken cancellationToken = default) => botClient?.SendTextMessageAsync(
                chatId: chatId,
                text: replyMessage,
                replyToMessageId: null,
                parseMode: Telegram.Bot.Types.Enums.ParseMode.Html,
                cancellationToken: cancellationToken) ?? Task.CompletedTask;
 
-    protected async Task AudioReply(Message message, string audioFileName, string? title = null, int? duration = null, bool deleteFile = false)
+    protected async Task AudioReply(MessageContext context, string audioFileName, string? title = null, int? duration = null, bool deleteFile = false)
     {
         using var file = System.IO.File.OpenRead(audioFileName);
-        await this.AudioReply(message, file, title, duration);
+        await this.AudioReply(context, file, title, duration);
         if (deleteFile)
         {
             System.IO.File.Delete(audioFileName);
         }
     }
 
-    protected Task AudioReply(Message message, Stream audioStream, string? title = null, int? duration = null)
+    protected Task AudioReply(MessageContext context, Stream audioStream, string? title = null, int? duration = null)
     {
         if (title == "voice-memo")
         {
-            return this.BotClient!.SendVoiceAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
+            return context.BotClient!.SendVoiceAsync(chatId: context.Message.Chat.Id, replyToMessageId: context.Message.MessageId, duration: duration, voice: InputFile.FromStream(audioStream));
         }
 
-        return this.BotClient!.SendAudioAsync(chatId: message.Chat.Id, replyToMessageId: message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
+        return context.BotClient!.SendAudioAsync(chatId: context.Message.Chat.Id, replyToMessageId: context.Message.MessageId, title: title, duration: duration, audio: InputFile.FromStream(audioStream));
 
     }
 
@@ -173,9 +172,8 @@ public abstract class TelegramCommand : ITelegramCommand
     public void LogError(Exception e, string message) => this.Logger?.LogError(e, message);
     public void LogError(string message) => this.Logger?.LogError(message);
 
-    internal TelegramCommand Init(ITelegramBotClient botClient, ILocalizationResolver localizationResolver)
+    internal TelegramCommand Init(ILocalizationResolver localizationResolver)
     {
-        this.BotClient = botClient;
         this.LocalizationResolver = localizationResolver;
         return this;
     }

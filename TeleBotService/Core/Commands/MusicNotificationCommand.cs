@@ -31,7 +31,7 @@ public class MusicNotificationCommand : MusicPlayerCommandBase
             {
                 var same = prevStatus?.Title == currentStatus?.Title;
                 // TODO: Do not sent status if stopped
-                await ReplyPlayerStatus(message, playersConfig);
+                await ReplyPlayerStatus(messageContext, playersConfig);
                 this.LogInformation("Player status New: {currentStatusTitle}, Prev: {prevStatusTitle}", currentStatus?.Title, prevStatus?.Title);
             });
         }

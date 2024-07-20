@@ -65,7 +65,7 @@ public class HelpCommand : TelegramCommand
             }
         }
 
-        await this.ReplyFormated(message, sb.RemoveAccents().ToString(), cancellationToken);
+        await this.ReplyFormated(messageContext, sb.RemoveAccents().ToString(), cancellationToken);
     }
 
     private void AddCommandUssage(ITelegramCommand command, Message message, StringBuilder sb)

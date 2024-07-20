@@ -50,9 +50,9 @@ public class RadioPlayerListCommand : TelegramCommand
                   .AppendLine();
             }
 
-            return this.ReplyFormated(message, sb.ToString(), cancellationToken);
+            return this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
         }
 
-        return this.Reply(message, "No radio stations configured", cancellationToken);
+        return this.Reply(messageContext, "No radio stations configured", cancellationToken);
     }
 }

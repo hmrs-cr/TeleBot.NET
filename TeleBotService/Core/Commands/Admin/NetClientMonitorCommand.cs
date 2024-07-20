@@ -59,7 +59,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
     public bool StartNetClientMonitor(MessageContext messageContext)
     {
-        var started = this.StartNetClientMonitor(messageContext.Message.Chat.Id);
+        var started = this.StartNetClientMonitor(messageContext.BotClient, messageContext.Message.Chat.Id);
         if (started)
         {
             messageContext.User.SetSetting(UserData.NetClientMonitorChatIdKeyName, messageContext.Message.Chat.Id);
@@ -68,13 +68,13 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
         return started;
     }
 
-    public bool StartNetClientMonitor(long chatId)
+    public bool StartNetClientMonitor(Telegram.Bot.ITelegramBotClient botClient, long chatId)
     {
         lock (taskCreationLock)
         {
             if (MonitorData.NotifyUserList.Add(chatId))
             {
-                MonitorData.NotifyTask ??= this.StartNotifyTask(MonitorData);
+                MonitorData.NotifyTask ??= this.StartNotifyTask(botClient, MonitorData);
                 this.LogInformation("Starting monitor NetClient Monitor for chat {chatId}", chatId);
                 return true;
             }
@@ -88,18 +88,18 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
         if (messageContext.Message.Text == "/NetClients_Monitor_Start")
         {
             var started = this.StartNetClientMonitor(messageContext);
-            _ = this.Reply(messageContext.Message, $"Started:{started}");
+            _ = this.Reply(messageContext, $"Started:{started}");
         }
         else if (messageContext.Message.Text == "/NetClients_Monitor_End")
         {
             var stoped = this.StopNetClientMonitor(messageContext);
-            _ = this.Reply(messageContext.Message, $"Stoped:{stoped}");
+            _ = this.Reply(messageContext, $"Stoped:{stoped}");
         }
 
         return Task.CompletedTask;
     }
 
-    private async Task StartNotifyTask(NetClientsMonitorData monitorData)
+    private async Task StartNotifyTask(Telegram.Bot.ITelegramBotClient botClient, NetClientsMonitorData monitorData)
     {
         monitorData.CancellationTokenSource ??= new CancellationTokenSource();
 
@@ -159,7 +159,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
                     foreach (var chatId in monitorData.NotifyUserList)
                     {
-                        await this.ReplyFormated(chatId, message);
+                        await this.ReplyFormated(botClient, chatId, message);
                     }
                 }
 

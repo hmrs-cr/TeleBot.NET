@@ -19,16 +19,16 @@ public class SetLanguageCommand : TelegramCommand
             messageContext.Context.LanguageCode = lang.lang;
             messageContext.User.SetSetting(nameof(UserData.Language), messageContext.Context.LanguageCode);
             var localizedText = this.Localize(message, "Hello, the new language is '[lang]'");
-            this.Reply(message, localizedText.Format(lang), cancellationToken);
+            this.Reply(messageContext, localizedText.Format(lang), cancellationToken);
         }
         else if (lang.lang is null)
         {
-            this.ReplyPrompt(message, "Choose your language", definedLanguages, cancellationToken);
+            this.ReplyPrompt(messageContext, "Choose your language", definedLanguages, cancellationToken);
         }
         else
         {
             var localizedText = this.Localize(message, "Language '[lang]' not found");
-            this.Reply(message, localizedText.Format(lang), cancellationToken);
+            this.Reply(messageContext, localizedText.Format(lang), cancellationToken);
         }
 
         return Task.CompletedTask;

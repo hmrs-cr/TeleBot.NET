@@ -20,5 +20,5 @@ public class ListUsersCommand : TelegramCommand
     public override string CommandString => "/ListUsers";
 
     protected override Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default) =>
-        this.Reply(messageContext.Message, string.Join('\n', this.users.Where(kv => kv.Value.Enabled).Select(kv => kv.Key)));
+        this.Reply(messageContext, string.Join('\n', this.users.Where(kv => kv.Value.Enabled).Select(kv => kv.Key)));
 }

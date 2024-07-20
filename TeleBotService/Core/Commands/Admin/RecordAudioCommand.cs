@@ -43,7 +43,7 @@ public class RecordAudioCommand : TelegramCommand
 
         if (!everthingIsSetup)
         {
-            await this.Reply(messageContext.Message, "Can not record audio. Missing audio tools.");
+            await this.Reply(messageContext, "Can not record audio. Missing audio tools.");
         }
 
         return everthingIsSetup;
@@ -118,7 +118,7 @@ public class RecordAudioCommand : TelegramCommand
             await Task.WhenAll(recordProcessTask, oggencProcessTask);
             System.IO.File.Delete(intermediateFileName);
 
-            replyTasks.Add(this.AudioReply(messageContext.Message, fileName, title: isVoice ? "voice-memo" : $"{recordDateTime:s}", duration: duration, deleteFile: true));
+            replyTasks.Add(this.AudioReply(messageContext, fileName, title: isVoice ? "voice-memo" : $"{recordDateTime:s}", duration: duration, deleteFile: true));
         }
 
         await Task.WhenAll(replyTasks);

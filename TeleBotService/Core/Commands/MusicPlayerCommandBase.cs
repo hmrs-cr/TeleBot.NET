@@ -45,7 +45,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 if (this.CanAutoTurnOn && !await playerConfig.Client.IsConnected())
                 {
                     var localizedTemplate = this.Localize(message, "'[playerName]' is offline. Wait a minute, I'm trying to turn it on");
-                    _ = this.Reply(message, localizedTemplate.Format(new { playerName = playerConfig.Name }));
+                    _ = this.Reply(messageContext, localizedTemplate.Format(new { playerName = playerConfig.Name }));
                     await this.UntilOnline(playerConfig, true, cancellationToken);
                 }
 
@@ -58,7 +58,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 }
                 if (result > 0)
                 {
-                    _ = this.ReplyPlayerStatus(message, playerConfig, result);
+                    _ = this.ReplyPlayerStatus(messageContext, playerConfig, result);
                 }
             }
             catch (Exception e)
@@ -68,7 +68,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         }
         else
         {
-            _ = this.Reply(message, "No music players configured");
+            _ = this.Reply(messageContext, "No music players configured");
         }
     }
 
@@ -122,7 +122,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         this.playersConfig?.FirstOrDefault(pc => message.Text?.Contains(pc.Key, StringComparison.OrdinalIgnoreCase) == true).Value ?? message.GetContext().LastPlayerConfig ?? this.playersConfig?.FirstOrDefault().Value;
 
     protected async Task ReplyPlayerStatus(
-        Message message,
+        MessageContext messageContext,
         PlayersConfig playerConfig,
         int? delay = null,
         CancellationToken cancellationToken = default)
@@ -156,9 +156,9 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             statusMessage = "Nothing playing in '[playerName]'";
         }
 
-        statusMessage = ResolveTokens(Localize(message, statusMessage), playerStatus, playerConfig);
+        statusMessage = ResolveTokens(Localize(messageContext.Message, statusMessage), playerStatus, playerConfig);
 
-        await this.Reply(message, statusMessage);
+        await this.Reply(messageContext, statusMessage);
     }
 
     protected async Task<T?> ExecutePlayerClientCommand<T>(MessageContext messageContext, PlayersConfig playerConfig, Func<MessageContext, Message, PlayersConfig, Task<T>> command)
@@ -181,7 +181,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
 
         if (!success)
         {
-            await this.Reply(messageContext.Message, "Something failed");
+            await this.Reply(messageContext, "Something failed");
         }
 
         return result;

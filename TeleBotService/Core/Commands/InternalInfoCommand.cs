@@ -20,7 +20,7 @@ public class InternalInfoCommand : TelegramCommand
     {
         var myInfo = await this.telegramService.GetInfo();
         var internalInfo = GetInternalInfoString(myInfo);
-        await this.Reply(messageContext.Message, internalInfo);
+        await this.Reply(messageContext, internalInfo);
     }
 
     public static string GetInternalInfoString(User user) => new StringBuilder()

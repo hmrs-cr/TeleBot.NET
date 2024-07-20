@@ -26,7 +26,7 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
         if (this.playersConfig?.GetValueOrDefault(lastString) is { } newDefPlayer)
         {
             context.LastPlayerConfig = newDefPlayer;
-            await this.Reply(message, $"New default player config: {newDefPlayer.Name}");
+            await this.Reply(messageContext, $"New default player config: {newDefPlayer.Name}");
         }
         else if (!context.IsPromptReplyMessage)
         {
@@ -54,11 +54,11 @@ public class PlayerConfigCommand : MusicPlayerCommandBase
                 }
             }
 
-            await this.ReplyFormatedPrompt(message, sb.ToString());
+            await this.ReplyFormatedPrompt(messageContext, sb.ToString());
         }
         else
         {
-            await this.Reply(message, "Not a valid music player name");
+            await this.Reply(messageContext, "Not a valid music player name");
         }
 
         return DoNotReplyPlayerStatus;

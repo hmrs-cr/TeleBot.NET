@@ -23,15 +23,15 @@ public class AddUserCommand : TelegramCommand
         var userName = messageContext.Message.GetLastString("_");
         if (string.IsNullOrEmpty(userName))
         {
-            return this.Reply(messageContext.Message, "No user specified");
+            return this.Reply(messageContext, "No user specified");
         }
 
         if (this.users.GetValueOrDefault(userName)?.Enabled == true)
         {
-            return this.Reply(messageContext.Message, $"'{userName}' is already configured.");
+            return this.Reply(messageContext, $"'{userName}' is already configured.");
         }
 
         users.AddNewUser(userName);
-        return this.Reply(messageContext.Message, $"User '{userName}' added successfully.");
+        return this.Reply(messageContext, $"User '{userName}' added successfully.");
     }
 }

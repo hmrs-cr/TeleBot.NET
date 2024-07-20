@@ -2,5 +2,5 @@
 
 public interface INetClientMonitor
 {
-    bool StartNetClientMonitor(long chatId);
+    bool StartNetClientMonitor(Telegram.Bot.ITelegramBotClient botClient, long chatId);
 }

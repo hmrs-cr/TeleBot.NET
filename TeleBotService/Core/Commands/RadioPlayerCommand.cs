@@ -90,7 +90,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
                     await playersConfig.Client.PlayUrl(name, url.Url);
                 }
 
-                await this.Reply(message, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
+                await this.Reply(messageContext, "Playing radio '[radio]'".Format(new { radio = radio?.Name }), cancellationToken);
                 return ReplyPlayerStatusDelayLong;
             }
             catch (Exception)
@@ -101,7 +101,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         }
         else
         {
-            await this.Reply(message, this.Localize(message, "Can't find [radio]").Format(new { radio = radio?.Name ?? radioName }), cancellationToken);
+            await this.Reply(messageContext, this.Localize(message, "Can't find [radio]").Format(new { radio = radio?.Name ?? radioName }), cancellationToken);
         }
 
 

@@ -23,20 +23,20 @@ public class RemoveUserCommand : TelegramCommand
         var userName = messageContext.Message.GetLastString("_");
         if (string.IsNullOrEmpty(userName))
         {
-            return this.Reply(messageContext.Message, "No user specified");
+            return this.Reply(messageContext, "No user specified");
         }
 
         if (messageContext.User.UserName == userName)
         {
-            return this.Reply(messageContext.Message, "You can not remove yourself.");
+            return this.Reply(messageContext, "You can not remove yourself.");
         }
 
         if (this.users.ContainsKey(userName))
         {
             this.users.RemoveUser(userName);
-            return this.Reply(messageContext.Message, $"'{userName}' removed.");
+            return this.Reply(messageContext, $"'{userName}' removed.");
         }
 
-        return this.Reply(messageContext.Message, $"'{userName}' does not exists.");
+        return this.Reply(messageContext, $"'{userName}' does not exists.");
     }
 }

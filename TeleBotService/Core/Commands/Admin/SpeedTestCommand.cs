@@ -36,7 +36,7 @@ public class SpeedTestCommand : TelegramCommand
         var everthingIsSetup = System.IO.File.Exists(this.speedTestExecPath);
         if (!everthingIsSetup)
         {
-            await this.Reply(messageContext.Message, "Can not run speedtest. Missing speedtest tools.");
+            await this.Reply(messageContext, "Can not run speedtest. Missing speedtest tools.");
         }
 
         return everthingIsSetup;
@@ -49,7 +49,7 @@ public class SpeedTestCommand : TelegramCommand
         var isLicenseAlreadyAccepted = messageContext.User.GetBoolSetting(SpeedTestLicenseAccepted);
         if (!isAcceptanceMessage && !isLicenseAlreadyAccepted)
         {
-            await this.Reply(message, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
+            await this.Reply(messageContext, $"You need to accept the terms of use first:\n\n\thttps://www.speedtest.net/about/eula\n\thttps://www.speedtest.net/about/terms\n\thttps://www.speedtest.net/about/privacy\n\nExecute the command {AcceptanceMessage} to continue", cancellationToken);
             return;
         }
 
@@ -67,7 +67,7 @@ executeSpeedTest:
             if (result?.Result?.Url is { })
             {
                 var image = InputFile.FromString($"{result.Result.Url}.png");
-                await this.BotClient!.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: result.Result.Url, cancellationToken: cancellationToken);
+                await messageContext.BotClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: result.Result.Url, cancellationToken: cancellationToken);
             }
             else
             {
@@ -77,13 +77,13 @@ executeSpeedTest:
                     goto executeSpeedTest;
                 }
 
-                await this.Reply(message, "An error happened.");
+                await this.Reply(messageContext, "An error happened.");
             }
         }
         catch (Exception e)
         {
             var error = "Error executing speedtest";
-            await this.Reply(message, error, cancellationToken);
+            await this.Reply(messageContext, error, cancellationToken);
             this.LogWarning(e, error);
         }
     }
