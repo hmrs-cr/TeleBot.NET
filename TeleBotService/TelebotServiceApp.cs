@@ -185,6 +185,7 @@ public static class RegistrationExtensions
     {
         if (app.Environment.IsDevelopment())
         {
+            app.MapPost("/execute-command", ([FromServices] ITelegramService ts, [FromBody] string commandText, [FromHeader] string userName, bool sentReply = false ) => ts.ExecuteCommand(commandText, userName, sentReply)).WithName("ExecuteUpdate").WithOpenApi();
             app.MapGet("test", async ([FromServices]IOmadaOpenApiClient omadaClient) =>
             {
 

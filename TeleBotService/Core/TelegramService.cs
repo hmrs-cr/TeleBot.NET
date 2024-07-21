@@ -6,7 +6,11 @@ using TeleBotService.Data;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
 using Telegram.Bot;
+using Telegram.Bot.Args;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
+using Telegram.Bot.Requests;
+using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core;
@@ -103,6 +107,21 @@ public class TelegramService : ITelegramService
         }
     }
 
+    public async Task<string?> ExecuteCommand(string command, string userName, bool sentReply = false, CancellationToken cancellationToken = default)
+    {
+        var user = this.users.GetUser(userName);
+        if (user is null || !user.Enabled)
+        {
+            return "Unauthorized";
+        }
+
+        var chatId = sentReply ? user.GetLongSetting(UserData.ChatIdKeyName) : 0;
+        var update = new FakeUpdateTelegramClient.FakeUpdate(command, userName, chatId);
+        var tc = new FakeUpdateTelegramClient(this.botClient);
+        await this.HandleUpdateAsync(tc, update, cancellationToken);
+        return await tc.GetTextResponse();
+    }
+
     private Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
     {
         // Only process Message updates: https://core.telegram.org/bots/api#message
@@ -116,7 +135,7 @@ public class TelegramService : ITelegramService
         var user = this.users.GetUser(message.Chat.Username);
         if (user is null || !user.Enabled)
         {
-            this.HandleUnknownUser(message, cancellationToken);
+            this.HandleUnknownUser(botClient, message, cancellationToken);
             return Task.CompletedTask;
         }
 
@@ -128,7 +147,7 @@ public class TelegramService : ITelegramService
         return Task.CompletedTask;
     }
 
-    private void HandleUnknownUser(Message message, CancellationToken cancellationToken)
+    private void HandleUnknownUser(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
         var messageText = message.Text ?? string.Empty;
         if (messageText.EndsWith("start") && this.config.JoinBotServicesWatchword != null)
@@ -141,41 +160,41 @@ public class TelegramService : ITelegramService
             {
                 if (!string.IsNullOrEmpty(message.Chat.Username) && messageText == this.config.JoinBotServicesPassword)
                 {
-                    this.AcceptNewUser(message, cancellationToken);
+                    this.AcceptNewUser(botClient, message, cancellationToken);
                     return;
                 }
 
-                _ = this.RejectNewUser(message, cancellationToken);
+                _ = this.RejectNewUser(botClient, message, cancellationToken);
                 this.logger.LogInformation("Forbidden {messageChatUsername}:{messageChatId}", message.Chat.Username, message.Chat.Id);
                 return;
             }
     }
 
-    private async Task RejectNewUser(Message message, CancellationToken cancellationToken)
+    private async Task RejectNewUser(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
         await Task.Delay(2500);
-        await this.ReplyPhotoUrl(message, "👎", this.config.FailedJoinPasswordImageUrl, cancellationToken);
+        await this.ReplyPhotoUrl(botClient, message, "👎", this.config.FailedJoinPasswordImageUrl, cancellationToken);
     }
 
-    private void AcceptNewUser(Message message, CancellationToken cancellationToken)
+    private void AcceptNewUser(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken)
     {
         this.users.AddNewUser(message.Chat.Username!, message.GetContext().LanguageCode ?? "en");
         this.logger.LogInformation("New user '{userName}' added", message.Chat.Username);
 
         _ = this.SentAdminMessage($"'{message.Chat.Username}' joined the bot services.", cancellationToken);
-        _ = this.ReplyPhotoUrl(message, "Welcome! Write /Help to see what you can do.", this.config.WelcomeImageUrl, cancellationToken);
+        _ = this.ReplyPhotoUrl(botClient, message, "Welcome! Write /Help to see what you can do.", this.config.WelcomeImageUrl, cancellationToken);
     }
 
-    private Task ReplyPhotoUrl(Message message, string messageText, Uri? imageUrl, CancellationToken cancellationToken)
+    private Task ReplyPhotoUrl(ITelegramBotClient botClient, Message message, string messageText, Uri? imageUrl, CancellationToken cancellationToken)
     {
         if (imageUrl != null)
         {
             var image = InputFile.FromUri(imageUrl);
             messageText = this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, messageText);
-            return this.botClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: messageText, cancellationToken: cancellationToken);
+            return botClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: messageText, cancellationToken: cancellationToken);
         }
 
-        return this.Reply(message, messageText, cancellationToken);
+        return this.Reply(botClient, message, messageText, cancellationToken);
     }
 
     private async Task HandleCommands(MessageContext messageContext, CancellationToken cancellationToken)
@@ -218,7 +237,7 @@ public class TelegramService : ITelegramService
         else if (failedCommandCount == 0 && refusedCommandCount == 0)
         {
             this.logger.LogInformation("No commands found for message '{messageText}', chat {messageChatId}.", messageContext.Message.Text, messageContext.Message.Chat.Id);
-            await this.Reply(messageContext.Message, "I didn't understand you", cancellationToken);
+            await this.Reply(messageContext, "I didn't understand you", cancellationToken);
         }
     }
 
@@ -231,8 +250,11 @@ public class TelegramService : ITelegramService
         messageContext.Context.LanguageCode = messageContext.User.GeStringSetting(nameof(UserData.Language), messageContext.User.Language) ?? this.config.DefaultLanguageCode ?? messageContext.Context.LanguageCode;
     }
 
-    private Task Reply(Message message, string text, CancellationToken cancellationToken) =>
-        this.botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
+    private Task Reply(MessageContext context, string text, CancellationToken cancellationToken) =>
+        context.BotClient.Reply(context.Message, this.localizationResolver.GetLocalizedString(context.Message.GetContext().LanguageCode, text), cancellationToken);
+
+    private Task Reply(ITelegramBotClient botClient, Message message, string text, CancellationToken cancellationToken) =>
+        botClient.Reply(message, this.localizationResolver.GetLocalizedString(message.GetContext().LanguageCode, text), cancellationToken);
 
     private async Task SentAdminMessage(string message, CancellationToken cancellationToken)
     {
@@ -275,4 +297,90 @@ public class TelegramService : ITelegramService
         })
         .Where(i => i != null)
         .ToList()!;
+
+    private class FakeUpdateTelegramClient : ITelegramBotClient
+    {
+        private TaskCompletionSource<string> responseTaskCompletion = new();
+
+        private readonly ITelegramBotClient botClient;
+
+        public bool LocalBotServer => this.botClient.LocalBotServer;
+
+        public long? BotId => this.botClient.BotId;
+
+        public TimeSpan Timeout { get; set; }
+
+        public IExceptionParser ExceptionsParser { get; set; }
+
+        public FakeUpdateTelegramClient(ITelegramBotClient botClient)
+        {
+            this.botClient = botClient;
+            this.ExceptionsParser = botClient.ExceptionsParser;
+            this.Timeout = botClient.Timeout;
+        }
+
+        public event AsyncEventHandler<ApiRequestEventArgs>? OnMakingApiRequest;
+
+        public event AsyncEventHandler<ApiResponseEventArgs>? OnApiResponseReceived;
+
+        private void SetTextResponse(string textResponse) => this.responseTaskCompletion.SetResult(textResponse);
+
+        public Task<string> GetTextResponse() => this.GetTextResponse(TimeSpan.FromMinutes(2.5));
+
+        public async Task<string> GetTextResponse(TimeSpan  timeout)
+        {
+            var resultTask = this.responseTaskCompletion.Task;
+            await Task.WhenAny(resultTask, Task.Delay(timeout));
+            return resultTask.IsCompleted ? resultTask.Result : "Timeout";
+        }
+
+        public Task DownloadFileAsync(string filePath, Stream destination, CancellationToken cancellationToken = default) =>
+            this.botClient.DownloadFileAsync(filePath, destination, cancellationToken);
+
+
+        public async Task<TResponse> MakeRequestAsync<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        {
+            var textResponse = string.Empty;
+            if (request is SendMessageRequest messageRequest && messageRequest.Text is { })
+            {
+                textResponse = messageRequest.Text;
+            }
+            else if (request is SendPhotoRequest photoRequest && photoRequest.Caption is { })
+            {
+                textResponse = photoRequest.Caption;
+            }
+            else if (request is SendAudioRequest audioRequest && audioRequest.Caption is { })
+            {
+                textResponse = audioRequest.Caption;
+            }
+
+            this.SetTextResponse(textResponse);
+
+            var result = default(TResponse);
+            if (request is IChatTargetable { ChatId.Identifier: > 0 })
+            {
+                result = await this.botClient.MakeRequestAsync(request, cancellationToken);
+            }
+
+            return result;
+        }
+
+        public Task<bool> TestApiAsync(CancellationToken cancellationToken = default) => this.botClient.TestApiAsync(cancellationToken);
+
+        public class FakeUpdate : Update
+        {
+            public FakeUpdate(string command, string userName, long chatId)
+            {
+                this.Message = new()
+                {
+                    Text = command,
+                    Chat = new()
+                    {
+                        Username = userName,
+                        Id = chatId,
+                    }
+                };
+            }
+        }
+    }
 }

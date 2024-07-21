@@ -6,6 +6,7 @@ public class UserData
 {
     public const string DeleteSettingValue = "DELETED_\0\0\n\n\t\t\t\n\n\0\0_DELETED";
     public const string NetClientMonitorChatIdKeyName = "NetClientMonitorChatId";
+    public const string ChatIdKeyName = "ChatId";
 
     private readonly Dictionary<string, string?> settings = [];
 
@@ -21,6 +22,9 @@ public class UserData
     public int GetIntSetting(string key, int defaultValue = default) =>
         this.settings?.GetValueOrDefault(key) is { } strVal && int.TryParse(strVal, out var result) ? result : defaultValue;
 
+    public long GetLongSetting(string key, int defaultValue = default) =>
+        this.settings?.GetValueOrDefault(key) is { } strVal && long.TryParse(strVal, out var result) ? result : defaultValue;
+
     public bool GetBoolSetting(string key, bool defaultValue = default) =>
         this.settings?.GetValueOrDefault(key) is { } strVal && bool.TryParse(strVal, out var result) ? result : defaultValue;
 
@@ -29,7 +33,7 @@ public class UserData
 
     public void SetSetting<T>(string key, T? value)
     {
-        if (this.settings != null)
+        if (this.settings != null && this.settings.GetValueOrDefault(key) != value?.ToString())
         {
             this.settings[key] = value?.ToString();
             this.areSettingsDirty = true;

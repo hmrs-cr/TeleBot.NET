@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using TeleBotService.Config;
 using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 using TeleBotService.Localization;
@@ -41,6 +42,11 @@ public abstract class TelegramCommand : ITelegramCommand
         {
             if (canExecute)
             {
+                if (messageContext.Message.Chat.Id > 0)
+                {
+                    messageContext.User.SetSetting(UserData.ChatIdKeyName, messageContext.Message.Chat.Id);
+                }
+
                 this.isExecuting = true;
                 var task = this.Execute(messageContext, cancellationToken);
                 context.AddExecutingTask(task);
