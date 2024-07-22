@@ -98,7 +98,7 @@ public class SchedulerService : IHostedService
 
     private class MyLogProvider : ILogProvider
     {
-        private static Dictionary<Quartz.Logging.LogLevel, Microsoft.Extensions.Logging.LogLevel> LogLevelMap = new ()
+        private static readonly Dictionary<Quartz.Logging.LogLevel, Microsoft.Extensions.Logging.LogLevel> LogLevelMap = new ()
         {
             { Quartz.Logging.LogLevel.Debug, Microsoft.Extensions.Logging.LogLevel.Debug },
             { Quartz.Logging.LogLevel.Error, Microsoft.Extensions.Logging.LogLevel.Error },
