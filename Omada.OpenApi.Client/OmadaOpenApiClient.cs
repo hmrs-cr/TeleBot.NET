@@ -73,8 +73,8 @@ public class OmadaOpenApiClient : IOmadaOpenApiClient
 
     public async Task<ClientsResponse> GetClients(string siteId, int page = 1, int pageSize = 100)
     {
-        var url = this.GetPagedRequestUrl(siteId, "clients", page, pageSize);
-        //var url = new Uri("http://localhost:5247/getclients");
+        //var url = this.GetPagedRequestUrl(siteId, "clients", page, pageSize);
+        var url = new Uri("http://localhost:5247/getclients");
         var response = await this.Get<ClientsResponse>(url).ConfigureAwait(false);
         return response!;
     }

@@ -11,6 +11,7 @@
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.4" />
     <PackageReference Include="NRedisStack" Version="0.12.0" />
+    <PackageReference Include="Quartz" Version="3.11.0" />
     <PackageReference Include="Smdn.TPSmartHomeDevices.Tapo" Version="2.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />

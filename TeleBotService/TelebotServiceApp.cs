@@ -155,6 +155,7 @@ public static class RegistrationExtensions
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .AddNetClientMonitor(configuration)
+                .AddJobScheduler(configuration)
                 .ConfigureHttpJsonOptions(options =>
                 {
                     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
