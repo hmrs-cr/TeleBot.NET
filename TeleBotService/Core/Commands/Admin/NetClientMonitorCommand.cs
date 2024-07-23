@@ -164,12 +164,13 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 }
 
                 this.prevClientList = currClientList;
-                await Task.Delay(TimeSpan.FromSeconds(this.config?.MonitorFrequencyInSeconds ?? 60));
             }
             catch (Exception e)
             {
                 this.LogWarning(e, "Unhandled error on StartNotifyTask");
             }
+
+            await Task.Delay(TimeSpan.FromSeconds(this.config?.MonitorFrequencyInSeconds ?? 60));
         }
     }
 
