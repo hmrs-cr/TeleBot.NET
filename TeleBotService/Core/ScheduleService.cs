@@ -55,7 +55,7 @@ public class SchedulerService : IHostedService
             var trigger = string.IsNullOrEmpty(schedule.Value.CronSchedule) ?
                           null :
                           TriggerBuilder.Create()
-                                        .WithIdentity($"{schedule.Key}_Trigger", "Cron")
+                                        .WithIdentity($"{schedule.Key}_CronTrigger")
                                         .UsingJobData(CronTriggerDataMap)
                                         .StartNow()
                                         .WithCronSchedule(schedule.Value.CronSchedule)
@@ -110,7 +110,7 @@ public class SchedulerService : IHostedService
 
     private async Task<bool> OnClientConnectionEvent(string eventName, BasicClientData clientData, JobDataMap data)
     {
-        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName);
+        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName && s.Value.IsInValidTime);
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
@@ -119,7 +119,10 @@ public class SchedulerService : IHostedService
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name) &&
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), clientData.Mac))
             {
-                var task = this.scheduler?.TriggerJob(new JobKey(job.Key), data);
+                var task = eventInfo.Delay.HasValue ?
+                           this.scheduler?.ScheduleJob(GetSingleFireTrigger(job.Key, data, eventInfo.Delay.Value)) :
+                           this.scheduler?.TriggerJob(new JobKey(job.Key), data);
+
                 if (task != null)
                 {
                     await task;
@@ -130,6 +133,15 @@ public class SchedulerService : IHostedService
 
         return false;
     }
+
+    private static ITrigger GetSingleFireTrigger(string key , JobDataMap data, TimeSpan delay) =>
+        TriggerBuilder.Create()
+                      .WithIdentity($"{key}_DelaySingleTrigger", "Delay")
+                      .UsingJobData(data)
+                      .StartAt(DateTime.UtcNow.Add(delay))
+                      .ForJob(key)
+                      .WithSimpleSchedule(b => b.WithRepeatCount(0))
+                      .Build();
 
     private class JobFactory : IJobFactory
     {
@@ -163,12 +175,15 @@ public class SchedulerService : IHostedService
 
         public async Task Execute(IJobExecutionContext context)
         {
-            var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
             var config = (ScheduleConfig)context.JobDetail.JobDataMap[nameof(ScheduleConfig)];
-            foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            if (config.IsInValidTime)
             {
-                var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
-                this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' triggered by '{trigger}' with result '{commandResult}'", command, config.User, triggerName, result);
+                var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
+                foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
+                    this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, config.User, triggerName, context.Trigger.Key.Name, result);
+                }
             }
         }
     }

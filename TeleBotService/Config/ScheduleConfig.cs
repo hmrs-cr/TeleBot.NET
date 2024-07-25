@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 
 namespace TeleBotService.Config;
 
@@ -24,6 +25,33 @@ public class ScheduleConfig
 
     public bool Enabled { get; init; } = true;
 
+    public bool IsInValidTime
+    {
+        get
+        {
+            var triggerInfo = this.EventTriggerInfo;
+            var startDateTime = DateTime.MinValue;
+            var endDateTime = DateTime.MaxValue;
+            var now = DateTime.UtcNow;
+
+            if (triggerInfo.StartValidTime.HasValue)
+            {
+                startDateTime = now.Date.Add(triggerInfo.StartValidTime.Value.ToTimeSpan());
+            }
+
+            if (triggerInfo.EndValidTime.HasValue)
+            {
+                endDateTime = now.Date.Add(triggerInfo.EndValidTime.Value.ToTimeSpan());
+                if (startDateTime > endDateTime)
+                {
+                    endDateTime = endDateTime.AddDays(1);
+                }
+            }
+
+            return now >= startDateTime && now <= endDateTime;
+        }
+    }
+
     public EventTriggerData EventTriggerInfo => this.eventTriggerInfo ??= new EventTriggerData(this.EventTrigger);
 
     public class EventTriggerData
@@ -35,16 +63,38 @@ public class ScheduleConfig
                 return;
             }
 
-            var parts = eventString.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var parts = eventString.Split(':', 2, StringSplitOptions.TrimEntries);
             this.EventName = parts[0];
-            for (var c = 1; c < parts.Length; c++)
+
+            if (parts.Length == 2)
             {
-                var keyValue = parts[c].Split('=', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                this.EventParams[keyValue[0]] = keyValue.Length > 1 ? keyValue[1] : string.Empty;
+                var parameters = parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                foreach (var param in parameters)
+                {
+                    var keyValue = param.Split('=', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    if (keyValue[0] == "ValidTimeRange" && keyValue.Length == 2)
+                    {
+                        this.ParseValidTimeRange(keyValue[1]);
+                    }
+                    else if (keyValue[0] == "Delay" && keyValue.Length == 2)
+                    {
+                        this.ParseDelay(keyValue[1]);
+                    }
+                    else
+                    {
+                        this.EventParams[keyValue[0]] = keyValue.Length == 2 ? keyValue[1] : string.Empty;
+                    }
+                }
             }
         }
 
-        public string EventName { get; init; } = string.Empty;
+        public  string EventName { get; private set; } = string.Empty;
+
+        public TimeOnly? StartValidTime { get; private set; }
+
+        public TimeOnly? EndValidTime { get; private set; }
+
+        public TimeSpan? Delay { get; private set; }
 
         public Dictionary<string, string> EventParams { get; } = [];
 
@@ -66,5 +116,29 @@ public class ScheduleConfig
             return result;
         }
 
+        private void ParseValidTimeRange(string validTimeRange)
+        {
+            var parts = validTimeRange.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length == 2)
+            {
+                if (TimeOnly.TryParseExact(parts[0], "HH:mm", out var startValidTime))
+                {
+                    this.StartValidTime = startValidTime;
+                }
+
+                if (TimeOnly.TryParseExact(parts[1], "HH:mm", out var endValidTime))
+                {
+                    this.EndValidTime = endValidTime;
+                }
+            }
+        }
+
+        private void ParseDelay(string delayStr)
+        {
+            if (int.TryParse(delayStr, out var delay))
+            {
+                this.Delay = TimeSpan.FromSeconds(delay);
+            }
+        }
     }
 }
