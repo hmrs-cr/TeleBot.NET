@@ -1,8 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
-
-namespace TeleBotService.Config;
-
+﻿namespace TeleBotService.Config;
 
 public class SchedulesConfig : Dictionary<string, ScheduleConfig>
 {
@@ -52,10 +48,14 @@ public class ScheduleConfig
         }
     }
 
-    public EventTriggerData EventTriggerInfo => this.eventTriggerInfo ??= new EventTriggerData(this.EventTrigger);
+    public EventTriggerData EventTriggerInfo => this.eventTriggerInfo ??= string.IsNullOrEmpty(this.EventTrigger) ? EventTriggerData.Empty : new(this.EventTrigger);
 
     public class EventTriggerData
     {
+        public static readonly EventTriggerData Empty = new(string.Empty);
+
+        private readonly Dictionary<string, string> eventParams = [];
+
         public EventTriggerData(string? eventString)
         {
             if (string.IsNullOrEmpty(eventString))
@@ -82,7 +82,7 @@ public class ScheduleConfig
                     }
                     else
                     {
-                        this.EventParams[keyValue[0]] = keyValue.Length == 2 ? keyValue[1] : string.Empty;
+                        this.eventParams[keyValue[0]] = keyValue.Length == 2 ? keyValue[1] : string.Empty;
                     }
                 }
             }
@@ -96,13 +96,11 @@ public class ScheduleConfig
 
         public TimeSpan? Delay { get; private set; }
 
-        public Dictionary<string, string> EventParams { get; } = [];
-
         public bool HasParamValueOrNotSet(string paramName, string? value)
         {
-            var result = !this.EventParams.ContainsKey(paramName) || this.EventParams[paramName] == value;
+            var result = !this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value;
 
-            if (result && this.EventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
+            if (result && this.eventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
             {
                 foreach (var exception in exceptions.Split('|'))
                 {
