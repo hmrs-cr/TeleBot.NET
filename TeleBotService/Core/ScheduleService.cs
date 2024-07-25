@@ -37,6 +37,7 @@ public class SchedulerService : IHostedService
 
             var job = JobBuilder.Create<CommandJob>()
                                 .WithIdentity(schedule.Key)
+                                .StoreDurably(true)
                                 .Build();
 
 
@@ -88,7 +89,8 @@ public class SchedulerService : IHostedService
             var eventInfo = job.Value.EventTriggerInfo;
             if (eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), clientData.Ssid) &&
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), clientData.NetworkName) &&
-                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name))
+                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name) &&
+                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), clientData.Mac))
             {
                 var task = this.scheduler?.TriggerJob(new JobKey(job.Key));
                 if (task != null)
@@ -132,8 +134,11 @@ public class SchedulerService : IHostedService
         public async Task Execute(IJobExecutionContext context)
         {
             var config = (ScheduleConfig)context.JobDetail.JobDataMap[nameof(ScheduleConfig)];
-            var result = await this.telegramService.ExecuteCommand(config.CommandText, config.User, config.Reply);
-            this.logger.LogDebug("Automatically executed command '{commandText}' by user '{user}' with result '{commandResult}'", config.CommandText, config.User, result);
+            foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
+                this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' with result '{commandResult}'", command, config.User, result);
+            }
         }
     }
 

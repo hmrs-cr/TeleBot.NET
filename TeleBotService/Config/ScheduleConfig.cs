@@ -1,4 +1,6 @@
-﻿namespace TeleBotService.Config;
+﻿using System.Runtime.CompilerServices;
+
+namespace TeleBotService.Config;
 
 
 public class SchedulesConfig : Dictionary<string, ScheduleConfig>
@@ -46,7 +48,23 @@ public class ScheduleConfig
 
         public Dictionary<string, string> EventParams { get; } = [];
 
-        public bool HasParamValueOrNotSet(string paramName, string? value) =>
-            !this.EventParams.ContainsKey(paramName) || this.EventParams[paramName] == value;
+        public bool HasParamValueOrNotSet(string paramName, string? value)
+        {
+            var result = !this.EventParams.ContainsKey(paramName) || this.EventParams[paramName] == value;
+
+            if (result && this.EventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
+            {
+                foreach (var exception in exceptions.Split('|'))
+                {
+                    if (value == exception)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return result;
+        }
+
     }
 }
