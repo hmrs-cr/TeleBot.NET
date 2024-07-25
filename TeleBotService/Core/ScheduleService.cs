@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
+using Omada.OpenApi.Client.Responses;
 using Quartz;
-using Quartz.Impl;
 using Quartz.Logging;
 using Quartz.Spi;
 using TeleBotService.Config;
@@ -18,20 +18,33 @@ public class SchedulerService : IHostedService
         this.serviceProvider = serviceProvider;
         this.config = config.Value;
         LogProvider.SetCurrentLogProvider(new MyLogProvider(logger));
+
+        if (serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
+        {
+            netClientMonitor.ClientConcected += this.OnClientConnected;
+            netClientMonitor.ClientDisconcected += this.OnClientDisconnected;
+        }
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         foreach (var schedule in this.config.Where(s => s.Value.Enabled))
         {
+            if (string.IsNullOrEmpty(schedule.Value.CronSchedule) && string.IsNullOrEmpty(schedule.Value.EventTrigger))
+            {
+                continue;
+            }
+
             var job = JobBuilder.Create<CommandJob>()
-                                .WithIdentity(schedule.Key, "group1")
+                                .WithIdentity(schedule.Key)
                                 .Build();
 
 
             job.JobDataMap[nameof(ScheduleConfig)] = schedule.Value;
-            var trigger = TriggerBuilder.Create()
-                                        .WithIdentity($"{schedule.Key}_Trigger", "group1")
+            var trigger = string.IsNullOrEmpty(schedule.Value.CronSchedule) ?
+                          null :
+                          TriggerBuilder.Create()
+                                        .WithIdentity($"{schedule.Key}_Trigger")
                                         .StartNow()
                                         .WithCronSchedule(schedule.Value.CronSchedule)
                                         .Build();
@@ -44,7 +57,7 @@ public class SchedulerService : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken) => this.scheduler?.Shutdown(cancellationToken) ?? Task.CompletedTask;
 
-    private async Task ScheduleJob(IJobDetail job, ITrigger trigger, CancellationToken cancellationToken)
+    private async Task ScheduleJob(IJobDetail job, ITrigger? trigger, CancellationToken cancellationToken)
     {
         if (this.scheduler == null)
         {
@@ -55,7 +68,35 @@ public class SchedulerService : IHostedService
             scheduler.JobFactory = new JobFactory(this.serviceProvider);
         }
 
-        await this.scheduler.ScheduleJob(job, trigger, cancellationToken);
+        if (trigger != null)
+        {
+            await this.scheduler.ScheduleJob(job, trigger, cancellationToken);
+        }
+        else
+        {
+            await this.scheduler.AddJob(job, false, cancellationToken);
+        }
+    }
+
+    private void OnClientDisconnected(object? sender, BasicClientData clientData) { }
+
+    private async void OnClientConnected(object? sender, BasicClientData clientData)
+    {
+        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == "ClientConnected");
+        foreach (var job in jobs)
+        {
+            var eventInfo = job.Value.EventTriggerInfo;
+            if (eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), clientData.Ssid) &&
+                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), clientData.NetworkName) &&
+                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name))
+            {
+                var task = this.scheduler?.TriggerJob(new JobKey(job.Key));
+                if (task != null)
+                {
+                    await task;
+                }
+            }
+        }
     }
 
     private class JobFactory : IJobFactory

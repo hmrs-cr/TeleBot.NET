@@ -80,6 +80,11 @@ public class TelegramService : ITelegramService
 
     public async Task StopAsync(CancellationToken cancellationToken)
     {
+        if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
+        {
+            netClientMonitor.StopNetClientMonitor();
+        }
+
         if (!cts.IsCancellationRequested)
         {
             _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", default);
@@ -94,10 +99,16 @@ public class TelegramService : ITelegramService
         {
             if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
             {
+                var started = false;
                 var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
                 await foreach (var id in ids)
                 {
-                    netClientMonitor.StartNetClientMonitor(this.botClient, id);
+                    started |= netClientMonitor.StartNetClientMonitor(this.botClient, id);
+                }
+
+                if (!started)
+                {
+                    netClientMonitor.StartNetClientMonitor(this.botClient, -1);
                 }
             }
         }

@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using Omada.OpenApi.Client;
@@ -19,6 +20,9 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     private Dictionary<string, BasicClientData>? prevClientList;
     private readonly NetClientMonitorConfig config;
 
+    public event EventHandler<BasicClientData>? ClientConcected;
+    public event EventHandler<BasicClientData>? ClientDisconcected;
+
     public NetClientMonitorCommand(
         IOptions<NetClientMonitorConfig> config,
         IOmadaOpenApiClient omadaClient,
@@ -34,10 +38,17 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
     public override bool CanExecuteCommand(Message message) => message.Text == "/NetClients_Monitor_Start" || message.Text == "/NetClients_Monitor_End";
 
-    public bool StopNetClientMonitor(MessageContext messageContext)
+    private bool StopNetClientMonitor(MessageContext? messageContext)
     {
         lock (taskCreationLock)
         {
+            if (messageContext == null)
+            {
+                MonitorData.CancellationTokenSource?.Cancel();
+                MonitorData.MonitorTask = null;
+                return true;
+            }
+
             var chatId = messageContext.Message.Chat.Id;
             if (MonitorData.NotifyUserList.Remove(chatId))
             {
@@ -45,19 +56,18 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 if (MonitorData.NotifyUserList.Count == 0)
                 {
                     messageContext.User.RemoveSetting(UserData.NetClientMonitorChatIdKeyName);
-                    MonitorData.CancellationTokenSource?.Cancel();
-                    MonitorData.NotifyTask = null;
                     MonitorData.CancellationTokenSource = null;
                 }
 
                 return true;
             }
+
         }
 
         return false;
     }
 
-    public bool StartNetClientMonitor(MessageContext messageContext)
+    private bool StartNetClientMonitor(MessageContext messageContext)
     {
         var started = this.StartNetClientMonitor(messageContext.BotClient, messageContext.Message.Chat.Id);
         if (started)
@@ -72,9 +82,9 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     {
         lock (taskCreationLock)
         {
-            if (MonitorData.NotifyUserList.Add(chatId))
+            MonitorData.MonitorTask ??= this.StartNotifyTask(botClient, MonitorData);
+            if (chatId > 0 && MonitorData.NotifyUserList.Add(chatId))
             {
-                MonitorData.NotifyTask ??= this.StartNotifyTask(botClient, MonitorData);
                 this.LogInformation("Starting monitor NetClient Monitor for chat {chatId}", chatId);
                 return true;
             }
@@ -82,6 +92,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
         return false;
     }
+
+    public bool StopNetClientMonitor() => this.StopNetClientMonitor(null);
 
     protected override Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
@@ -117,18 +129,17 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
 
                 var maxClientNameLen = 0;
                 StringBuilder? messageBuilder = null;
+
                 foreach (var clientAdded in addedClients)
                 {
                     DisconectedClientsRemove(clientAdded);
                     _ = this.netClientRepository.RemoveDisconnectedNetClientInfo(clientAdded);
-                    if (clientAdded.Index == 0)
+                    if (monitorData.NotifyUserList.Count > 0)
                     {
-                        messageBuilder ??= new StringBuilder().Append("<pre>");
-                        messageBuilder.AppendLine("NEWLY CONNECTED CLIENTS:");
-                        maxClientNameLen = clientAdded.Name.Length;
+                        AppendClientInfo("NEWLY CONNECTED CLIENTS:", clientAdded, false, ref maxClientNameLen, ref messageBuilder);
                     }
 
-                    AppendClientData(messageBuilder!, clientAdded, maxClientNameLen);
+                    this.ClientConcected?.Invoke(this, clientAdded);
                     this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                 }
 
@@ -136,19 +147,12 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 {
                     DisconectedClientsAdd(clientRemoved);
                     _ = this.netClientRepository.SaveDisconnectedNetClientInfo(clientRemoved);
-                    if (clientRemoved.Index == 0)
+                    if (monitorData.NotifyUserList.Count > 0)
                     {
-                        messageBuilder ??= new StringBuilder().Append("<pre>");
-                        if (messageBuilder.Length > 10)
-                        {
-                            messageBuilder.AppendLine();
-                        }
-
-                        messageBuilder.AppendLine("JUST DISCONNECTED CLIENTS:");
-                        maxClientNameLen = clientRemoved.Name.Length;
+                        AppendClientInfo("JUST DISCONNECTED CLIENTS:", clientRemoved, true, ref maxClientNameLen, ref messageBuilder);
                     }
 
-                    AppendClientData(messageBuilder!, clientRemoved, maxClientNameLen);
+                    this.ClientDisconcected?.Invoke(this, clientRemoved);
                     this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                 }
 
@@ -174,11 +178,33 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
         }
     }
 
+    private static void AppendClientInfo(
+        string headerText,
+        BasicClientData clientRemoved,
+        bool appendExtraLine,
+        ref int maxClientNameLen,
+        ref StringBuilder? messageBuilder)
+    {
+        if (clientRemoved.Index == 0)
+        {
+            messageBuilder ??= new StringBuilder().Append("<pre>");
+            if (appendExtraLine && messageBuilder.Length > 10)
+            {
+                messageBuilder.AppendLine();
+            }
+
+            messageBuilder.AppendLine(headerText);
+            maxClientNameLen = clientRemoved.Name.Length;
+        }
+
+        AppendClientData(messageBuilder!, clientRemoved, maxClientNameLen);
+    }
+
     private class NetClientsMonitorData
     {
         public CancellationTokenSource? CancellationTokenSource { get; set; }
 
-        public Task? NotifyTask { get; set; }
+        public Task? MonitorTask { get; set; }
 
         public HashSet<long> NotifyUserList { get; } = [];
     }
