@@ -20,8 +20,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     private Dictionary<string, BasicClientData>? prevClientList;
     private readonly NetClientMonitorConfig config;
 
-    public event EventHandler<BasicClientData>? ClientConcected;
-    public event EventHandler<BasicClientData>? ClientDisconcected;
+    public event EventHandler<IEnumerable<BasicClientData>>? ClientConcected;
+    public event EventHandler<IEnumerable<BasicClientData>>? ClientDisconcected;
 
     public NetClientMonitorCommand(
         IOptions<NetClientMonitorConfig> config,
@@ -124,36 +124,43 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                 var currClientList = clients.Result!.Data.ToDictionary(c => c.Mac);
                 this.prevClientList ??= currClientList;
 
-                var addedClients = currClientList.Where(c => !this.prevClientList.ContainsKey(c.Key)).OrderByDescending(c => c.Value.Name.Length).Select((c, i) => c.Value.SetIndex(i));
-                var removedClients = this.prevClientList.Where(c => !currClientList.ContainsKey(c.Key)).OrderByDescending(c => c.Value.Name.Length).Select((c, i) => c.Value.SetIndex(i));
+                var addedClients = currClientList.Where(c => !this.prevClientList.ContainsKey(c.Key)).OrderByDescending(c => c.Value.Name.Length).Select((c, i) => c.Value.SetIndex(i)).ToList();
+                var removedClients = this.prevClientList.Where(c => !currClientList.ContainsKey(c.Key)).OrderByDescending(c => c.Value.Name.Length).Select((c, i) => c.Value.SetIndex(i)).ToList();
 
                 var maxClientNameLen = 0;
                 StringBuilder? messageBuilder = null;
 
-                foreach (var clientAdded in addedClients)
+                if (addedClients.Count > 0)
                 {
-                    DisconectedClientsRemove(clientAdded);
-                    _ = this.netClientRepository.RemoveDisconnectedNetClientInfo(clientAdded);
-                    if (monitorData.NotifyUserList.Count > 0)
+                    foreach (var clientAdded in addedClients)
                     {
-                        AppendClientInfo("NEWLY CONNECTED CLIENTS:", clientAdded, false, ref maxClientNameLen, ref messageBuilder);
+                        DisconectedClientsRemove(clientAdded);
+                        _ = this.netClientRepository.RemoveDisconnectedNetClientInfo(clientAdded);
+                        if (monitorData.NotifyUserList.Count > 0)
+                        {
+                            AppendClientInfo("NEWLY CONNECTED CLIENTS:", clientAdded, false, ref maxClientNameLen, ref messageBuilder);
+                        }
+                        this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                     }
 
-                    this.ClientConcected?.Invoke(this, clientAdded);
-                    this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
+                    this.ClientConcected?.Invoke(this, addedClients);
                 }
 
-                foreach (var clientRemoved in removedClients)
+                if (removedClients.Count > 0)
                 {
-                    DisconectedClientsAdd(clientRemoved);
-                    _ = this.netClientRepository.SaveDisconnectedNetClientInfo(clientRemoved);
-                    if (monitorData.NotifyUserList.Count > 0)
+                    foreach (var clientRemoved in removedClients)
                     {
-                        AppendClientInfo("JUST DISCONNECTED CLIENTS:", clientRemoved, true, ref maxClientNameLen, ref messageBuilder);
+                        DisconectedClientsAdd(clientRemoved);
+                        _ = this.netClientRepository.SaveDisconnectedNetClientInfo(clientRemoved);
+                        if (monitorData.NotifyUserList.Count > 0)
+                        {
+                            AppendClientInfo("JUST DISCONNECTED CLIENTS:", clientRemoved, true, ref maxClientNameLen, ref messageBuilder);
+                        }
+
+                        this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                     }
 
-                    this.ClientDisconcected?.Invoke(this, clientRemoved);
-                    this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
+                    this.ClientDisconcected?.Invoke(this, removedClients);
                 }
 
                 if (messageBuilder?.Length > 0)

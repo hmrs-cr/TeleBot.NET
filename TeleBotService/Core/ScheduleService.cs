@@ -9,12 +9,22 @@ namespace TeleBotService.Core;
 
 public class SchedulerService : IHostedService
 {
+    private const string TriggerNameKey = "TriggerName";
+
+    private static readonly JobDataMap NetClientDisconnectedTriggerDataMap = new(1);
+    private static readonly JobDataMap NetClientConnectedTriggerDataMap = new(1);
+    private static readonly JobDataMap CronTriggerDataMap = new(1);
+
     private readonly IServiceProvider serviceProvider;
     private readonly SchedulesConfig config;
     private IScheduler? scheduler;
 
     public SchedulerService(IServiceProvider serviceProvider, IOptions<SchedulesConfig> config, ILogger<SchedulerService> logger)
     {
+        NetClientDisconnectedTriggerDataMap[TriggerNameKey] = "NetClientDisconnected";
+        NetClientConnectedTriggerDataMap[TriggerNameKey] = "NetClientConnected";
+        CronTriggerDataMap[TriggerNameKey] = "Cron";
+
         this.serviceProvider = serviceProvider;
         this.config = config.Value;
         LogProvider.SetCurrentLogProvider(new MyLogProvider(logger));
@@ -45,7 +55,8 @@ public class SchedulerService : IHostedService
             var trigger = string.IsNullOrEmpty(schedule.Value.CronSchedule) ?
                           null :
                           TriggerBuilder.Create()
-                                        .WithIdentity($"{schedule.Key}_Trigger")
+                                        .WithIdentity($"{schedule.Key}_Trigger", "Cron")
+                                        .UsingJobData(CronTriggerDataMap)
                                         .StartNow()
                                         .WithCronSchedule(schedule.Value.CronSchedule)
                                         .Build();
@@ -79,11 +90,27 @@ public class SchedulerService : IHostedService
         }
     }
 
-    private void OnClientDisconnected(object? sender, BasicClientData clientData) { }
+    private void OnClientDisconnected(object? sender, IEnumerable<BasicClientData> clientData) =>
+        _ = this.OnClientConnectionEvent("ClientDisconnected", clientData, NetClientDisconnectedTriggerDataMap);
 
-    private async void OnClientConnected(object? sender, BasicClientData clientData)
+    private void OnClientConnected(object? sender, IEnumerable<BasicClientData> clientData) =>
+        _ = this.OnClientConnectionEvent("ClientConnected", clientData, NetClientConnectedTriggerDataMap);
+
+
+    private async Task OnClientConnectionEvent(string eventName, IEnumerable<BasicClientData> clientData, JobDataMap data)
     {
-        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == "ClientConnected");
+        foreach (var client in clientData)
+        {
+            if (await this.OnClientConnectionEvent(eventName, client, data))
+            {
+                return;
+            }
+        }
+    }
+
+    private async Task<bool> OnClientConnectionEvent(string eventName, BasicClientData clientData, JobDataMap data)
+    {
+        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName);
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
@@ -92,13 +119,16 @@ public class SchedulerService : IHostedService
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name) &&
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), clientData.Mac))
             {
-                var task = this.scheduler?.TriggerJob(new JobKey(job.Key));
+                var task = this.scheduler?.TriggerJob(new JobKey(job.Key), data);
                 if (task != null)
                 {
                     await task;
+                    return true;
                 }
             }
         }
+
+        return false;
     }
 
     private class JobFactory : IJobFactory
@@ -133,18 +163,19 @@ public class SchedulerService : IHostedService
 
         public async Task Execute(IJobExecutionContext context)
         {
+            var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
             var config = (ScheduleConfig)context.JobDetail.JobDataMap[nameof(ScheduleConfig)];
             foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
-                this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' with result '{commandResult}'", command, config.User, result);
+                this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' triggered by '{trigger}' with result '{commandResult}'", command, config.User, triggerName, result);
             }
         }
     }
 
     private class MyLogProvider : ILogProvider
     {
-        private static readonly Dictionary<Quartz.Logging.LogLevel, Microsoft.Extensions.Logging.LogLevel> LogLevelMap = new ()
+        private static readonly Dictionary<Quartz.Logging.LogLevel, Microsoft.Extensions.Logging.LogLevel> LogLevelMap = new()
         {
             { Quartz.Logging.LogLevel.Debug, Microsoft.Extensions.Logging.LogLevel.Debug },
             { Quartz.Logging.LogLevel.Error, Microsoft.Extensions.Logging.LogLevel.Error },
