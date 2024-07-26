@@ -12,3 +12,5 @@ TeleBotService/appsettings.Staging.json
 /Omada.OpenApi.Client/bin
 /Omada.OpenApi.Client/obj
 TeleBotService/GetClientsResponse.json
+/TeleBotService.Tests/bin
+/TeleBotService.Tests/obj
