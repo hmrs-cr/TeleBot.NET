@@ -173,14 +173,11 @@ public class SchedulerService : IHostedService
         public async Task Execute(IJobExecutionContext context)
         {
             var config = (ScheduleConfig)context.JobDetail.JobDataMap[nameof(ScheduleConfig)];
-            if (config.IsInValidTime)
+            var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
+            foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
-                foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                {
-                    var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
-                    this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, config.User, triggerName, context.Trigger.Key.Name, result);
-                }
+                var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
+                this.logger.LogInformation("Automatically executed command '{commandText}' by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, config.User, triggerName, context.Trigger.Key.Name, result);
             }
         }
     }
