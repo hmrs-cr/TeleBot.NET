@@ -121,6 +121,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
             {
                 var clientsResponse = await this.omadaClient.GetClients();
 
+                IReadOnlyCollection<BasicClientData>? prevClientList = null;
                 var clients = clientsResponse.Result!.Data;
                 var currClientList = clients.ToDictionary(c => c.Mac);
                 this.prevClientList ??= currClientList;
@@ -144,7 +145,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                         this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                     }
 
-                    this.ClientConcected?.Invoke(this, new(currentClients: clients, updatedClients: addedClients));
+                    prevClientList ??= this.prevClientList.Select(kv => kv.Value).ToList();
+                    this.ClientConcected?.Invoke(this, new(previousClients: prevClientList, currentClients: clients, updatedClients: addedClients));
                 }
 
                 if (removedClients.Count > 0)
@@ -161,7 +163,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                         this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                     }
 
-                    this.ClientDisconcected?.Invoke(this, new(currentClients: clients, updatedClients: removedClients));
+                    prevClientList ??= this.prevClientList.Select(kv => kv.Value).ToList();
+                    this.ClientDisconcected?.Invoke(this, new(previousClients: prevClientList, currentClients: clients, updatedClients: removedClients));
                 }
 
                 if (messageBuilder?.Length > 0)

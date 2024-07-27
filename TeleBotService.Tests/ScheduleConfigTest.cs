@@ -16,7 +16,7 @@ public class ScheduleConfigTest
             EventTrigger = eventTriggerString,
         };
 
-        Assert.Equal(ScheduleConfig.EventTriggerData.Empty, config.EventTriggerInfo);
+        Assert.Equal(EventTriggerData.Empty, config.EventTriggerInfo);
     }
 
     [Theory]
@@ -188,5 +188,69 @@ public class ScheduleConfigTest
 
         TimeOnly? expectdValue = expectedHours.HasValue && expectedMinutes.HasValue ? new TimeOnly(expectedHours.Value, expectedMinutes.Value) : null;
         Assert.Equal(expectdValue, config.EventTriggerInfo.EndValidTime);
+    }
+
+    [Theory]
+    [InlineData("TestEventName", null)]
+    [InlineData("TestEventName:MeetCount=3", 3)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;MeetCount=777", 777)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;MeetCount=caca", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=777", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=00:33-13:44", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=13:44-09:66", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;ExceptParam2=ValNot1|ValNot2|ValNot3;Param3=00:22;ValidTimeRange=13:44-09:66", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=13:44-_", null)]
+    [InlineData("JacunaMatata:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=_-13:44", null)]
+    [InlineData(":Param1=11:11;Param2=Val2;Param3=00:22;MeetCount=0", 0)]
+    [InlineData(":CACA;Param1=11:11;Param2=Val2;Param3=00:22", null)]
+    [InlineData(null, null)]
+    [InlineData(":", null)]
+    [InlineData(":MeetCount=333", 333)]
+    [InlineData(":CACA", null)]
+    [InlineData("", null)]
+    public void ScheduleConfigTest_EventTriggerInfo_HasCorrectMeetCount(string? eventTriggerString, int? expectedValue)
+    {
+        var config = new ScheduleConfig
+        {
+            CommandText = string.Empty,
+            User = string.Empty,
+            EventTrigger = eventTriggerString,
+        };
+
+        Assert.Equal(expectedValue, config.EventTriggerInfo.MeetCount);
+    }
+
+    [Theory]
+    [InlineData("TestEventName", null)]
+    [InlineData("TestEventName:MeetCount=3;PrevMeetCount=6", 6)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;PrevMeetCount=777", 777)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;PrevMeetCount=caca", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=777", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=00:33-13:44", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=13:44-09:66", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;ExceptParam2=ValNot1|ValNot2|ValNot3;Param3=00:22;ValidTimeRange=13:44-09:66", null)]
+    [InlineData("TestEventName:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=13:44-_", null)]
+    [InlineData("JacunaMatata:Param1=11:11;Param2=Val2;Param3=00:22;ValidTimeRange=_-13:44", null)]
+    [InlineData(":Param1=11:11;Param2=Val2;Param3=00:22;MeetCount=0;PrevMeetCount=3", 3)]
+    [InlineData(":CACA;Param1=11:11;Param2=Val2;Param3=00:22", null)]
+    [InlineData(null, null)]
+    [InlineData(":", null)]
+    [InlineData(":PrevMeetCount=333", 333)]
+    [InlineData(":CACA", null)]
+    [InlineData("", null)]
+    public void ScheduleConfigTest_EventTriggerInfo_HasCorrectPrevMeetCount(string? eventTriggerString, int? expectedValue)
+    {
+        var config = new ScheduleConfig
+        {
+            CommandText = string.Empty,
+            User = string.Empty,
+            EventTrigger = eventTriggerString,
+        };
+
+        Assert.Equal(expectedValue, config.EventTriggerInfo.PrevMeetCount);
     }
 }

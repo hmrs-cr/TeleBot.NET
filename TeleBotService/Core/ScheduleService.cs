@@ -228,12 +228,18 @@ public class SchedulerService : IHostedService
 
 public static class EventTriggerDataExtensions
 {
-    public static bool ClientMeetsParameters(this ScheduleConfig.EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
+    public static bool ClientMeetsParameters(this EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
     {
-        var count = clientData.CurrentClients.Count(c => MeetsIndividualParameters(eventInfo, c));
-        return MeetsIndividualParameters(eventInfo, client) && true;
+        return MeetsIndividualParameters(eventInfo, client) && MeetsGroupParameters(eventInfo, clientData, client);
 
-        static bool MeetsIndividualParameters(ScheduleConfig.EventTriggerData eventInfo, BasicClientData client) =>
+        static bool MeetsGroupParameters(EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
+        {
+            int? meetCount = eventInfo.MeetCount.HasValue ? clientData.CurrentClients.Count(c => MeetsIndividualParameters(eventInfo, c)) : null;
+            int? prevMeetCount = eventInfo.PrevMeetCount.HasValue ? clientData.PreviousClients.Count(c => MeetsIndividualParameters(eventInfo, c)) : null;
+            return meetCount == eventInfo.MeetCount && prevMeetCount == eventInfo.PrevMeetCount;
+        }
+
+        static bool MeetsIndividualParameters(EventTriggerData eventInfo, BasicClientData client) =>
             eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), client.Ssid) &&
                 eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), client.NetworkName) &&
                     eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), client.Name) &&

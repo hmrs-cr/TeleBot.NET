@@ -13,12 +13,21 @@ public interface INetClientMonitor
 
 public class ClientConnectionParams
 {
-    public ClientConnectionParams(IReadOnlyCollection<BasicClientData> currentClients, IReadOnlyCollection<BasicClientData> updatedClients)
+    public ClientConnectionParams(
+        IReadOnlyCollection<BasicClientData> previousClients,
+        IReadOnlyCollection<BasicClientData> currentClients,
+        IReadOnlyCollection<BasicClientData> updatedClients)
     {
+        this.PreviousClients = previousClients;
         this.CurrentClients = currentClients;
         this.UpdatedClients = updatedClients;
     }
 
+    public IReadOnlyCollection<BasicClientData> PreviousClients { get; }
     public IReadOnlyCollection<BasicClientData> CurrentClients { get; }
+
+    /// <summary>
+    /// Get the list of client that where added or removed.
+    /// </summary>
     public IReadOnlyCollection<BasicClientData> UpdatedClients { get; }
 }

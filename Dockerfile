@@ -3,6 +3,7 @@ WORKDIR /src
 
 # Copy everything
 COPY . ./
+RUN dotnet test
 # Restore as distinct layers
 RUN dotnet restore
 # Build and publish a release
