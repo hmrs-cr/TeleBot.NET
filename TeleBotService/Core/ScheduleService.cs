@@ -90,34 +90,31 @@ public class SchedulerService : IHostedService
         }
     }
 
-    private void OnClientDisconnected(object? sender, IEnumerable<BasicClientData> clientData) =>
+    private void OnClientDisconnected(object? _, ClientConnectionParams clientData) =>
         _ = this.OnClientConnectionEvent("ClientDisconnected", clientData, NetClientDisconnectedTriggerDataMap);
 
-    private void OnClientConnected(object? sender, IEnumerable<BasicClientData> clientData) =>
+    private void OnClientConnected(object? _, ClientConnectionParams clientData) =>
         _ = this.OnClientConnectionEvent("ClientConnected", clientData, NetClientConnectedTriggerDataMap);
 
 
-    private async Task OnClientConnectionEvent(string eventName, IEnumerable<BasicClientData> clientData, JobDataMap data)
+    private async Task OnClientConnectionEvent(string eventName, ClientConnectionParams clientData, JobDataMap data)
     {
-        foreach (var client in clientData)
+        foreach (var client in clientData.UpdatedClients)
         {
-            if (await this.OnClientConnectionEvent(eventName, client, data))
+            if (await this.OnClientConnectionEvent(eventName, clientData, client, data))
             {
                 return;
             }
         }
     }
 
-    private async Task<bool> OnClientConnectionEvent(string eventName, BasicClientData clientData, JobDataMap data)
+    private async Task<bool> OnClientConnectionEvent(string eventName, ClientConnectionParams clientData, BasicClientData client, JobDataMap data)
     {
         var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName && s.Value.IsInValidTime);
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
-            if (eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), clientData.Ssid) &&
-                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), clientData.NetworkName) &&
-                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), clientData.Name) &&
-                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), clientData.Mac))
+            if (eventInfo.ClientMeetsParameters(clientData, client))
             {
                 var task = eventInfo.Delay.HasValue ?
                            this.scheduler?.ScheduleJob(GetSingleFireTrigger(job.Key, data, eventInfo.Delay.Value)) :
@@ -229,6 +226,20 @@ public class SchedulerService : IHostedService
     }
 }
 
+public static class EventTriggerDataExtensions
+{
+    public static bool ClientMeetsParameters(this ScheduleConfig.EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
+    {
+        var count = clientData.CurrentClients.Count(c => MeetsIndividualParameters(eventInfo, c));
+        return MeetsIndividualParameters(eventInfo, client) && true;
+
+        static bool MeetsIndividualParameters(ScheduleConfig.EventTriggerData eventInfo, BasicClientData client) =>
+            eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), client.Ssid) &&
+                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), client.NetworkName) &&
+                    eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), client.Name) &&
+                        eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), client.Mac);
+    }
+}
 
 public static class SchedulerRegistrationExtensions
 {

@@ -20,8 +20,8 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
     private Dictionary<string, BasicClientData>? prevClientList;
     private readonly NetClientMonitorConfig config;
 
-    public event EventHandler<IEnumerable<BasicClientData>>? ClientConcected;
-    public event EventHandler<IEnumerable<BasicClientData>>? ClientDisconcected;
+    public event EventHandler<ClientConnectionParams>? ClientConcected;
+    public event EventHandler<ClientConnectionParams>? ClientDisconcected;
 
     public NetClientMonitorCommand(
         IOptions<NetClientMonitorConfig> config,
@@ -119,9 +119,10 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
         {
             try
             {
-                var clients = await this.omadaClient.GetClients();
+                var clientsResponse = await this.omadaClient.GetClients();
 
-                var currClientList = clients.Result!.Data.ToDictionary(c => c.Mac);
+                var clients = clientsResponse.Result!.Data;
+                var currClientList = clients.ToDictionary(c => c.Mac);
                 this.prevClientList ??= currClientList;
 
                 var addedClients = currClientList.Where(c => !this.prevClientList.ContainsKey(c.Key)).OrderByDescending(c => c.Value.Name.Length).Select((c, i) => c.Value.SetIndex(i)).ToList();
@@ -143,7 +144,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                         this.LogDebug("Added ClientData: {clientData}", JsonSerializer.Serialize(clientAdded, this.jsonSerializerOptions));
                     }
 
-                    this.ClientConcected?.Invoke(this, addedClients);
+                    this.ClientConcected?.Invoke(this, new(currentClients: clients, updatedClients: addedClients));
                 }
 
                 if (removedClients.Count > 0)
@@ -160,7 +161,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
                         this.LogDebug("Removed ClientData: {clientData}", JsonSerializer.Serialize(clientRemoved, this.jsonSerializerOptions));
                     }
 
-                    this.ClientDisconcected?.Invoke(this, removedClients);
+                    this.ClientDisconcected?.Invoke(this, new(currentClients: clients, updatedClients: removedClients));
                 }
 
                 if (messageBuilder?.Length > 0)

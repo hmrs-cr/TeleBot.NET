@@ -80,6 +80,10 @@ public class ScheduleConfig
                     {
                         this.ParseDelay(keyValue[1]);
                     }
+                    else if (keyValue[0] == "MeetCount" && keyValue.Length == 2)
+                    {
+                        this.MeetCount = ParseInt(keyValue[1]);
+                    }
                     else
                     {
                         this.eventParams[keyValue[0]] = keyValue.Length == 2 ? keyValue[1] : string.Empty;
@@ -95,6 +99,8 @@ public class ScheduleConfig
         public TimeOnly? EndValidTime { get; private set; }
 
         public TimeSpan? Delay { get; private set; }
+
+        public int? MeetCount { get; private set; }
 
         public bool HasParamValueOrNotSet(string paramName, string? value)
         {
@@ -138,5 +144,8 @@ public class ScheduleConfig
                 this.Delay = TimeSpan.FromSeconds(delay);
             }
         }
+
+        private static int? ParseInt(string delayStr) =>
+            int.TryParse(delayStr, out var value) ? value : null;
     }
 }
