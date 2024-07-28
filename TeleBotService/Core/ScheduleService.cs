@@ -1,13 +1,14 @@
 ﻿using Microsoft.Extensions.Options;
 using Omada.OpenApi.Client.Responses;
 using Quartz;
+using Quartz.Impl.Matchers;
 using Quartz.Logging;
 using Quartz.Spi;
 using TeleBotService.Config;
 
 namespace TeleBotService.Core;
 
-public class SchedulerService : IHostedService
+public class SchedulerService : IHostedService, IJobInfoProvider
 {
     private const string TriggerNameKey = "TriggerName";
 
@@ -52,7 +53,6 @@ public class SchedulerService : IHostedService
 
 
             job.JobDataMap[nameof(ScheduleConfig)] = schedule.Value;
-            job.JobDataMap["ConfigKey"] = schedule.Key;
             var trigger = string.IsNullOrEmpty(schedule.Value.CronSchedule) ?
                           null :
                           TriggerBuilder.Create()
@@ -66,6 +66,40 @@ public class SchedulerService : IHostedService
         }
 
         _ = this.scheduler?.Start(cancellationToken);
+    }
+
+    public async IAsyncEnumerable<JobInfo> GetJobs()
+    {
+        if (this.scheduler != null)
+        {
+            var jobKeys = await this.scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            foreach (var key in jobKeys)
+            {
+                var job = await this.scheduler.GetJobDetail(key);
+                if (job != null)
+                {
+                    ScheduleConfig? scheduleConfig = null;
+                    if (job.JobDataMap.TryGetValue(nameof(ScheduleConfig), out var config))
+                    {
+                        scheduleConfig = config as ScheduleConfig;
+                    }
+
+
+                    var trigger = await this.scheduler.GetTriggersOfJob(key);
+                    var triggers = trigger.Select(t => new JobInfo.TriggerInfo() { TriggerKey = t.Key.Name, NextFireTimeUtc = t.GetNextFireTimeUtc(), PreviousFireTimeUtc = t.GetPreviousFireTimeUtc() });
+                    yield return new JobInfo()
+                    {
+                        JobKey = job.Key.Name,
+                        CommandText = scheduleConfig?.CommandText,
+                        CronSchedule = scheduleConfig?.CronSchedule,
+                        User = scheduleConfig?.User,
+                        EventTrigger = scheduleConfig?.EventTrigger,
+                        IsInValidTime = scheduleConfig?.IsInValidTime,
+                        Triggers = triggers,
+                    };
+                }
+            }
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => this.scheduler?.Shutdown(cancellationToken) ?? Task.CompletedTask;
@@ -174,12 +208,11 @@ public class SchedulerService : IHostedService
         public async Task Execute(IJobExecutionContext context)
         {
             var config = (ScheduleConfig)context.JobDetail.JobDataMap[nameof(ScheduleConfig)];
-            var configKey = context.JobDetail.JobDataMap["ConfigKey"];
             var triggerName = context.Trigger.JobDataMap.GetString(TriggerNameKey);
             foreach (var command in config.CommandText.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
                 var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
-                this.logger.LogInformation("Automatically executed command '{commandText}' ({}) by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, configKey, config.User, triggerName, context.Trigger.Key.Name, result);
+                this.logger.LogInformation("Automatically executed command '{commandText}' ({configKey}) by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, context.JobDetail.Key, config.User, triggerName, context.Trigger.Key.Name, result);
             }
         }
     }
@@ -249,7 +282,8 @@ public static class EventTriggerDataExtensions
 public static class SchedulerRegistrationExtensions
 {
     public static IServiceCollection AddJobScheduler(this IServiceCollection serviceCollection, IConfigurationManager config) =>
-        serviceCollection.AddHostedService<SchedulerService>()
-                         .AddSingleton<SchedulerService.CommandJob>()
+        serviceCollection.AddSingleton<SchedulerService.CommandJob>()
+                         .AddSingleton<IJobInfoProvider, SchedulerService>()
+                         .AddHostedService(s => (SchedulerService)s.GetService<IJobInfoProvider>()!)
                          .Configure<SchedulesConfig>(config.GetSection(SchedulesConfig.ScheduleConfigName));
 }
