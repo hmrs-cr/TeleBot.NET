@@ -2,7 +2,7 @@ using TeleBotService.Config;
 
 namespace TeleBotService.Tests;
 
-public class ScheduleConfigTest
+public class ScheduleConfigTests
 {
     [Theory]
     [InlineData("")]
@@ -252,5 +252,60 @@ public class ScheduleConfigTest
         };
 
         Assert.Equal(expectedValue, config.EventTriggerInfo.PrevMeetCount);
+    }
+
+    [Theory]
+    [InlineData("TestEventName", "ExceptParam1", "Excluded", false)]
+    [InlineData("TestEventName:MeetCount=3;PrevMeetCount=6", "Param1", "Excluded", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val0", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val1", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val2", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val3", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val4", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP10", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP11", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP12", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP13", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP14", true)]
+    public void ScheduleConfigTest_EventTriggerInfo_IsExcluded_ReturnsCorrectValue(string? eventTriggerString, string paramName, string? paramValue, bool expectedResult)
+    {
+        var config = new ScheduleConfig
+        {
+            CommandText = string.Empty,
+            User = string.Empty,
+            EventTrigger = eventTriggerString,
+        };
+
+        Assert.Equal(expectedResult, config.EventTriggerInfo.IsExcluded(paramName, paramValue));
+    }
+
+    [Theory]
+    [InlineData("TestEventName", "ExceptParam1", "Excluded", true)]
+    [InlineData("TestEventName:MeetCount=3;PrevMeetCount=6", "Param1", "Excluded", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val0", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val1", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val2", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val3", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param2", "Val4", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP10", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP11", false)]
+    [InlineData("TestEventName:Param1=ValP12;Param2=Val2;ExceptParam1=ValP10|ValP122|ValP14", "Param1", "ValP12", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP13", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam1=ValP10|ValP12|ValP14", "Param1", "ValP14", false)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val2|Val3", "Param1", "Val1", true)]
+    [InlineData("TestEventName:Param1=Val1;Param2=Val2;ExceptParam2=Val1|Val3", "Param2", "Val2", true)]
+    [InlineData("TestEventName:Param1=Val1;ExceptParam1=Val1", "Param1", "Val1", false)]
+    [InlineData(null, "Param2", "Val2", true)]
+    [InlineData("", "Param2", "Val2", true)]
+    public void ScheduleConfigTest_EventTriggerInfo_HasParamValueOrNotSet_ReturnsCorrectValue(string? eventTriggerString, string paramName, string? paramValue, bool expectedResult)
+    {
+        var config = new ScheduleConfig
+        {
+            CommandText = string.Empty,
+            User = string.Empty,
+            EventTrigger = eventTriggerString,
+        };
+
+        Assert.Equal(expectedResult, config.EventTriggerInfo.HasParamValueOrNotSet(paramName, paramValue));
     }
 }

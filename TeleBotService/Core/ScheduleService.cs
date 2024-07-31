@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Humanizer;
+using Microsoft.Extensions.Options;
 using Omada.OpenApi.Client.Responses;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -17,18 +18,24 @@ public class SchedulerService : IHostedService, IJobInfoProvider
     private static readonly JobDataMap CronTriggerDataMap = new(1);
 
     private readonly IServiceProvider serviceProvider;
+    private readonly ILogger<SchedulerService> logger;
     private readonly SchedulesConfig config;
     private IScheduler? scheduler;
 
-    public SchedulerService(IServiceProvider serviceProvider, IOptions<SchedulesConfig> config, ILogger<SchedulerService> logger)
+    public SchedulerService(
+        IServiceProvider serviceProvider,
+        IOptions<SchedulesConfig> config,
+        ILogger<SchedulerService> logger,
+        ILogger<QuartzLogProvider> quartzLogger)
     {
         NetClientDisconnectedTriggerDataMap[TriggerNameKey] = "NetClientDisconnected";
         NetClientConnectedTriggerDataMap[TriggerNameKey] = "NetClientConnected";
         CronTriggerDataMap[TriggerNameKey] = "Cron";
 
         this.serviceProvider = serviceProvider;
+        this.logger = logger;
         this.config = config.Value;
-        LogProvider.SetCurrentLogProvider(new MyLogProvider(logger));
+        LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
 
         if (serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
         {
@@ -158,8 +165,26 @@ public class SchedulerService : IHostedService, IJobInfoProvider
                 if (task != null)
                 {
                     await task;
+
+                    if (this.logger.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug) )
+                    {
+                        if (task is Task<DateTimeOffset> futureTask)
+                        {
+                            var time = await futureTask;
+                            this.logger.LogDebug("[{eventName}]: Job {job} will run in {time}", eventName, job.Key, time.Humanize());
+                        }
+                        else
+                        {
+                            this.logger.LogDebug("[{eventName}]: Job {job} will run now", eventName, job.Key);
+                        }
+                    }
+
                     return true;
                 }
+            }
+            else
+            {
+                this.logger.LogDebug("[{eventName}]: Job {job} does not meet parameters to execute job.", eventName, job.Key);
             }
         }
 
@@ -217,7 +242,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
         }
     }
 
-    private class MyLogProvider : ILogProvider
+    public class QuartzLogProvider : ILogProvider
     {
         private static readonly Dictionary<Quartz.Logging.LogLevel, Microsoft.Extensions.Logging.LogLevel> LogLevelMap = new()
         {
@@ -231,7 +256,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
 
         private readonly ILogger logger;
 
-        public MyLogProvider(ILogger logger)
+        public QuartzLogProvider(ILogger logger)
         {
             this.logger = logger;
         }

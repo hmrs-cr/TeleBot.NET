@@ -58,22 +58,23 @@ public class EventTriggerData
 
     public int? PrevMeetCount { get; private set; }
 
-    public bool HasParamValueOrNotSet(string paramName, string? value)
-    {
-        var result = !this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value;
+    public bool HasParamValueOrNotSet(string paramName, string? value) =>
+        (!this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value) && !this.IsExcluded(paramName, value);
 
-        if (result && this.eventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
+    public bool IsExcluded(string paramName, string? value)
+    {
+        if (this.eventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
         {
             foreach (var exception in exceptions.Split('|'))
             {
                 if (value == exception)
                 {
-                    return false;
+                    return true;
                 }
             }
         }
 
-        return result;
+        return false;
     }
 
     private void ParseValidTimeRange(string validTimeRange)
