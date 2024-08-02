@@ -334,7 +334,13 @@ public class TelegramService : ITelegramService
 
         public event AsyncEventHandler<ApiResponseEventArgs>? OnApiResponseReceived;
 
-        private void SetTextResponse(string textResponse) => this.responseTaskCompletion.SetResult(textResponse);
+        private void SetTextResponse(string textResponse)
+        {
+            if (!this.responseTaskCompletion.Task.IsCompleted)
+            {
+                this.responseTaskCompletion.SetResult(textResponse);
+            }
+        }
 
         public Task<string> GetTextResponse() => this.GetTextResponse(TimeSpan.FromMinutes(2.5));
 
