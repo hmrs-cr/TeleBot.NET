@@ -1,3 +1,5 @@
+using TeleBotService.Extensions;
+
 namespace TeleBotService.Config;
 
 public class EventTriggerData
@@ -21,26 +23,29 @@ public class EventTriggerData
             var parameters = parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             foreach (var param in parameters)
             {
-                var keyValue = param.Split('=', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                if (keyValue[0] == "ValidTimeRange" && keyValue.Length == 2)
+                var keyValueEnumerator = param.SplitEnumerated('=', 2, true);
+                var key = keyValueEnumerator.MoveNext() ? keyValueEnumerator.Current : [];
+                var value = keyValueEnumerator.MoveNext() ? keyValueEnumerator.Current : [];
+
+                if ("ValidTimeRange".AsSpan().Equals(key, StringComparison.Ordinal))
                 {
-                    this.ParseValidTimeRange(keyValue[1]);
+                    this.ParseValidTimeRange(value);
                 }
-                else if (keyValue[0] == "Delay" && keyValue.Length == 2)
+                else if ("Delay".AsSpan().Equals(key, StringComparison.Ordinal))
                 {
-                    this.ParseDelay(keyValue[1]);
+                    this.ParseDelay(value);
                 }
-                else if (keyValue[0] == "MeetCount" && keyValue.Length == 2)
+                else if ("MeetCount".AsSpan().Equals(key, StringComparison.Ordinal))
                 {
-                    this.MeetCount = ParseInt(keyValue[1]);
+                    this.MeetCount = ParseInt(value);
                 }
-                 else if (keyValue[0] == "PrevMeetCount" && keyValue.Length == 2)
+                 else if ("PrevMeetCount".AsSpan().Equals(key, StringComparison.Ordinal))
                 {
-                    this.PrevMeetCount = ParseInt(keyValue[1]);
+                    this.PrevMeetCount = ParseInt(value);
                 }
                 else
                 {
-                    this.eventParams[keyValue[0]] = keyValue.Length == 2 ? keyValue[1] : string.Empty;
+                    this.eventParams[key.ToString()] = value.ToString();
                 }
             }
         }
@@ -61,13 +66,13 @@ public class EventTriggerData
     public bool HasParamValueOrNotSet(string paramName, string? value) =>
         (!this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value) && !this.IsExcluded(paramName, value);
 
-    public bool IsExcluded(string paramName, string? value)
+    public bool IsExcluded(string paramName, ReadOnlySpan<char> value)
     {
         if (this.eventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)
         {
-            foreach (var exception in exceptions.Split('|'))
+            foreach (var exception in exceptions.SplitEnumerated('|'))
             {
-                if (value == exception)
+                if (value.Equals(exception, StringComparison.Ordinal))
                 {
                     return true;
                 }
@@ -77,8 +82,11 @@ public class EventTriggerData
         return false;
     }
 
-    private void ParseValidTimeRange(string validTimeRange)
+    private void ParseValidTimeRange(ReadOnlySpan<char> validTimeRangeSpan)
     {
+        // TODO: Remove this when optimized
+        var validTimeRange = validTimeRangeSpan.ToString();
+
         var parts = validTimeRange.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (parts.Length == 2)
         {
@@ -94,7 +102,7 @@ public class EventTriggerData
         }
     }
 
-    private void ParseDelay(string delayStr)
+    private void ParseDelay(ReadOnlySpan<char> delayStr)
     {
         if (int.TryParse(delayStr, out var delay))
         {
@@ -102,6 +110,6 @@ public class EventTriggerData
         }
     }
 
-    private static int? ParseInt(string delayStr) =>
+    private static int? ParseInt(ReadOnlySpan<char> delayStr) =>
         int.TryParse(delayStr, out var value) ? value : null;
 }
