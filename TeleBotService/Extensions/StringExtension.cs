@@ -91,22 +91,26 @@ public static partial class StringExtension
         return [];
     }
 
+    public static SpanSeparatorEnumerator SplitEnumerated(this ReadOnlySpan<char> value, char separator, int count = -1, bool removeEmpty = false) =>
+        new (value, separator, count, removeEmpty);
+
     public static SpanSeparatorEnumerator SplitEnumerated(this string? value, char separator, int count = -1, bool removeEmpty = false) =>
         new (value, separator, count, removeEmpty);
 
     public ref struct SpanSeparatorEnumerator
     {
-        private int i1 = 0;
-        private int i2 = -1;
-
-        private readonly string value;
         private readonly char separator;
         private readonly int count;
         private readonly bool removeEmpty;
 
-        internal SpanSeparatorEnumerator(string? value, char separator, int count, bool removeEmpty)
+
+        private int separatorPosition = -1;
+        private ReadOnlySpan<char> remaining;
+        private ReadOnlySpan<char> current;
+
+        internal SpanSeparatorEnumerator(ReadOnlySpan<char> value, char separator, int count, bool removeEmpty)
         {
-            this.value = value ?? string.Empty;
+            this.remaining = value;
             this.separator = separator;
             this.count = count;
             this.removeEmpty = removeEmpty;
@@ -114,33 +118,38 @@ public static partial class StringExtension
 
         public int Count { get; private set; }
 
-        public readonly ReadOnlySpan<char> Current
-        {
-            get => this.value.AsSpan(this.i1, this.i2 - this.i1);
-        }
+        public readonly ReadOnlySpan<char> Current => this.current;
 
         public readonly SpanSeparatorEnumerator GetEnumerator() => this;
 
         public bool MoveNext()
         {
-            if (this.i2 == value.Length)
+            if (this.remaining.IsEmpty)
             {
                 return false;
             }
 
-            if ((i2 = value.IndexOf(separator, i1 = i2 + 1)) < 0 || this.Count + 1 == this.count)
+            this.separatorPosition = remaining.IndexOf(separator);
+            if (this.separatorPosition < 0 || this.Count + 1 == this.count)
             {
-                i2 = value.Length;
+                separatorPosition = remaining.Length;
             }
 
-            if (this.removeEmpty && this.i1 == this.i2)
+            if (this.removeEmpty && this.separatorPosition == 0)
             {
+                this.UpdateRemaining();
                 return this.MoveNext();
             }
+
+            this.current = this.remaining[..this.separatorPosition];
+            this.UpdateRemaining();
 
             this.Count++;
             return true;
         }
+
+        private void UpdateRemaining() =>
+            this.remaining = this.separatorPosition == remaining.Length ? [] : this.remaining.Slice(this.separatorPosition + 1);
     }
 
     [GeneratedRegex(@"\[(.*?)\]")]

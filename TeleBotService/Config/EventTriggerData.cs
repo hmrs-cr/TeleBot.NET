@@ -15,12 +15,12 @@ public class EventTriggerData
             return;
         }
 
-        var parts = eventString.Split(':', 2, StringSplitOptions.TrimEntries);
-        this.EventName = parts[0];
+        var parts = eventString.SplitEnumerated(':', 2);
+        this.EventName = parts.MoveNext() ? parts.Current.ToString() : string.Empty;
 
-        if (parts.Length == 2)
+        if (parts.MoveNext())
         {
-            var parameters = parts[1].Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var parameters = parts.Current.SplitEnumerated(';', removeEmpty: true);
             foreach (var param in parameters)
             {
                 var keyValueEnumerator = param.SplitEnumerated('=', 2, true);
@@ -82,23 +82,18 @@ public class EventTriggerData
         return false;
     }
 
-    private void ParseValidTimeRange(ReadOnlySpan<char> validTimeRangeSpan)
+    private void ParseValidTimeRange(ReadOnlySpan<char> validTimeRange)
     {
-        // TODO: Remove this when optimized
-        var validTimeRange = validTimeRangeSpan.ToString();
+        var parts = validTimeRange.SplitEnumerated('-', removeEmpty: true);
 
-        var parts = validTimeRange.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length == 2)
+        if (parts.MoveNext() && TimeOnly.TryParseExact(parts.Current, "HH:mm", out var startValidTime))
         {
-            if (TimeOnly.TryParseExact(parts[0], "HH:mm", out var startValidTime))
-            {
-                this.StartValidTime = startValidTime;
-            }
+            this.StartValidTime = startValidTime;
+        }
 
-            if (TimeOnly.TryParseExact(parts[1], "HH:mm", out var endValidTime))
-            {
-                this.EndValidTime = endValidTime;
-            }
+        if (parts.MoveNext() && TimeOnly.TryParseExact(parts.Current, "HH:mm", out var endValidTime))
+        {
+            this.EndValidTime = endValidTime;
         }
     }
 
