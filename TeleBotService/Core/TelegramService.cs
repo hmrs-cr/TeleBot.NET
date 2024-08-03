@@ -150,7 +150,7 @@ public class TelegramService : ITelegramService
             return Task.CompletedTask;
         }
 
-        this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
+        this.logger.LogDebug("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
 
         var messageContext = new MessageContext(botClient, message, user);
         _ = HandleCommands(messageContext, cancellationToken);
@@ -243,7 +243,7 @@ public class TelegramService : ITelegramService
         if (executedCommandCount > 0)
         {
             this.SaveUserSettingsIfNeeded(messageContext);
-            this.logger.LogInformation("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, messageContext.Message.Text, messageContext.Message.Chat.Id);
+            this.logger.LogDebug("Executed {executedCommandCount} commands: '{messageText}', chat {messageChatId}.", executedCommandCount, messageContext.Message.Text, messageContext.Message.Chat.Id);
         }
         else if (failedCommandCount == 0 && refusedCommandCount == 0)
         {
