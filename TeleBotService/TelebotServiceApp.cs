@@ -7,6 +7,7 @@ using TeleBotService.Config;
 using TeleBotService.Core;
 using TeleBotService.Core.Commands.Admin;
 using TeleBotService.Data.Redis;
+using TeleBotService.Extensions;
 using TeleBotService.Localization;
 
 namespace TeleBotService;
@@ -75,7 +76,7 @@ public class TelebotServiceApp
     public static void LogInformation(string message) => Logger?.LogInformation(message);
     public static void LogWarning(string message, params object?[] args) => Logger?.LogWarning(message, args);
     public static void LogWarning(Exception e, string message, params object?[] args) => Logger?.LogWarning(e, message, args);
-    public static void LogWarning(Exception e, string message) => Logger?.LogWarning(e, message);
+    public static void LogSimpleException(Exception e, string message) => Logger?.LogSimpleException(message, e);
     public static void LogWarning(string message) => Logger?.LogWarning(message);
     public static void LogError(string message, params object?[] args) => Logger?.LogError(message, args);
     public static void LogError(Exception e, string message, params object?[] args) => Logger?.LogError(e, message, args);

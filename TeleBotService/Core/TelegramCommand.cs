@@ -171,7 +171,7 @@ public abstract class TelegramCommand : ITelegramCommand
     public void LogInformation(string message) => this.Logger?.LogInformation(message);
     public void LogWarning(string message, params object?[] args) => this.Logger?.LogWarning(message, args);
     public void LogWarning(Exception e, string message, params object?[] args) => this.Logger?.LogWarning(e, message, args);
-    public void LogWarning(Exception e, string message) => this.Logger?.LogWarning(e, message);
+    public void LogSimpleException(Exception e, string message) => this.Logger?.LogSimpleException(message, e);
     public void LogWarning(string message) => this.Logger?.LogWarning(message);
     public void LogError(string message, params object?[] args) => this.Logger?.LogError(message, args);
     public void LogError(Exception e, string message, params object?[] args) => this.Logger?.LogError(e, message, args);

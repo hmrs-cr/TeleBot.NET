@@ -114,7 +114,7 @@ public class TelegramService : ITelegramService
         }
         catch (Exception e)
         {
-            this.logger.LogWarning(e, "Error StartingNetClientMonitor");
+            this.logger.LogSimpleException("Error StartingNetClientMonitor", e);
         }
     }
 
@@ -295,7 +295,7 @@ public class TelegramService : ITelegramService
 
     private async Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
-        this.logger.LogWarning(exception, "Telegram API Error");
+        this.logger.LogSimpleException("Telegram API Error", exception);
         await Task.Delay(5000);
     }
 

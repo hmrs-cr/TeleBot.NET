@@ -84,7 +84,7 @@ executeSpeedTest:
         {
             var error = "Error executing speedtest";
             await this.Reply(messageContext, error, cancellationToken);
-            this.LogWarning(e, error);
+            this.LogSimpleException(e, error);
         }
     }
 

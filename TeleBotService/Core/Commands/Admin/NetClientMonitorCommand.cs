@@ -181,7 +181,7 @@ public class NetClientMonitorCommand : GetNetClientsCommand, INetClientMonitor
             }
             catch (Exception e)
             {
-                this.LogWarning(e, "Unhandled error on StartNotifyTask");
+                this.LogSimpleException(e, "Unhandled error on StartNotifyTask");
             }
 
             await Task.Delay(TimeSpan.FromSeconds(this.config?.MonitorFrequencyInSeconds ?? 60));

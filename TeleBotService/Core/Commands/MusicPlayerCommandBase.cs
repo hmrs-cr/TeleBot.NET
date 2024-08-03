@@ -176,7 +176,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
         }
         catch (Exception e)
         {
-            this.LogWarning(e, "Error executing player command");
+            this.LogSimpleException(e, "Error executing player command");
         }
 
         if (!success)
