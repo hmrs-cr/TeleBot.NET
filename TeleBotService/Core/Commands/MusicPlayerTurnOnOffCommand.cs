@@ -42,7 +42,7 @@ public class MusicPlayerTurnOnOffCommand : MusicPlayerCommandBase
             }
             catch (Exception e)
             {
-               this.LogWarning(e, "Error tuning {state} '{playerConfigName}'", isShutDown ? "off" : "on", playerConfig.Name);
+               this.LogWarning("Error tuning {state} '{playerConfigName}': [{ExceptionType}] {ExceptionMessage}", isShutDown ? "off" : "on", playerConfig.Name, e.GetType().FullName, e.Message);
             }
         }
 
