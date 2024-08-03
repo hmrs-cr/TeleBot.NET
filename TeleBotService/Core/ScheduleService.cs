@@ -102,7 +102,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
                         CronSchedule = scheduleConfig?.CronSchedule,
                         User = scheduleConfig?.User,
                         EventTrigger = scheduleConfig?.EventTrigger,
-                        IsInValidTime = scheduleConfig?.IsInValidTime,
+                        IsInValidTime = scheduleConfig?.EventTriggerInfo.IsInValidTime,
                         Triggers = triggers,
                     };
                 }
@@ -153,7 +153,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
 
     private async Task<bool> OnClientConnectionEvent(string eventName, ClientConnectionParams clientData, BasicClientData client, JobDataMap data)
     {
-        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName && s.Value.IsInValidTime);
+        var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName);
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
@@ -290,6 +290,15 @@ public static class EventTriggerDataExtensions
 
     public static bool ClientMeetsParameters(this EventTriggerData eventInfo, string jobKey, ClientConnectionParams clientData, BasicClientData client)
     {
+        if (!eventInfo.IsInValidTime)
+        {
+            if (Logger?.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug) == true)
+            {
+                Logger.LogDebug("[{jobKey}]: No in valid date time.", jobKey);
+            }
+            return false;
+        }
+
         return MeetsIndividualParameters(jobKey, eventInfo, client) && MeetsGroupParameters(jobKey, eventInfo, clientData, client);
 
         static bool MeetsGroupParameters(string jobKey, EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)

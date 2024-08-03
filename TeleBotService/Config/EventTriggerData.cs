@@ -63,6 +63,32 @@ public class EventTriggerData
 
     public int? PrevMeetCount { get; private set; }
 
+    public bool IsInValidTime
+    {
+        get
+        {
+            var startDateTime = DateTime.MinValue;
+            var endDateTime = DateTime.MaxValue;
+            var now = DateTime.UtcNow;
+
+            if (this.StartValidTime.HasValue)
+            {
+                startDateTime = now.Date.Add(this.StartValidTime.Value.ToTimeSpan());
+            }
+
+            if (this.EndValidTime.HasValue)
+            {
+                endDateTime = now.Date.Add(this.EndValidTime.Value.ToTimeSpan());
+                if (startDateTime > endDateTime)
+                {
+                    endDateTime = endDateTime.AddDays(1);
+                }
+            }
+
+            return now >= startDateTime && now <= endDateTime;
+        }
+    }
+
     public bool HasParamValueOrNotSet(string paramName, string? value) =>
         (!this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value) && !this.IsExcluded(paramName, value);
 
