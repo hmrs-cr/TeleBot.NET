@@ -119,12 +119,14 @@ public class TelegramChatContext
     {
         if (!task.IsCompleted && !task.IsCanceled && !task.IsFaulted && task.Status != TaskStatus.RanToCompletion)
         {
+            var total = 0;
             lock (this.executingTasksLock)
             {
                 this.executingTasks.Add(task);
+                total = this.executingTasks.Count;
             }
 
-            this.Logger?.LogInformation("Added Task. Total tasks tracked for {key}: {executingTaskCount}", this.key, this.executingTasks.Count);
+            this.Logger?.LogDebug("Added Task. Total tasks tracked for {key}: {executingTaskCount}", this.key, total);
         }
     }
 
@@ -140,11 +142,14 @@ public class TelegramChatContext
 
     internal void RemoveFinishedTasks()
     {
+        var total = 0;
         lock (this.executingTasksLock)
         {
             this.executingTasks.RemoveAll(t => t.IsCanceled || t.IsCompleted || t.IsFaulted || t.Status == TaskStatus.RanToCompletion);
-            this.Logger?.LogInformation("Removed Tasks. Total tasks tracked for {key}: {executingTaskCount}", this.key, this.executingTasks.Count);
+            total = this.executingTasks.Count;
         }
+
+        this.Logger?.LogDebug("Removed Tasks. Total tasks tracked for {key}: {executingTaskCount}", this.key, total);
     }
 
     private class ChatContextKey
