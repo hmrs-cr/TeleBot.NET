@@ -66,6 +66,8 @@ public class EventTriggerData
     public bool HasParamValueOrNotSet(string paramName, string? value) =>
         (!this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value) && !this.IsExcluded(paramName, value);
 
+    public string? GetParamValue(string paramName) => this.eventParams.GetValueOrDefault(paramName);
+
     public bool IsExcluded(string paramName, ReadOnlySpan<char> value)
     {
         if (this.eventParams.GetValueOrDefault($"Except{paramName}") is { } exceptions)

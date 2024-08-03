@@ -36,6 +36,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
         this.logger = logger;
         this.config = config.Value;
         LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
+        EventTriggerDataExtensions.Logger = logger;
 
         if (serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
         {
@@ -156,7 +157,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
-            if (eventInfo.ClientMeetsParameters(clientData, client))
+            if (eventInfo.ClientMeetsParameters(job.Key, clientData, client))
             {
                 var task = eventInfo.Delay.HasValue ?
                            this.scheduler?.ScheduleJob(GetSingleFireTrigger(job.Key, data, eventInfo.Delay.Value)) :
@@ -285,22 +286,53 @@ public class SchedulerService : IHostedService, IJobInfoProvider
 
 public static class EventTriggerDataExtensions
 {
-    public static bool ClientMeetsParameters(this EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
-    {
-        return MeetsIndividualParameters(eventInfo, client) && MeetsGroupParameters(eventInfo, clientData, client);
+    public static ILogger? Logger { get; set; }
 
-        static bool MeetsGroupParameters(EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
+    public static bool ClientMeetsParameters(this EventTriggerData eventInfo, string jobKey, ClientConnectionParams clientData, BasicClientData client)
+    {
+        return MeetsIndividualParameters(jobKey, eventInfo, client) && MeetsGroupParameters(jobKey, eventInfo, clientData, client);
+
+        static bool MeetsGroupParameters(string jobKey, EventTriggerData eventInfo, ClientConnectionParams clientData, BasicClientData client)
         {
-            int? meetCount = eventInfo.MeetCount.HasValue ? clientData.CurrentClients.Count(c => MeetsIndividualParameters(eventInfo, c)) : null;
-            int? prevMeetCount = eventInfo.PrevMeetCount.HasValue ? clientData.PreviousClients.Count(c => MeetsIndividualParameters(eventInfo, c)) : null;
-            return meetCount == eventInfo.MeetCount && prevMeetCount == eventInfo.PrevMeetCount;
+            int? meetCount = eventInfo.MeetCount.HasValue ? clientData.CurrentClients.Count(c => MeetsIndividualParameters(null, eventInfo, c)) : null;
+            int? prevMeetCount = eventInfo.PrevMeetCount.HasValue ? clientData.PreviousClients.Count(c => MeetsIndividualParameters(null, eventInfo, c)) : null;
+
+            var meetsMeetCount = meetCount == eventInfo.MeetCount;
+            var meetsPrevMeetCount = prevMeetCount == eventInfo.PrevMeetCount;
+
+            if (Logger?.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug) == true)
+            {
+                if (!meetsMeetCount)
+                {
+                    Logger.LogDebug("[{jobKey}]: MeetCount does not meet criteria: Required: {requiredValue}, Actual: {value}.", jobKey, eventInfo.MeetCount, meetCount);
+                }
+
+                if (!meetsPrevMeetCount)
+                {
+                    Logger.LogDebug("[{jobKey}]: PrevMeetCount does not meet criteria: Required: {requiredValue}, Actual: {value}.", jobKey, eventInfo.PrevMeetCount, prevMeetCount);
+                }
+            }
+
+            return meetsMeetCount && meetsPrevMeetCount;
         }
 
-        static bool MeetsIndividualParameters(EventTriggerData eventInfo, BasicClientData client) =>
-            eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Ssid), client.Ssid) &&
-                eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.NetworkName), client.NetworkName) &&
-                    eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Name), client.Name) &&
-                        eventInfo.HasParamValueOrNotSet(nameof(BasicClientData.Mac), client.Mac);
+        static bool MeetsIndividualParameters(string? jobKey, EventTriggerData eventInfo, BasicClientData client) =>
+            eventInfo.MeetsIndividualParameter(jobKey, nameof(BasicClientData.Ssid), client.Ssid) &&
+                eventInfo.MeetsIndividualParameter(jobKey, nameof(BasicClientData.NetworkName), client.NetworkName) &&
+                    eventInfo.MeetsIndividualParameter(jobKey, nameof(BasicClientData.Name), client.Name) &&
+                        eventInfo.MeetsIndividualParameter(jobKey, nameof(BasicClientData.Mac), client.Mac);
+    }
+
+    public static bool MeetsIndividualParameter(this EventTriggerData eventInfo, string? jobKey, string paramName, string? value)
+    {
+        var result = eventInfo.HasParamValueOrNotSet(paramName, value);
+        if (!result && jobKey != null && Logger?.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug) == true)
+        {
+            var requiredValue = eventInfo.GetParamValue(paramName);
+            Logger.LogDebug("[{jobKey}]: {paramName} does not meet criteria: Required: {requiredValue}, Actual: {value}, Excluded: {excluded}", jobKey, paramName, requiredValue, value, eventInfo.IsExcluded(paramName, value));
+        }
+
+        return result;
     }
 }
 
