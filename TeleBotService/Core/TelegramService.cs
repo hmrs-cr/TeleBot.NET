@@ -236,7 +236,7 @@ public class TelegramService : ITelegramService
             catch (Exception e)
             {
                 failedCommandCount++;
-                this.logger.LogWarning(e, "Unhandled error while executing command {command.Name}", command.Name);
+                this.logger.LogWarning("Unhandled error while executing command {command.Name}: [{ExceptionType}] {ExceptionMessage}", command.Name, e.GetType().FullName, e.Message);
             }
         }
 

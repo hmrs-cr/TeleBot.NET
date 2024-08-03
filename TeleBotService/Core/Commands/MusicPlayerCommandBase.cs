@@ -63,7 +63,8 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
             }
             catch (Exception e)
             {
-                this.LogWarning(e, "Error executing message '{message}'", message.Text);
+                this.LogWarning("Error executing message '{message}': [{ExceptionType}] {ExceptionMessage}", message.Text, e.GetType().FullName, e.Message);
+
             }
         }
         else
@@ -106,7 +107,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                 }
                 catch (Exception e)
                 {
-                    this.LogWarning(e, "Error connecting {playerConfigName}", playerConfig.Name);
+                    this.LogWarning("Error connecting {playerConfigName}: [{ExceptionType}] {ExceptionMessage}", playerConfig.Name, e.GetType().FullName, e.Message);
                 }
             }
         }

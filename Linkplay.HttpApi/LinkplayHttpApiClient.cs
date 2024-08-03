@@ -105,7 +105,7 @@ public class LinkplayHttpApiClient : ILinkplayHttpApiClient
         }
         catch (Exception e)
         {
-            this.Logger?.LogWarning(e, "Error executing command {command}", command);
+            this.Logger?.LogWarning("Error executing command {command}: [{ExceptionType}] {ExceptionMessage}", command, e.GetType().FullName, e.Message);
             return default;
         }
     }
