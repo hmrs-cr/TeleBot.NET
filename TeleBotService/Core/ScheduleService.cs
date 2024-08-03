@@ -294,7 +294,7 @@ public static class EventTriggerDataExtensions
         {
             if (Logger?.IsEnabled(Microsoft.Extensions.Logging.LogLevel.Debug) == true)
             {
-                Logger.LogDebug("[{jobKey}]: No in valid date time.", jobKey);
+                Logger.LogDebug("[{jobKey}]: Not in valid date time.", jobKey);
             }
             return false;
         }
