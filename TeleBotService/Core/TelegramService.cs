@@ -150,7 +150,7 @@ public class TelegramService : ITelegramService
             return Task.CompletedTask;
         }
 
-        this.logger.LogDebug("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
+        this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
 
         var messageContext = new MessageContext(botClient, message, user);
         _ = HandleCommands(messageContext, cancellationToken);
