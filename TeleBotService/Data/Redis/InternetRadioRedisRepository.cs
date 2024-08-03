@@ -1,4 +1,5 @@
 ﻿using StackExchange.Redis;
+using TeleBotService.Extensions;
 
 namespace TeleBotService.Data.Redis;
 
@@ -35,7 +36,7 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         }
         catch (Exception e)
         {
-            this.logger.LogWarning(e, "An error ocurred while saving user settings");
+            this.logger.LogSimpleException("An error ocurred while saving user settings", e);
         }
     }
 

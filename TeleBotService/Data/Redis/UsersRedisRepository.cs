@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 using TeleBotService.Config;
+using TeleBotService.Extensions;
 
 namespace TeleBotService.Data.Redis;
 
@@ -63,7 +64,7 @@ public class UsersRedisRepository : IUsersRepository
         }
         catch (Exception e)
         {
-            this.logger.LogWarning(e, "An error ocurred while saving user settings");
+            this.logger.LogSimpleException("An error ocurred while saving user settings", e);
         }
 
         return true;
@@ -85,7 +86,7 @@ public class UsersRedisRepository : IUsersRepository
         }
         catch (Exception e)
         {
-            this.logger.LogWarning(e, "An error ocurred while loading user settings");
+            this.logger.LogSimpleException("An error ocurred while loading user settings", e);
         }
 
         return UserSettings.Empty;
