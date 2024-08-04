@@ -154,6 +154,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
     private async Task<bool> OnClientConnectionEvent(string eventName, ClientConnectionParams clientData, BasicClientData client, JobDataMap data)
     {
         var jobs = this.config.Where(s => s.Value.EventTriggerInfo.EventName == eventName);
+        var executedCount = 0;
         foreach (var job in jobs)
         {
             var eventInfo = job.Value.EventTriggerInfo;
@@ -180,7 +181,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
                         }
                     }
 
-                    return true;
+                    executedCount++;
                 }
             }
             else
@@ -189,7 +190,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
             }
         }
 
-        return false;
+        return executedCount > 0;
     }
 
     private static ITrigger GetSingleFireTrigger(string key , JobDataMap data, TimeSpan delay) =>
