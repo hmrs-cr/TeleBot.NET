@@ -308,4 +308,57 @@ public class ScheduleConfigTests
 
         Assert.Equal(expectedResult, config.EventTriggerInfo.HasParamValueOrNotSet(paramName, paramValue));
     }
+
+    [Theory]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 23, 59, 36, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 00, 51, 36, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 00, 51, 38, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 19, 51, 36, false)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 19, 54, 36, false)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 19, 55, 36, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 01, 03, 36, false)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 01, 03, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 02, 03, 36, false)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 19, 58, 36, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 00, 00, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=19:55-01:03", 12, 00, 00, false)]
+
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 12, 00, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 00, 00, 00, false)]
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 00, 00, 59, false)]
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 00, 01, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 23, 55, 01, false)]
+    [InlineData("TestEventName:ValidTimeRange=00:01-23:55", 23, 55, 00, true)]
+
+    [InlineData("TestEventName:ValidTimeRange=23:55-00:01", 23, 55, 01, true)]
+    [InlineData("TestEventName:ValidTimeRange=23:55-00:01", 00, 00, 01, true)]
+    [InlineData("TestEventName:ValidTimeRange=23:55-00:01", 00, 00, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=23:55-00:01", 00, 01, 08, false)]
+
+    [InlineData("TestEventName:ValidTimeRange=20:05", 21, 01, 08, true)]
+    [InlineData("TestEventName:ValidTimeRange=20:05", 00, 01, 08, false)]
+    [InlineData("TestEventName:ValidTimeRange=20:05", 23, 59, 59, true)]
+    [InlineData("TestEventName:ValidTimeRange=20:05", 00, 00, 00, false)]
+    [InlineData("TestEventName:ValidTimeRange=20:05", 20, 04, 59, false)]
+    [InlineData("TestEventName:ValidTimeRange=20:05", 20, 05, 00, true)]
+
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 21, 01, 08, false)]
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 00, 01, 08, true)]
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 23, 59, 59, false)]
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 00, 00, 00, true)]
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 20, 04, 59, true)]
+    [InlineData("TestEventName:ValidTimeRange=-20:05", 20, 05, 00, true)]
+    public void ScheduleConfigTest_EventTriggerInfo_IsInValidDateTime_ReturnsCorrectValue(string? eventTriggerString, int hour, int minute, int second, bool expectedResult)
+    {
+        var config = new ScheduleConfig
+        {
+            CommandText = string.Empty,
+            User = string.Empty,
+            EventTrigger = eventTriggerString,
+        };
+
+        var now = DateTime.UtcNow;
+        var result = config.EventTriggerInfo.IsInValidTime(new (now.Year, now.Month, now.Day, hour, minute, second));
+        Assert.Equal(expectedResult, result);
+    }
 }
