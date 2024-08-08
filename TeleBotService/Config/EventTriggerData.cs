@@ -39,7 +39,7 @@ public class EventTriggerData
                 {
                     this.MeetCount = ParseInt(value);
                 }
-                 else if ("PrevMeetCount".AsSpan().Equals(key, StringComparison.Ordinal))
+                else if ("PrevMeetCount".AsSpan().Equals(key, StringComparison.Ordinal))
                 {
                     this.PrevMeetCount = ParseInt(value);
                 }
@@ -63,31 +63,7 @@ public class EventTriggerData
 
     public int? PrevMeetCount { get; private set; }
 
-    public bool IsInValidTime
-    {
-        get
-        {
-            var startDateTime = DateTime.MinValue;
-            var endDateTime = DateTime.MaxValue;
-            var now = DateTime.UtcNow;
-
-            if (this.StartValidTime.HasValue)
-            {
-                startDateTime = now.Date.Add(this.StartValidTime.Value.ToTimeSpan());
-            }
-
-            if (this.EndValidTime.HasValue)
-            {
-                endDateTime = now.Date.Add(this.EndValidTime.Value.ToTimeSpan());
-                if (startDateTime > endDateTime)
-                {
-                    endDateTime = endDateTime.AddDays(1);
-                }
-            }
-
-            return now >= startDateTime && now <= endDateTime;
-        }
-    }
+    public bool IsInValidTime => this.IsInValidTime(DateTime.UtcNow);
 
     public bool HasParamValueOrNotSet(string paramName, string? value) =>
         (!this.eventParams.ContainsKey(paramName) || this.eventParams[paramName] == value) && !this.IsExcluded(paramName, value);
@@ -112,7 +88,7 @@ public class EventTriggerData
 
     private void ParseValidTimeRange(ReadOnlySpan<char> validTimeRange)
     {
-        var parts = validTimeRange.SplitEnumerated('-', removeEmpty: true);
+        var parts = validTimeRange.SplitEnumerated('-');
 
         if (parts.MoveNext() && TimeOnly.TryParseExact(parts.Current, "HH:mm", out var startValidTime))
         {
@@ -135,4 +111,18 @@ public class EventTriggerData
 
     private static int? ParseInt(ReadOnlySpan<char> delayStr) =>
         int.TryParse(delayStr, out var value) ? value : null;
+}
+
+public static class EventTriggerDataExtensions
+{
+    public static bool IsInValidTime(this EventTriggerData eventTriggerData, DateTime dateTime)
+    {
+        var timeOfDay = dateTime.TimeOfDay;
+        var startDateTime = (eventTriggerData.StartValidTime ?? TimeOnly.MinValue).ToTimeSpan();
+        var endDateTime = (eventTriggerData.EndValidTime ?? TimeOnly.MaxValue).ToTimeSpan();
+
+        return startDateTime < endDateTime ?
+               startDateTime <= timeOfDay && timeOfDay <= endDateTime :
+               !(endDateTime < timeOfDay && timeOfDay < startDateTime);
+    }
 }
