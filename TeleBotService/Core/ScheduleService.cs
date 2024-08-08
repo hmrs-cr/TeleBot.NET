@@ -240,6 +240,7 @@ public class SchedulerService : IHostedService, IJobInfoProvider
             {
                 var result = await this.telegramService.ExecuteCommand(command, config.User, config.Reply);
                 this.logger.LogInformation("Automatically executed command '{commandText}' ({configKey}) by user '{user}' triggered by '{trigger} ({triggerName})' with result '{commandResult}'", command, context.JobDetail.Key, config.User, triggerName, context.Trigger.Key.Name, result);
+                await Task.Delay(1000);
             }
         }
     }
