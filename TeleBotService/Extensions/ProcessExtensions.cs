@@ -71,4 +71,23 @@ public static class ProcessExtensions
         var result = await ExecuteProcessCommand(command, arguments, cancellationToken);
         return result != null ? JsonSerializer.Deserialize<T>(result, jsonSerializerOptions) : default;
     }
+
+    public static async Task Retry(this Func<CancellationToken, ValueTask> asyncAction, int retryTimes = 3, int waitTime = 1000, CancellationToken cancellationToken = default)
+    {
+        for (var c = 0; c < retryTimes - 1; c++)
+        {
+            try
+            {
+                await asyncAction.Invoke(cancellationToken);
+                break;
+            }
+            catch (Exception e)
+            {
+                await Task.Delay(waitTime, cancellationToken);
+            }
+        }
+
+        await asyncAction.Invoke(cancellationToken);
+    }
+
 }

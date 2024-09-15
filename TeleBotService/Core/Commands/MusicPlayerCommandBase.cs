@@ -89,7 +89,7 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
                     if (autoTurnon)
                     {
                         this.LogInformation("{playerConfigName} is offline triying to turn it on", playerConfig.Name);
-                        await tapoDeviceClient.TurnOnAsync();
+                        await ProcessExtensions.Retry(tapoDeviceClient.TurnOnAsync, waitTime: 3500, cancellationToken: cancellationToken);
                         await Task.Delay(29000, cancellationToken);
                     }
 
