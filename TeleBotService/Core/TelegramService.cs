@@ -63,7 +63,9 @@ public class TelegramService : ITelegramService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await this.StartNetClientMonitor();
+        await Task.Delay(TimeSpan.FromSeconds(7), cancellationToken);
+
+        _ = this.StartNetClientMonitor(cancellationToken);
 
         this.botClient.StartReceiving(
             updateHandler: HandleUpdateAsync,
@@ -93,28 +95,33 @@ public class TelegramService : ITelegramService
         }
     }
 
-    private async Task StartNetClientMonitor()
+    private async Task StartNetClientMonitor(CancellationToken cancellationToken)
     {
         try
         {
-            if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
-            {
-                var started = false;
-                var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
-                await foreach (var id in ids)
-                {
-                    started |= netClientMonitor.StartNetClientMonitor(this.botClient, id);
-                }
-
-                if (!started)
-                {
-                    netClientMonitor.StartNetClientMonitor(this.botClient, -1);
-                }
-            }
+            await ProcessExtensions.Retry(this.StartNetClientMonitorInternal, retryTimes: 10, waitTime: 33333, cancellationToken);
         }
         catch (Exception e)
         {
             this.logger.LogSimpleException("Error StartingNetClientMonitor", e);
+        }
+    }
+
+    private async ValueTask StartNetClientMonitorInternal(CancellationToken cancellationToken)
+    {
+        if (this.serviceProvider.GetService<INetClientMonitor>() is { } netClientMonitor)
+        {
+            var started = false;
+            var ids = this.userSettingsRepository.GetNetClientMonitorChatIds();
+            await foreach (var id in ids)
+            {
+                started |= netClientMonitor.StartNetClientMonitor(this.botClient, id);
+            }
+
+            if (!started)
+            {
+                netClientMonitor.StartNetClientMonitor(this.botClient, -1);
+            }
         }
     }
 

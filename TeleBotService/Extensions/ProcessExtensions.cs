@@ -81,7 +81,7 @@ public static class ProcessExtensions
                 await asyncAction.Invoke(cancellationToken);
                 break;
             }
-            catch (Exception e)
+            catch
             {
                 await Task.Delay(waitTime, cancellationToken);
             }
