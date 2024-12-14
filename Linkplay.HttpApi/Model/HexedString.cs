@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Linkplay.HttpApi.Model;
 
-public struct HexedString
+public readonly struct HexedString : IEquatable<HexedString>
 {
     private readonly string value;
 
