@@ -24,6 +24,8 @@ RUN apt-get update \
 
 RUN apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools
 
+RUN apt-get install -y netcat
+
 
 ENTRYPOINT ["./TeleBotService.sh"]
 
