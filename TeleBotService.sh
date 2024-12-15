@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "Checking Internet connection..."
 for i in {1..10}; do nc -zw1 google.com 443 && break || sleep 20; done
