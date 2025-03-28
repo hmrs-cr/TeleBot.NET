@@ -65,6 +65,14 @@ public class TelegramService : ITelegramService
     {
         await Task.Delay(TimeSpan.FromSeconds(7), cancellationToken);
 
+        var areSettingsAvailable = await this.userSettingsRepository.AreSettingsAvailable();
+        if (!areSettingsAvailable && this.config.DontStartIfSettingsUnavailable)
+        {
+            this.logger.LogWarning("Setting are not available, shutting down...");
+            _ = TelebotServiceApp.Stop(1983);
+            return;
+        }
+
         _ = this.StartNetClientMonitor(cancellationToken);
 
         this.botClient.StartReceiving(

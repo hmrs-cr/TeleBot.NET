@@ -67,7 +67,7 @@ public class TelebotServiceApp
     {
         await Task.Delay(2500);
         Environment.ExitCode = exitCode;
-        await App!.StopAsync(TimeSpan.FromSeconds(5));
+        await App!.StopAsync(TimeSpan.FromSeconds(7));
     }
 
     public static void LogDebug(string message, params object?[] args) => Logger?.LogDebug(message, args);

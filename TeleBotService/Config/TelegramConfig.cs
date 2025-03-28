@@ -4,6 +4,7 @@ public class TelegramConfig
 {
     public const string TelegramConfigName = "Telegram";
 
+    public bool DontStartIfSettingsUnavailable { get; init; } = true;
     public int AdminChatId { get; init; }
 
     public required string BotToken { get; init; }

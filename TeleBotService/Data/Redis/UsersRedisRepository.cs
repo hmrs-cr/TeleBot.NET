@@ -21,6 +21,26 @@ public class UsersRedisRepository : IUsersRepository
         this.logger = logger;
     }
 
+    public async Task<bool> AreSettingsAvailable()
+    {
+        try
+        {
+            await ProcessExtensions.Retry(PingDatabaseAsync, 15, 2000);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogWarning(ex, "Redis connection failure.");
+            return false;
+        }
+
+        async ValueTask PingDatabaseAsync(CancellationToken cancellationToken)
+        {
+            var database = await redis.GetDatabaseAsync();
+            database.Ping();
+        }
+    }
+
     public async IAsyncEnumerable<long> GetNetClientMonitorChatIds()
     {
         var database = await redis.GetDatabaseAsync();
@@ -28,7 +48,7 @@ public class UsersRedisRepository : IUsersRepository
         foreach (var key in keys)
         {
             var value = await database.HashGetAsync(key, UserData.NetClientMonitorChatIdKeyName);
-            if (value is { } && value.HasValue)
+            if (value is { HasValue: true })
             {
                 yield return (long)value;
             }
@@ -64,7 +84,7 @@ public class UsersRedisRepository : IUsersRepository
         }
         catch (Exception e)
         {
-            this.logger.LogSimpleException("An error ocurred while saving user settings", e);
+            this.logger.LogSimpleException("An error occurred while saving user settings", e);
         }
 
         return true;
