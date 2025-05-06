@@ -97,9 +97,16 @@ public class TelegramService : ITelegramService
 
         if (!cts.IsCancellationRequested)
         {
-            _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", default);
-            cts.Cancel();
-            cts.Dispose();
+            _ = this.SentAdminMessage($"Service stopped: {InternalInfoCommand.GetInternalInfoString(await this.myInfo.Value)}", CancellationToken.None);
+            try
+            {
+                await cts.CancelAsync();
+                cts.Dispose();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Ignore
+            }
         }
     }
 
