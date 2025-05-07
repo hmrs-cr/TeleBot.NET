@@ -66,8 +66,7 @@ executeSpeedTest:
             var result = await ProcessExtensions.ExecuteJsonProcessCommand<SimpleSpeedTestResult>(this.speedTestExecPath, arguments, cancellationToken);
             if (result?.Result?.Url is { })
             {
-                var image = InputFile.FromString($"{result.Result.Url}.png");
-                await messageContext.BotClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId, caption: result.Result.Url, cancellationToken: cancellationToken);
+                await SendResultMessage(messageContext, result, cancellationToken);
             }
             else
             {
@@ -85,6 +84,24 @@ executeSpeedTest:
             var error = "Error executing speedtest";
             await this.Reply(messageContext, error, cancellationToken);
             this.LogSimpleException(e, error);
+        }
+    }
+
+    private async Task SendResultMessage(MessageContext messageContext, SimpleSpeedTestResult result, CancellationToken cancellationToken = default)
+    {
+        var message = messageContext.Message;
+        try
+        {
+            var image = InputFile.FromString($"{result.Result.Url}.png");
+            await messageContext.BotClient.SendPhotoAsync(message.Chat.Id, image, replyToMessageId: message.MessageId,
+                caption: result.Result.Url, cancellationToken: cancellationToken);
+        }
+        catch (Exception e)
+        {
+            var error = "Error sending speedtest message";
+            this.LogSimpleException(e, error);
+            
+            await messageContext.BotClient.SendTextMessageAsync(message.Chat.Id, result.Result.Url, replyToMessageId: message.MessageId, cancellationToken: cancellationToken);
         }
     }
 
