@@ -1,0 +1,39 @@
+services:  
+  telebot-service:
+    image: ${DOCKER_IMAGE_TAG}
+    container_name: ${DOCKER_CONTAINER_NAME}
+    restart: unless-stopped
+    depends_on:
+      - redis
+    devices:
+      - /dev/snd
+    volumes:
+      - telebot-local-config:/App/local-config    
+    environment:
+      - REMOTE_CONFIG_URL=${REMOTE_CONFIG_URL}
+      - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}    
+    command:
+      - "Telegram:BotToken=${TELEGRAM_BT}"
+      - "Telegram:AdminChatId=${TELEGRAM_ADMINCHATID}"
+      - "Tapo:UserName=${TAPOUN}"
+      - "Tapo:Password=${TAPOP}"
+      - "Users:hmrscr:IsAdmin=true"
+      - "Users:hmrscr:Language=es"
+      - "Users:hmrscr:Enabled=true"
+      - "Redis:Host=redis,password=${REDIS_PASS}"
+      - "HOSTNAME=${HOSTNAME}"
+
+  # The Redis database service.
+  redis:
+    image: redis
+    container_name: ${DOCKER_REDIS_CONTAINER_NAME}
+    restart: unless-stopped    
+    ports:
+      - "6379:6379"    
+    volumes:
+      - redis-data:/data    
+    command: redis-server --save 10 1 --loglevel warning --requirepass ${REDIS_PASS}
+
+volumes:
+  telebot-local-config:
+  redis-data:
