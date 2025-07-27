@@ -17,3 +17,4 @@ TeleBotService/GetClientsResponse.json
 env.sh
 /.idea
 *.user
+buildnrun-telebot-galprod
