@@ -34,7 +34,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
     protected override bool CanAutoTurnOn => true;
 
     public override bool CanExecuteCommand(Message message) =>
-        this.ContainsText(message, "radio") && this.ContainsText(message, "play");
+        this.ContainsText(message, "radio") && (this.ContainsText(message, "play") || this.ContainsText(message, "rebuild-cache"));
 
     protected override async Task<int> ExecuteMusicPlayerCommand(
         MessageContext messageContext,
@@ -43,6 +43,13 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         CancellationToken cancellationToken = default)
     {
         var message = messageContext.Message;
+        if (message.Text?.Contains("rebuild-cache") == true)
+        {
+            await BuildRadioStreamDataCache();
+            return DoNotReplyPlayerStatus;
+        }
+        
+        
         // Need to figure out a better way to implement this:
         var radioName = message.Text?.Replace(Localize(message, "play"), string.Empty, StringComparison.OrdinalIgnoreCase)
                                      .Replace("play", string.Empty, StringComparison.OrdinalIgnoreCase)
@@ -108,6 +115,38 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         return DoNotReplyPlayerStatus;
     }
 
+    public async Task BuildRadioStreamDataCache()
+    {
+        foreach (var radioStation in this.radioConfig.Stations ?? [])
+        {
+            var cachedStreamData = await this.internetRadioRepository.GetStreamData(radioStation.Id);
+            if (cachedStreamData is not null)
+            {
+                this.LogInformation("Radio stream data for radio '{radio}' is already cached.", radioStation.Id);
+                continue;
+            }
+            
+            var streamData = await DiscoverRadioUrl(radioStation.Id);
+            if (streamData is null)
+            {
+                continue;
+            }
+            
+            cachedStreamData = await this.internetRadioRepository.GetStreamData(radioStation.Id);
+            if (cachedStreamData is not null)
+            {
+                if (cachedStreamData.Url == streamData.Url)
+                {
+                    this.LogInformation("Successfully rebuilded radio stream data for radio '{radio}'.", radioStation.Id);
+                }
+            }
+            else
+            {
+                this.LogWarning("Failed to cache radio stream data for radio '{radio}'.", radioStation.Id);
+            }
+        }
+    }
+
     private async Task<IUrlData?> GetRadioUrl(InternetRadioStationConfig? radio)
     {
         if (radio is { })
@@ -115,21 +154,21 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             return radio.Url != null ? radio : await this.memoryCache.GetOrCreateAsync(radio, async (k) =>
             {
                 k.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
-                return this.SaveDicoveredUrl(radio, await this.DiscoverRadioUrl(radio.Id));
+                return await this.DiscoverRadioUrl(radio.Id);
             });
         }
 
         return null;
     }
 
-    private IUrlData? SaveDicoveredUrl(InternetRadioStationConfig radio, RadioDiscoverResponse.ResultData.Stream? stream)
+    private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(string radioId)
     {
-        _ = this.internetRadioRepository.SaveDiscoveredUrl(radio.Id!, stream?.Url);
-        return stream;
-    }
-
-    private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(string? radioId)
-    {
+        var streamData = await this.internetRadioRepository.GetStreamData(radioId);
+        if (streamData is not null)
+        {
+            return streamData;
+        }
+        
         if (this.radioConfig.DiscoverUrl == null)
         {
             return null;
@@ -145,6 +184,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         this.LogDebug("Getting DiscoverRadioUrl: {url} = {response}", url, response);
         var streamInfo = response?.Result?.Streams?.OrderBy(s => s.IsContainer).FirstOrDefault(s => s.MediaType != "HTML" && s.MediaType != "HLS");
         this.LogDebug("Returning stream info for radio {radio}: {streamInfo}", radioId, streamInfo);
-        return streamInfo;
+        
+        return await this.internetRadioRepository.SaveStreamData(radioId, streamInfo);
     }
 }

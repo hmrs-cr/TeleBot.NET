@@ -1,12 +1,11 @@
 ﻿using StackExchange.Redis;
+using TeleBotService.Core.Model;
 using TeleBotService.Extensions;
 
 namespace TeleBotService.Data.Redis;
 
 public class InternetRadioRedisRepository : IInternetRadioRepository
 {
-    private static readonly DateTime startDateTimeCount = new(2024, 6, 8);
-
     private readonly LazyRedis redis;
     private readonly ILogger<InternetRadioRedisRepository> logger;
 
@@ -16,29 +15,54 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         this.logger = logger;
     }
 
-    public async ValueTask SaveDiscoveredUrl(string radioId, Uri? url)
+    public async Task<RadioDiscoverResponse.ResultData.Stream?> GetStreamData(string radioId)
     {
         if (!this.redis.IsRedisConfigured)
         {
-            this.logger.LogWarning("Can't save radio URL. Redis host not set.");
-            return;
+            this.logger.LogWarning("Can't get radio stream data. Redis host not set.");
+            return null;
         }
-
-        if (url == null)
-        {
-            return;
-        }
-
+        
         try
         {
             var database = await redis.GetDatabaseAsync();
-            await database.SortedSetAddAsync(GetHashKey(radioId), url.ToString(), -(DateTime.UtcNow - startDateTimeCount).TotalSeconds);
+            var streamData = await database.StringGetAsync(GetHashKey(radioId));
+            if (streamData.HasValue)
+            {
+                return RadioDiscoverResponse.ResultData.Stream.FromJson(streamData!);
+            }
         }
         catch (Exception e)
         {
-            this.logger.LogSimpleException("An error ocurred while saving user settings", e);
+            this.logger.LogSimpleException("An error occurred while getting radio stream data", e);
         }
+
+        return null;
     }
 
-    private static RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}:urls";
+    public async Task<RadioDiscoverResponse.ResultData.Stream?> SaveStreamData(string radioId, RadioDiscoverResponse.ResultData.Stream? streamData)
+    {
+        if (!this.redis.IsRedisConfigured)
+        {
+            this.logger.LogWarning("Can't save radio stream data. Redis host not set.");
+            return streamData;
+        }
+        
+        try
+        {
+            if (streamData is not null)
+            {
+                var database = await redis.GetDatabaseAsync();
+                await database.StringSetAsync(GetHashKey(radioId), streamData.ToString());
+            }
+        }
+        catch (Exception e)
+        {
+            this.logger.LogSimpleException("An error occurred while getting radio stream data", e);
+        }
+        
+        return streamData;
+    }
+
+    private static RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}";
 }

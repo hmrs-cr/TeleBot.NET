@@ -6,7 +6,7 @@ public record InternetRadioStationConfig : IUrlData
 
     public int InternalId { get; } = ++internalId;
 
-    public string? Id { get; init; }
+    public required string Id { get; init; }
     public string? Name { get; init; }
     public Uri? Url { get; init; }
 

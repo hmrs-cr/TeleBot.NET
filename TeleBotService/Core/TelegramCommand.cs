@@ -190,7 +190,7 @@ public static class TelegramCommandRegistrationExtensions
     internal static IEnumerable<Type> CommandTypes => AppDomain.CurrentDomain
                                                                .GetAssemblies()
                                                                .SelectMany(a => a.GetTypes())
-                                                               .Where(t => !t.IsAbstract && t.IsClass && t.IsAssignableTo(typeof(ITelegramCommand)));
+                                                               .Where(t => t is { IsAbstract: false, IsClass: true } && t.IsAssignableTo(typeof(ITelegramCommand)));
 
     public static IServiceCollection RegisterTelegramCommands(this IServiceCollection serviceDescriptors)
     {
