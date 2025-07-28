@@ -15,6 +15,3 @@ TeleBotService/GetClientsResponse.json
 /TeleBotService.Tests/bin
 /TeleBotService.Tests/obj
 env.sh
-/.idea
-*.user
-buildnrun-telebot-galprod

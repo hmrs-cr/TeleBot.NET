@@ -1,0 +1,60 @@
+#!/bin/bash
+
+if [ ! -f 'TeleBotService.sln' ]
+then
+   echo "This is not the TeleBotService source folder: $(pwd)"
+   exit
+fi
+
+if [ -e "env.sh" ]; then
+    source env.sh
+else
+    echo "No env.sh file found"
+    exit 11
+fi
+
+GIT_BRANCH="galprod"
+git checkout $GIT_BRANCH && git pull
+
+latcommit=$(git log --format="%h" -n 1)
+if [ "$1" == "--rebuild"  ]; then
+    lastbuildcommit="0"    
+else
+    lastbuildcommit=$(cat TeleBotService/buildinfo 2> /dev/null || echo "")    
+fi
+
+RESET_CONTAINER=0
+SHUTDOWN_CONTAINER=0
+if [ "$1" == "--reset-container"  ]; then
+    RESET_CONTAINER=1
+fi
+
+if [ "$1" == "--shutdown"  ]; then
+    SHUTDOWN_CONTAINER=1
+fi
+
+
+if [ "$lastbuildcommit" != "$latcommit" ]
+then
+    SECONDS=0
+    echo "Generating new build. Last commit: $latcommit"
+    echo $latcommit > TeleBotService/buildinfo
+    docker build -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1
+    if [ "$?" != "0" ]; then
+        rm TeleBotService/buildinfo
+    fi
+    echo "Compilation time: $SECONDS seconds"
+else
+    echo "No new commits to generate a new build."
+fi
+
+if [ "$SHUTDOWN_CONTAINER" -eq "1" ]; then
+    echo "Shutting docker containers"
+    docker-compose down
+fi
+
+if [ "$RESET_CONTAINER" -eq "1" ]; then
+    echo "Reseting docker containers"
+    docker-compose down
+    docker-compose up -d
+fi
