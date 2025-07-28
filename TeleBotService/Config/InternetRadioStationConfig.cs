@@ -1,6 +1,6 @@
 namespace TeleBotService.Config;
 
-public record InternetRadioStationConfig : IUrlData
+public class InternetRadioStationConfig : IUrlData, IEquatable<InternetRadioStationConfig>
 {
     private static int internalId = 0;
 
@@ -11,6 +11,12 @@ public record InternetRadioStationConfig : IUrlData
     public Uri? Url { get; init; }
 
     public bool? IsContainer { get; init; }
+
+    public override int GetHashCode() => Id.GetHashCode();
+
+    public bool Equals(InternetRadioStationConfig? other) => Id == other?.Id;
+
+    public override bool Equals(object? obj) => Equals(obj as InternetRadioStationConfig);
 }
 
 

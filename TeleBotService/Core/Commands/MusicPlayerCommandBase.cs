@@ -36,13 +36,13 @@ public abstract class MusicPlayerCommandBase : TelegramCommand
     {
         var message = messageContext.Message;
         message.Text = message.Text?.Trim();
-        var text = message.Text;
+        var text = message.Text ?? string.Empty;
         if (this.playersConfig?.Count > 0 && this.GetPlayerConfig(message) is { } playerConfig)
         {
             var preset = playerConfig.GetPreset(text);
             try
             {
-                if (this.CanAutoTurnOn && !await playerConfig.Client.IsConnected())
+                if (this.CanAutoTurnOn && !await playerConfig.Client.IsConnected() && !text.Contains("nato")) // nato = No Auto Turn On
                 {
                     var localizedTemplate = this.Localize(message, "'[playerName]' is offline. Wait a minute, I'm trying to turn it on");
                     _ = this.Reply(messageContext, localizedTemplate.Format(new { playerName = playerConfig.Name }));

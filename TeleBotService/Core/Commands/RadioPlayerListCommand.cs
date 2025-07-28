@@ -35,7 +35,7 @@ public class RadioPlayerListCommand : TelegramCommand
     public override bool CanExecuteCommand(Message message) =>
         this.ContainsText(message, "radio") && this.ContainsText(message, "list");
 
-    protected override Task Execute(
+    protected override async Task Execute(
         MessageContext messageContext,
         CancellationToken cancellationToken = default)
     {
@@ -45,14 +45,27 @@ public class RadioPlayerListCommand : TelegramCommand
             var sb = new StringBuilder();
             foreach (var radio in this.radioConfig.Stations)
             {
+                var cached = await this.internetRadioRepository.GetStreamData(radio.Id);
                 sb.Append("<b>").Append(radio.Name).Append("</b> (<i>").Append(radio.Id).Append("</i>) ==> ")
                   .Append('/').Append(this.Localize(message, "play")).Append(this.Localize(message, "radio")).Append('_').AppendFormat("{0:D2}", radio.InternalId)
+                  .Append(cached is null ? " *" : string.Empty)
                   .AppendLine();
+
+                if (sb.Length > 2550)
+                {
+                    await this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
+                    sb.Clear();
+                }
             }
 
-            return this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
+            if (sb.Length > 0)
+            {
+                await this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
+            }
+            
+            return;
         }
 
-        return this.Reply(messageContext, "No radio stations configured", cancellationToken);
+        await this.Reply(messageContext, "No radio stations configured", cancellationToken);
     }
 }

@@ -64,5 +64,25 @@ public class InternetRadioRedisRepository : IInternetRadioRepository
         return streamData;
     }
 
+    public async IAsyncEnumerable<RadioDiscoverResponse.ResultData.Stream> ListStreamData()
+    {
+        if (!this.redis.IsRedisConfigured)
+        {
+            this.logger.LogWarning("Can't save radio stream data. Redis host not set.");
+            yield break;
+        }
+
+        var server = await redis.GetServerAsync();
+        var database = await redis.GetDatabaseAsync();
+        await foreach (var key in server.KeysAsync(pattern: "telebot:radio:*"))
+        {
+            var streamData = await database.StringGetAsync(key);
+            if (streamData.HasValue)
+            {
+                yield return RadioDiscoverResponse.ResultData.Stream.FromJson(streamData!);
+            }
+        }
+    }
+
     private static RedisKey GetHashKey(string radioId) => $"telebot:radio:{radioId}";
 }

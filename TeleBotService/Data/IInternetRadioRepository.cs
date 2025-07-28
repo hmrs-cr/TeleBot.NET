@@ -8,4 +8,6 @@ public interface IInternetRadioRepository
 
     Task<RadioDiscoverResponse.ResultData.Stream?> SaveStreamData(string radioId,
         RadioDiscoverResponse.ResultData.Stream? streamData);
+
+    IAsyncEnumerable<RadioDiscoverResponse.ResultData.Stream> ListStreamData();
 }

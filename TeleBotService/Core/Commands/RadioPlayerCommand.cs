@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using HtmlAgilityPack;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
@@ -9,7 +10,7 @@ using Telegram.Bot.Types;
 namespace TeleBotService.Core.Commands;
 
 public class RadioPlayerCommand : MusicPlayerCommandBase
-{
+{   
     private readonly InternetRadioConfig radioConfig;
     private readonly IMemoryCache memoryCache;
     private readonly IInternetRadioRepository internetRadioRepository;
@@ -25,6 +26,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         this.radioConfig = radioConfig.Value;
         this.memoryCache = memoryCache;
         this.internetRadioRepository = internetRadioRepository;
+        _ = AutoRebuildRadioCache();
     }
 
     public override string Description => "Internet Radio";
@@ -115,10 +117,23 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         return DoNotReplyPlayerStatus;
     }
 
-    public async Task BuildRadioStreamDataCache()
+    private async Task AutoRebuildRadioCache()
     {
-        foreach (var radioStation in this.radioConfig.Stations ?? [])
+        await Task.Delay(60000);
+        await BuildRadioStreamDataCache();
+    }
+    
+    private async Task BuildRadioStreamDataCache()
+    {
+        var scrapedStations = this.radioConfig.ScrapeUrls is not null
+            ? await ScrapeRadioStations(this.radioConfig.ScrapeUrls)
+            : [];
+        
+        var c = 0;
+        this.radioConfig.Stations = (this.radioConfig.Stations ?? []).Concat(scrapedStations.Values).Distinct().ToList();
+        foreach (var radioStation in this.radioConfig.Stations)
         {
+            c++;
             var cachedStreamData = await this.internetRadioRepository.GetStreamData(radioStation.Id);
             if (cachedStreamData is not null)
             {
@@ -145,6 +160,8 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
                 this.LogWarning("Failed to cache radio stream data for radio '{radio}'.", radioStation.Id);
             }
         }
+        
+        this.LogDebug("Total stations: {total}", c);
     }
 
     private async Task<IUrlData?> GetRadioUrl(InternetRadioStationConfig? radio)
@@ -180,11 +197,64 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
         this.LogDebug("Getting DiscoverRadioUrl: {url}", url);
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(this.radioConfig.DiscoverUserAgent);
-        var response = await client.GetFromJsonAsync<RadioDiscoverResponse>(url);
-        this.LogDebug("Getting DiscoverRadioUrl: {url} = {response}", url, response);
-        var streamInfo = response?.Result?.Streams?.OrderBy(s => s.IsContainer).FirstOrDefault(s => s.MediaType != "HTML" && s.MediaType != "HLS");
-        this.LogDebug("Returning stream info for radio {radio}: {streamInfo}", radioId, streamInfo);
+        try
+        {
+            var response = await client.GetFromJsonAsync<RadioDiscoverResponse>(url);
+            this.LogDebug("Getting DiscoverRadioUrl: {url} = {response}", url, response);
+            var streamInfo = response?.Result?.Streams?.OrderBy(s => s.IsContainer).FirstOrDefault(s => s.MediaType != "HTML" && s.MediaType != "HLS");
+            this.LogDebug("Returning stream info for radio {radio}: {streamInfo}", radioId, streamInfo);
         
-        return await this.internetRadioRepository.SaveStreamData(radioId, streamInfo);
+            return await this.internetRadioRepository.SaveStreamData(radioId, streamInfo);
+        }
+        catch (Exception e)
+        {
+            LogWarning(e, "Error discovering radio {radioId}", radioId);
+            return null;
+        }
+    }
+    
+    private async Task<Dictionary<string, InternetRadioStationConfig>> ScrapeRadioStations(params string[] urls)
+    {
+        Dictionary<string, InternetRadioStationConfig> result = [];
+        foreach (var url in urls)
+        {
+            try
+            {
+                using var client = new HttpClient();
+                var html = await client.GetStringAsync(url);
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(html);
+
+                var radioList = htmlDoc.GetElementbyId("radios");
+                var anchorTags = radioList?.SelectNodes(".//a");
+
+                var stationInfo = anchorTags?.Select(a =>
+                {
+                    var id = a.GetAttributeValue("href", string.Empty);
+                    var i = id.LastIndexOf('#') + 1;
+                    id = id[i..];
+
+                    var imgNode = a.SelectSingleNode(".//img");
+                    var description = imgNode?.GetAttributeValue("alt", string.Empty).Trim() ?? string.Empty;
+
+                    return new InternetRadioStationConfig
+                    {
+                        Id = id,
+                        Name = description
+                    };
+                }) ?? [];
+                
+                foreach (var station in stationInfo)
+                {
+                    result[station.Id] = station;
+                }
+            }
+            catch (Exception e)
+            {
+                this.LogWarning(e, "Failed to parse radio stations");
+            }
+        }
+        
+        return result;
     }
 }
