@@ -6,7 +6,7 @@ services:
     depends_on:
       - redis
     devices:
-      - /dev/snd
+      - ${SND_DEVICE}
     volumes:
       - telebot-local-config:/App/local-config    
     environment:

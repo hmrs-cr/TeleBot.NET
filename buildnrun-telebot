@@ -17,6 +17,10 @@ if [ -z "${GIT_BRANCH}" ]; then
   GIT_BRANCH="galprod"
 fi
 
+if [ -z "${SND_DEVICE}" ]; then
+  SND_DEVICE="/dev/snd"
+fi
+
 git checkout $GIT_BRANCH && git pull
 
 latcommit=$(git log --format="%h" -n 1)
