@@ -13,14 +13,17 @@ else
     exit 11
 fi
 
-GIT_BRANCH="galprod"
+if [ -z "${GIT_BRANCH}" ]; then
+  GIT_BRANCH="galprod"
+fi
+
 git checkout $GIT_BRANCH && git pull
 
 latcommit=$(git log --format="%h" -n 1)
 if [ "$1" == "--rebuild"  ]; then
-    lastbuildcommit="0"    
+    lastbuildcommit="0"
 else
-    lastbuildcommit=$(cat TeleBotService/buildinfo 2> /dev/null || echo "")    
+    lastbuildcommit=$(cat TeleBotService/buildinfo 2> /dev/null || echo "")
 fi
 
 RESET_CONTAINER=0
