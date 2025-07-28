@@ -51,7 +51,7 @@ public class RadioPlayerListCommand : TelegramCommand
                   .Append(cached is null ? " *" : string.Empty)
                   .AppendLine();
 
-                if (sb.Length > 2550)
+                if (sb.Length > 4000)
                 {
                     await this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
                     sb.Clear();
