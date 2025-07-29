@@ -90,6 +90,13 @@ public static partial class StringExtension
 
         return [];
     }
+    
+    public static string GetLastPart(this string? value, char separator)
+    {
+        var enumerator = value.SplitEnumerated(separator);
+        while (enumerator.MoveNext()) { }
+        return enumerator.Current.ToString();
+    }
 
     public static SpanSeparatorEnumerator SplitEnumerated(this ReadOnlySpan<char> value, char separator, int count = -1, bool removeEmpty = false) =>
         new (value, separator, count, removeEmpty);

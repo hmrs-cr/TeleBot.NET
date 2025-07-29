@@ -119,7 +119,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     private async Task AutoRebuildRadioCache()
     {
-        await Task.Delay(60000);
+        await Task.Delay(30000);
         await BuildRadioStreamDataCache();
     }
     
@@ -130,11 +130,21 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             : [];
         
         var c = 0;
-        this.radioConfig.Stations = (this.radioConfig.Stations ?? []).Concat(scrapedStations.Values).Distinct().ToList();
+        
+        var cachedRadioInfo = await this.internetRadioRepository.ListStreamData();
+        var cachedRadioConfig = cachedRadioInfo?.Select(cri => new InternetRadioStationConfig
+        {
+            Id = cri.Key,
+            Name = cri.Key,
+            Url = cri.Value.Url,
+            IsContainer = cri.Value.IsContainer,
+        }) ?? [];
+            
+        this.radioConfig.Stations = (this.radioConfig.Stations ?? []).Concat(scrapedStations.Values).Concat(cachedRadioConfig).Distinct().ToList();
         foreach (var radioStation in this.radioConfig.Stations)
         {
             c++;
-            var cachedStreamData = await this.internetRadioRepository.GetStreamData(radioStation.Id);
+            var cachedStreamData = cachedRadioInfo?.GetValueOrDefault(radioStation.Id);
             if (cachedStreamData is not null)
             {
                 this.LogInformation("Radio stream data for radio '{radio}' is already cached.", radioStation.Id);

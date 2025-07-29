@@ -1,16 +1,23 @@
 ﻿using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using TeleBotService.Config;
 using TeleBotService.Core.Model;
 using TeleBotService.Data;
 using TeleBotService.Extensions;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TeleBotService.Core.Commands;
 
 public class RadioPlayerListCommand : TelegramCommand
 {
+    private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions()
+    {
+        WriteIndented = true,
+    };
+    
     private readonly InternetRadioConfig radioConfig;
     private readonly IMemoryCache memoryCache;
     private readonly IInternetRadioRepository internetRadioRepository;
@@ -43,12 +50,19 @@ public class RadioPlayerListCommand : TelegramCommand
         if (this.radioConfig.Stations?.Count > 0)
         {
             var sb = new StringBuilder();
-            foreach (var radio in this.radioConfig.Stations)
+            var isDownload = this.ContainsText(message, "download");
+            var cachedRadioInfo = await this.internetRadioRepository.ListStreamData();
+            foreach (var radio in this.radioConfig.Stations) 
             {
-                var cached = await this.internetRadioRepository.GetStreamData(radio.Id);
+                var isCached = cachedRadioInfo?.ContainsKey(radio.Id) == true;
+                if (isDownload && isCached)
+                {
+                    continue;
+                }
+                
                 sb.Append("<b>").Append(radio.Name).Append("</b> (<i>").Append(radio.Id).Append("</i>) ==> ")
                   .Append('/').Append(this.Localize(message, "play")).Append(this.Localize(message, "radio")).Append('_').AppendFormat("{0:D2}", radio.InternalId)
-                  .Append(cached is null ? " *" : string.Empty)
+                  .Append(!isCached ? " *" : string.Empty)
                   .AppendLine();
 
                 if (sb.Length > 4000)
@@ -61,6 +75,18 @@ public class RadioPlayerListCommand : TelegramCommand
             if (sb.Length > 0)
             {
                 await this.ReplyFormated(messageContext, sb.ToString(), cancellationToken);
+            }
+
+            if (isDownload)
+            {
+                using var stream = new MemoryStream();
+                await JsonSerializer.SerializeAsync(stream, cachedRadioInfo, jsonSerializerOptions, cancellationToken);
+                stream.Position = 0;
+                await (messageContext.BotClient?.SendDocumentAsync(
+                    chatId: messageContext.Message.Chat.Id,
+                    InputFile.FromStream(stream, "radio-list.json"),
+                    replyToMessageId: messageContext.Message.MessageId,
+                    cancellationToken: cancellationToken) ?? Task.CompletedTask);
             }
             
             return;

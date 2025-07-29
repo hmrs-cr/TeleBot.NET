@@ -135,7 +135,7 @@ public class TelegramService : ITelegramService
 
             if (!started)
             {
-                netClientMonitor.StartNetClientMonitor(this.botClient, -1);
+               netClientMonitor.StartNetClientMonitor(this.botClient, -1);
             }
         }
     }
@@ -160,6 +160,11 @@ public class TelegramService : ITelegramService
         // Only process Message updates: https://core.telegram.org/bots/api#message
         if (update.Message is not { } message)
             return Task.CompletedTask;
+
+        if (message.Document is { } document)
+        {
+            message.Text = $"{document.FileName} {document.FileId}";
+        }
 
         // Only process text messages
         if (message.Text is not { } messageText)
