@@ -17,7 +17,7 @@ public class UpdateRadioListCommand : TelegramCommand
     }
 
     public override bool IsAdmin => true;
-    public override string CommandString => "radio-list.json";
+    public override string CommandString => "update-radio-data.json";
 
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
@@ -33,7 +33,12 @@ public class UpdateRadioListCommand : TelegramCommand
                 var radioInfoList = await JsonSerializer.DeserializeAsync<Dictionary<string, RadioDiscoverResponse.ResultData.Stream>>(stream, cancellationToken: cancellationToken);
                 if (radioInfoList != null)
                 {
-                    // TODO: Implement
+                    foreach (var radioInfo in radioInfoList)
+                    {
+                        await this.internetRadioRepository.SaveStreamData(radioInfo.Key, radioInfo.Value);
+                    }
+                    
+                    await Reply(messageContext, $"Updated {radioInfoList.Count} radio entries.", cancellationToken: cancellationToken);
                 }
             }
         }

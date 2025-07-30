@@ -47,7 +47,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         var message = messageContext.Message;
         if (message.Text?.Contains("rebuild-cache") == true)
         {
-            await BuildRadioStreamDataCache();
+            await BuildRadioStreamDataCache(overwrite: true);
             return DoNotReplyPlayerStatus;
         }
         
@@ -123,7 +123,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         await BuildRadioStreamDataCache();
     }
     
-    private async Task BuildRadioStreamDataCache()
+    private async Task BuildRadioStreamDataCache(bool overwrite = false)
     {
         var scrapedStations = this.radioConfig.ScrapeUrls is not null
             ? await ScrapeRadioStations(this.radioConfig.ScrapeUrls)
@@ -135,7 +135,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         var cachedRadioConfig = cachedRadioInfo?.Select(cri => new InternetRadioStationConfig
         {
             Id = cri.Key,
-            Name = cri.Key,
+            Name = cri.Value.Name ?? cri.Key,
             Url = cri.Value.Url,
             IsContainer = cri.Value.IsContainer,
         }) ?? [];
@@ -144,14 +144,15 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         foreach (var radioStation in this.radioConfig.Stations)
         {
             c++;
+            
             var cachedStreamData = cachedRadioInfo?.GetValueOrDefault(radioStation.Id);
-            if (cachedStreamData is not null)
+            if (!overwrite && cachedStreamData is not null)
             {
                 this.LogInformation("Radio stream data for radio '{radio}' is already cached.", radioStation.Id);
                 continue;
             }
             
-            var streamData = await DiscoverRadioUrl(radioStation.Id);
+            var streamData = await DiscoverRadioUrl(radioStation, overwrite);
             if (streamData is null)
             {
                 continue;
@@ -181,21 +182,26 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             return radio.Url != null ? radio : await this.memoryCache.GetOrCreateAsync(radio, async (k) =>
             {
                 k.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12);
-                return await this.DiscoverRadioUrl(radio.Id);
+                return await this.DiscoverRadioUrl(radio);
             });
         }
 
         return null;
     }
 
-    private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(string radioId)
+    private async Task<RadioDiscoverResponse.ResultData.Stream?> DiscoverRadioUrl(InternetRadioStationConfig radio, bool ignoreCache = false)
     {
-        var streamData = await this.internetRadioRepository.GetStreamData(radioId);
-        if (streamData is not null)
+        var radioId = radio.Id;
+
+        if (!ignoreCache)
         {
-            return streamData;
+            var streamData = await this.internetRadioRepository.GetStreamData(radioId);
+            if (streamData is not null)
+            {
+                return streamData;
+            }
         }
-        
+
         if (this.radioConfig.DiscoverUrl == null)
         {
             return null;
@@ -212,6 +218,11 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             var response = await client.GetFromJsonAsync<RadioDiscoverResponse>(url);
             this.LogDebug("Getting DiscoverRadioUrl: {url} = {response}", url, response);
             var streamInfo = response?.Result?.Streams?.OrderBy(s => s.IsContainer).FirstOrDefault(s => s.MediaType != "HTML" && s.MediaType != "HLS");
+            if (streamInfo != null && string.IsNullOrEmpty(streamInfo.Name))
+            {
+                streamInfo.Name = radio.Name;    
+            }
+            
             this.LogDebug("Returning stream info for radio {radio}: {streamInfo}", radioId, streamInfo);
         
             return await this.internetRadioRepository.SaveStreamData(radioId, streamInfo);
@@ -245,12 +256,12 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
                     id = id[i..];
 
                     var imgNode = a.SelectSingleNode(".//img");
-                    var description = imgNode?.GetAttributeValue("alt", string.Empty).Trim() ?? string.Empty;
+                    var name = imgNode?.GetAttributeValue("alt", string.Empty).Trim() ?? string.Empty;
 
                     return new InternetRadioStationConfig
                     {
                         Id = id,
-                        Name = description
+                        Name = name
                     };
                 }) ?? [];
                 
