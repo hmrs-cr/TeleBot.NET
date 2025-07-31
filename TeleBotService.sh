@@ -1,7 +1,9 @@
 #!/bin/bash
 
-echo "Checking Internet connection..."
-for i in {1..10}; do nc -zw1 google.com 443 && break || sleep 20; done
+if command -v "nc" >/dev/null 2>&1; then
+  echo "Checking Internet connection..."
+  for i in {1..10}; do nc -zw1 google.com 443 && break || sleep 20; done
+fi
 
 LOCAL_REMOTE_CONFIG='appsettings.Remote.json'
 if [ "$REMOTE_CONFIG_URL" != "" ]

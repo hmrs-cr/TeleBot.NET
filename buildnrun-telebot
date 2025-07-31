@@ -13,6 +13,22 @@ else
     exit 11
 fi
 
+if [ -z "${INCLUDE_SPEEDTEST}" ]; then
+  INCLUDE_SPEEDTEST="yes"
+fi
+
+if [ -z "${INCLUDE_NETCAT}" ]; then
+  INCLUDE_NETCAT="yes"
+fi
+
+if [ -z "${RUN_TESTS}" ]; then
+  RUN_TESTS="yes"
+fi
+
+if [ -z "${INCLUDE_ALSA}" ]; then
+  INCLUDE_ALSA="yes"
+fi
+
 if [ -z "${GIT_BRANCH}" ]; then
   GIT_BRANCH="galprod"
 fi

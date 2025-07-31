@@ -3,7 +3,7 @@ WORKDIR /src
 
 # Copy everything
 COPY . ./
-RUN dotnet test
+RUN if [ "RUN_TESTS" = "yes" ]; then dotnet test; fi
 # Restore as distinct layers
 RUN dotnet restore
 # Build and publish a release
@@ -17,14 +17,21 @@ COPY --from=build /src/TeleBotService.sh .
 RUN chmod +x ./TeleBotService.sh
 RUN mkdir ./local-config
 
-RUN apt-get update \
-    && apt-get install -y curl \
-    && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
-    && apt-get install -y speedtest
+RUN if [ "INCLUDE_SPEEDTEST" = "yes" ]; then \
+        apt-get update \
+        && apt-get install -y curl \
+        && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
+        && apt-get install -y speedtest; \
+    fi
 
-RUN apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools
+RUN if [ "INCLUDE_ALSA" = "yes" ]; then \
+      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools; \
+    fi
 
-RUN apt-get install -y netcat-traditional
+RUN if [ "INCLUDE_NETCAT" = "yes" ]; then \
+      apt-get install -y netcat-traditional; \
+    fi
+    
 
 
 ENTRYPOINT ["./TeleBotService.sh"]
