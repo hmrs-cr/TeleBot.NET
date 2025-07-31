@@ -119,7 +119,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
 
     private async Task AutoRebuildRadioCache()
     {
-        await Task.Delay(30000);
+        await Task.Delay(10000);
         await BuildRadioStreamDataCache();
     }
     
@@ -212,7 +212,10 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
         url += url.EndsWith('/') ? radioId : "/" + radioId;
 
         this.LogDebug("Getting DiscoverRadioUrl: {url}", url);
+        client.DefaultRequestHeaders.Clear();
         client.DefaultRequestHeaders.UserAgent.TryParseAdd(this.radioConfig.DiscoverUserAgent);
+        client.DefaultRequestHeaders.AcceptLanguage.TryParseAdd("en-US");
+        client.DefaultRequestHeaders.Accept.TryParseAdd("application/json");
         try
         {
             var response = await client.GetFromJsonAsync<RadioDiscoverResponse>(url);
