@@ -14,6 +14,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
     private readonly InternetRadioConfig radioConfig;
     private readonly IMemoryCache memoryCache;
     private readonly IInternetRadioRepository internetRadioRepository;
+    private HttpClient? client;
 
     public RadioPlayerCommand(
         IOptions<MusicPlayersConfig> config,
@@ -207,7 +208,7 @@ public class RadioPlayerCommand : MusicPlayerCommandBase
             return null;
         }
 
-        using var client = new HttpClient();
+        this.client ??= new HttpClient();
         var url = this.radioConfig.DiscoverUrl;
         url += url.EndsWith('/') ? radioId : "/" + radioId;
 
