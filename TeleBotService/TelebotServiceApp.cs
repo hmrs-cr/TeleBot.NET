@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Linkplay.HttpApi.Json;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ public class TelebotServiceApp
 
     public static void Run(string[] args)
     {
+        DistributedContextPropagator.Current = DistributedContextPropagator.CreateNoOutputPropagator();
         var builder = WebApplication.CreateBuilder(args);
         builder.AddCustomLogger()
                .AddServices();
