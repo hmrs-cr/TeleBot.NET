@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Runtime.InteropServices;
+using System.Text;
 using TeleBotService.Core.Model;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -35,5 +36,7 @@ public class InternalInfoCommand : TelegramCommand
           .Append(TelebotServiceApp.VersionLabel)
           .Append('-')
           .Append(TelebotServiceApp.VersionHash)
+          .AppendLine()
+          .Append(RuntimeInformation.OSDescription)
           .ToString();
 }

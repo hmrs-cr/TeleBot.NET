@@ -14,19 +14,21 @@ public record RadioDiscoverResponse
 
         public record Stream : IUrlData
         {
-            private static readonly JsonSerializerOptions jsonOptions = new JsonSerializerOptions
+            private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions
             {
                 WriteIndented = true,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
             };
             
+            public string? Name { get; set; }
+            
             public string? MediaType { get; init; }
             public bool? IsContainer { get; init; }
             public Uri? Url { get; init; }
 
-            public override string ToString() => JsonSerializer.Serialize(this, jsonOptions);
+            public override string ToString() => JsonSerializer.Serialize(this, JsonOptions);
             
-            public static Stream FromJson(string json) => JsonSerializer.Deserialize<Stream>(json, jsonOptions) ?? throw new NullReferenceException();
+            public static Stream FromJson(string json) => JsonSerializer.Deserialize<Stream>(json, JsonOptions) ?? throw new NullReferenceException();
         }
     }
 }

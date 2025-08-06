@@ -11,7 +11,8 @@ services:
       - telebot-local-config:/App/local-config    
     environment:
       - REMOTE_CONFIG_URL=${REMOTE_CONFIG_URL}
-      - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}    
+      - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
     command:
       - "Telegram:BotToken=${TELEGRAM_BT}"
       - "Telegram:AdminChatId=${TELEGRAM_ADMINCHATID}"

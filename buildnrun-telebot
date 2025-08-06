@@ -14,12 +14,32 @@ else
     exit 11
 fi
 
+if [ -z "${INCLUDE_SPEEDTEST}" ]; then
+  export INCLUDE_SPEEDTEST="yes"
+fi
+
+if [ -z "${INCLUDE_NETCAT}" ]; then
+  export INCLUDE_NETCAT="yes"
+fi
+
+if [ -z "${RUN_TESTS}" ]; then
+  export RUN_TESTS="yes"
+fi
+
+if [ -z "${INCLUDE_ALSA}" ]; then
+  export INCLUDE_ALSA="yes"
+fi
+
 if [ -z "${GIT_BRANCH}" ]; then
-  GIT_BRANCH="galprod"
+  export GIT_BRANCH="galprod"
 fi
 
 if [ -z "${SND_DEVICE}" ]; then
-  SND_DEVICE="/dev/snd"
+  export SND_DEVICE="/dev/snd"
+fi
+
+if [ -z "${ASPNETCORE_ENVIRONMENT}" ]; then
+  export ASPNETCORE_ENVIRONMENT="Production"
 fi
 
 git checkout $GIT_BRANCH && git pull
@@ -47,7 +67,13 @@ then
     SECONDS=0
     echo "Generating new build. Last commit: $latcommit"
     echo $latcommit > TeleBotService/buildinfo
-    docker build -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1
+    docker build \
+          --build-arg INCLUDE_SPEEDTEST="$INCLUDE_SPEEDTEST" \
+          --build-arg INCLUDE_NETCAT="$INCLUDE_NETCAT" \
+          --build-arg INCLUDE_ALSA="$INCLUDE_ALSA" \
+          --build-arg RUN_TESTS="$RUN_TESTS" \
+          -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1
+          
     if [ "$?" != "0" ]; then
         rm TeleBotService/buildinfo
     fi
