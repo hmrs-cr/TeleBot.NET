@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Omada.OpenApi.Client;
 using TeleBotService.Config;
 using TeleBotService.Core;
+using TeleBotService.Core.Commands;
 using TeleBotService.Core.Commands.Admin;
 using TeleBotService.Data.Redis;
 using TeleBotService.Extensions;
@@ -158,6 +159,7 @@ public static class RegistrationExtensions
                 .AddCommandTextMappings(configuration)
                 .RegisterTelegramCommands()
                 .AddNetClientMonitor(configuration)
+                .AddVoiceMessageService()
                 .AddJobScheduler(configuration)
                 .ConfigureHttpJsonOptions(options =>
                 {
@@ -182,7 +184,33 @@ public static class RegistrationExtensions
     {
         app.MapGet("/info", async ([FromServices] ITelegramService ts) => await ts.GetInfo()).WithName("GetInfo").WithOpenApi();
         app.MapGet("/commands", ([FromServices] ITelegramService ts) => ts.GetCommands()).WithName("GetCommands").WithOpenApi();
+        app.AddVoiceServiceEndpoints();
         return app;
+    }
+
+    public static IServiceCollection AddVoiceMessageService(this IServiceCollection services) => services.AddSingleton<IVoiceMessageService>(sp => sp.GetRequiredService<VoiceMessagePlayerCommand>());
+    
+    public static WebApplication AddVoiceServiceEndpoints(this WebApplication app)
+    {
+        var group = app.MapGroup("/voice-message").WithName("Voice Messages").WithTags("Voice Messages"); 
+        group.MapGet("/", ([FromServices] IVoiceMessageService vms) => vms.GetPendingMessages()).WithName("GetPendingMessages").WithOpenApi();
+        group.MapGet("/{fileUniqueId}", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => vms.GetMessageById(fileUniqueId)).WithName("GetMessageById").WithOpenApi(); 
+        group.MapGet("/{fileUniqueId}/stream", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => ServeVoiceMessage(vms, fileUniqueId, download: false)).WithName("StreamMessage").WithOpenApi();
+        group.MapGet("/{fileUniqueId}/download", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => ServeVoiceMessage(vms, fileUniqueId, download: true)).WithName("DownloadMessage").WithOpenApi();
+        
+        return app;
+
+        IResult ServeVoiceMessage(IVoiceMessageService voiceMessageService, string fileUniqueId, bool download)
+        {
+            var voice = voiceMessageService.GetMessageById(fileUniqueId);
+            if (voice is null)
+            {
+                return Results.NotFound();
+            }
+
+            var stream = File.OpenRead(voice.LocalFullFilePath);
+            return Results.File(stream, contentType: voice.MimeType, fileDownloadName: download ? voice.LocalFileName : null, enableRangeProcessing: !download);
+        }
     }
 
     public static WebApplication AddDevOnlyEndpoints(this WebApplication app)

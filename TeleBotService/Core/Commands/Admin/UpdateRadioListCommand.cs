@@ -21,7 +21,7 @@ public class UpdateRadioListCommand : TelegramCommand
 
     protected override async Task Execute(MessageContext messageContext, CancellationToken cancellationToken = default)
     {
-        var fileId = messageContext.Message.GetLastString();
+        var fileId = messageContext.Message.Document?.FileId;
         if (fileId != null)
         {
             var fileInfo = await messageContext.BotClient.GetFileAsync(fileId, cancellationToken: cancellationToken);
@@ -41,6 +41,10 @@ public class UpdateRadioListCommand : TelegramCommand
                     await Reply(messageContext, $"Updated {radioInfoList.Count} radio entries.", cancellationToken: cancellationToken);
                 }
             }
+        }
+        else
+        {
+            await Reply(messageContext, "No valid document ID found", cancellationToken: cancellationToken);
         }
     }
 }

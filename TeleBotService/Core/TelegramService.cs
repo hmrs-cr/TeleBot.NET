@@ -163,7 +163,12 @@ public class TelegramService : ITelegramService
 
         if (message.Document is { } document)
         {
-            message.Text = $"{document.FileName} {document.FileId}";
+            message.Text = document.FileName;
+        }
+
+        if (message.Voice is not null)
+        {
+            message.Text = "Voice-Message-Player-Command";
         }
 
         // Only process text messages
