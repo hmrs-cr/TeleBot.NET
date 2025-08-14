@@ -209,8 +209,11 @@ public static class RegistrationExtensions
         
         return app;
 
-        IResult ServeVoiceMessage(IVoiceMessageService voiceMessageService, string fileUniqueId, bool download)
+        IResult ServeVoiceMessage(IVoiceMessageService voiceMessageService, string? fileUniqueId, bool download)
         {
+            if (fileUniqueId == "mostrecent")
+                fileUniqueId = null;
+            
             var voice = voiceMessageService.GetMessageById(fileUniqueId);
             if (voice is null)
             {

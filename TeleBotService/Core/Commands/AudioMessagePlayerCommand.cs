@@ -22,21 +22,22 @@ public class AudioFileInfo : Audio
     }
 
     public string? FilePath { get; }
-    
+
     public required string LocalFullFilePath { get; init; }
 }
 
 public interface IVoiceMessageService
 {
     IEnumerable<AudioFileInfo> GetPendingMessages();
-    AudioFileInfo? GetMessageById(string fileUniqueId);
+    AudioFileInfo? GetMessageById(string? fileUniqueId);
 }
 
 public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
 {
     private readonly string voiceMessageFolder;
-    
+
     private readonly ConcurrentDictionary<string, AudioFileInfo> pendingVoiceMessages = new();
+    private string? mostRecentFileUniqueId;
 
     public AudioMessagePlayerCommand(ILogger<AudioMessagePlayerCommand> logger)
     {
@@ -58,18 +59,21 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
             {
                 var directory = Path.Join(this.voiceMessageFolder, Path.GetDirectoryName(fileInfo.FilePath.AsSpan()));
                 var localFullFilePath = Path.Join(directory, Path.GetFileName(fileInfo.FilePath.AsSpan()));
-                
+
                 Directory.CreateDirectory(directory);
-                
+
                 var voiceFileInfo = new AudioFileInfo(fileBaseInfo, fileInfo)
                 {
                     LocalFullFilePath = localFullFilePath
                 };
 
-                pendingVoiceMessages.TryAdd(fileBaseInfo.FileUniqueId, voiceFileInfo);
-                
+                pendingVoiceMessages.TryAdd(mostRecentFileUniqueId = fileBaseInfo.FileUniqueId, voiceFileInfo);
+
                 await using var writeStream = new FileStream(voiceFileInfo.LocalFullFilePath, FileMode.Create);
                 await messageContext.BotClient.DownloadFileAsync(fileInfo.FilePath, writeStream, cancellationToken);
+                
+                // TODO: Execute command: play music with-resume MostRecentAudioMessage 
+                
                 return;
             }
         }
@@ -79,6 +83,6 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
 
     IEnumerable<AudioFileInfo> IVoiceMessageService.GetPendingMessages() => pendingVoiceMessages.Values;
 
-    AudioFileInfo? IVoiceMessageService.GetMessageById(string fileUniqueId) =>
-        pendingVoiceMessages.GetValueOrDefault(fileUniqueId);
+    AudioFileInfo? IVoiceMessageService.GetMessageById(string? fileUniqueId) =>
+        pendingVoiceMessages.GetValueOrDefault(fileUniqueId ?? mostRecentFileUniqueId ?? string.Empty);
 }
