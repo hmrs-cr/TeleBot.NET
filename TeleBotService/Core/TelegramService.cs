@@ -166,7 +166,7 @@ public class TelegramService : ITelegramService
             message.Text = document.FileName;
         }
 
-        if (message.Voice is not null)
+        if (message.Voice is not null || message.Audio is not null)
         {
             message.Text = "Voice-Message-Player-Command";
         }

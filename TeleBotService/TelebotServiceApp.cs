@@ -188,15 +188,24 @@ public static class RegistrationExtensions
         return app;
     }
 
-    public static IServiceCollection AddVoiceMessageService(this IServiceCollection services) => services.AddSingleton<IVoiceMessageService>(sp => sp.GetRequiredService<VoiceMessagePlayerCommand>());
+    public static IServiceCollection AddVoiceMessageService(this IServiceCollection services) => services.AddSingleton<IVoiceMessageService>(sp => sp.GetRequiredService<AudioMessagePlayerCommand>());
     
     public static WebApplication AddVoiceServiceEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/voice-message").WithName("Voice Messages").WithTags("Voice Messages"); 
-        group.MapGet("/", ([FromServices] IVoiceMessageService vms) => vms.GetPendingMessages()).WithName("GetPendingMessages").WithOpenApi();
-        group.MapGet("/{fileUniqueId}", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => vms.GetMessageById(fileUniqueId)).WithName("GetMessageById").WithOpenApi(); 
+        var group = app.MapGroup("/audio-message").WithName("Audio Messages").WithTags("Audio Messages");
+        if (app.Environment.IsDevelopment())
+        {
+            group.MapGet("/", ([FromServices] IVoiceMessageService vms) => vms.GetPendingMessages())
+                .WithName("GetPendingMessages").WithOpenApi();
+            group.MapGet("/{fileUniqueId}",
+                    ([FromServices] IVoiceMessageService vms, string fileUniqueId) => vms.GetMessageById(fileUniqueId))
+                .WithName("GetMessageById").WithOpenApi();
+            
+            group.MapGet("/{fileUniqueId}/download", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => 
+                ServeVoiceMessage(vms, fileUniqueId, download: true)).WithName("DownloadMessage").WithOpenApi();
+        }
+
         group.MapGet("/{fileUniqueId}/stream", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => ServeVoiceMessage(vms, fileUniqueId, download: false)).WithName("StreamMessage").WithOpenApi();
-        group.MapGet("/{fileUniqueId}/download", ([FromServices] IVoiceMessageService vms, string fileUniqueId) => ServeVoiceMessage(vms, fileUniqueId, download: true)).WithName("DownloadMessage").WithOpenApi();
         
         return app;
 
@@ -209,7 +218,7 @@ public static class RegistrationExtensions
             }
 
             var stream = File.OpenRead(voice.LocalFullFilePath);
-            return Results.File(stream, contentType: voice.MimeType, fileDownloadName: download ? voice.LocalFileName : null, enableRangeProcessing: !download);
+            return Results.File(stream, contentType: voice.MimeType, fileDownloadName: download ? voice.FileName ?? Path.GetFileName(voice.FilePath) : null, enableRangeProcessing: !download);
         }
     }
 
