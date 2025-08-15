@@ -9,7 +9,7 @@ services:
       - redis
     volumes:
       - telebot-local-config:/App/local-config
-      - /dev/snd:/dev/snd
+      - /dev:/dev
     environment:
       - REMOTE_CONFIG_URL=${REMOTE_CONFIG_URL}
       - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}
