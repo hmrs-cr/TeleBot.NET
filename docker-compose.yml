@@ -3,12 +3,13 @@ services:
     image: ${DOCKER_IMAGE_TAG}
     container_name: ${DOCKER_CONTAINER_NAME}
     restart: unless-stopped
+    ports:
+      - "8080:8080" 
     depends_on:
       - redis
-    devices:
-      - ${SND_DEVICE}
     volumes:
-      - telebot-local-config:/App/local-config    
+      - telebot-local-config:/App/local-config
+      - /dev/snd:/dev/snd
     environment:
       - REMOTE_CONFIG_URL=${REMOTE_CONFIG_URL}
       - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}
