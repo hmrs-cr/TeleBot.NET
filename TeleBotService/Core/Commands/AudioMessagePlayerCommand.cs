@@ -72,7 +72,7 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
                 await using var writeStream = new FileStream(voiceFileInfo.LocalFullFilePath, FileMode.Create);
                 await messageContext.BotClient.DownloadFileAsync(fileInfo.FilePath, writeStream, cancellationToken);
                 
-                // TODO: Execute command: play music with-resume MostRecentAudioMessage 
+                _ = messageContext.ExecuteCommand("play music with-resume MostRecentAudioMessage", ct: cancellationToken); 
                 
                 return;
             }
