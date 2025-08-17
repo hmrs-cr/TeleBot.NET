@@ -195,8 +195,8 @@ public static class RegistrationExtensions
         var group = app.MapGroup("/audio-message").WithName("Audio Messages").WithTags("Audio Messages");
         if (app.Environment.IsDevelopment())
         {
-            group.MapGet("/", ([FromServices] IVoiceMessageService vms) => vms.GetPendingMessages())
-                .WithName("GetPendingMessages").WithOpenApi();
+            group.MapGet("/", ([FromServices] IVoiceMessageService vms) => vms.EnumerateAudioMessages())
+                .WithName("GetAudioMessages").WithOpenApi();
             group.MapGet("/{fileUniqueId}",
                     ([FromServices] IVoiceMessageService vms, string fileUniqueId) => vms.GetMessageById(fileUniqueId))
                 .WithName("GetMessageById").WithOpenApi();
@@ -209,19 +209,19 @@ public static class RegistrationExtensions
         
         return app;
 
-        IResult ServeVoiceMessage(IVoiceMessageService voiceMessageService, string? fileUniqueId, bool download)
+        async Task<IResult> ServeVoiceMessage(IVoiceMessageService voiceMessageService, string? fileUniqueId, bool download)
         {
             if (fileUniqueId == "mostrecent")
                 fileUniqueId = null;
             
-            var voice = voiceMessageService.GetMessageById(fileUniqueId);
-            if (voice is null)
+            var metadata = await voiceMessageService.GetMessageById(fileUniqueId);
+            if (metadata is null)
             {
                 return Results.NotFound();
             }
 
-            var stream = File.OpenRead(voice.LocalFullFilePath);
-            return Results.File(stream, contentType: voice.MimeType, fileDownloadName: download ? voice.FileName ?? Path.GetFileName(voice.FilePath) : null, enableRangeProcessing: !download);
+            var stream = File.OpenRead(metadata.LocalFullFilePath);
+            return Results.File(stream, contentType: metadata.MimeType, fileDownloadName: download ? metadata.FileName ?? Path.GetFileName(metadata.FilePath) : null, enableRangeProcessing: !download);
         }
     }
 

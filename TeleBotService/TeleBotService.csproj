@@ -16,6 +16,7 @@
     <PackageReference Include="Smdn.TPSmartHomeDevices.Tapo" Version="2.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
+    <PackageReference Include="System.IO.Hashing" Version="9.0.8" />
   </ItemGroup>
 
   <ItemGroup>
