@@ -140,7 +140,8 @@ public class TelegramService : ITelegramService
         }
     }
 
-    public async Task<string?> ExecuteCommand(string command, string userName, bool sentReply = false, CancellationToken cancellationToken = default)
+    public async Task<string?> ExecuteCommand(string command, string userName, bool sentReply = false, 
+        long? chatId = null, int messageId = 0, CancellationToken cancellationToken = default)
     {
         var user = this.users.GetUser(userName);
         if (user is null || !user.Enabled)
@@ -148,8 +149,8 @@ public class TelegramService : ITelegramService
             return "Unauthorized";
         }
 
-        var chatId = sentReply ? user.GetLongSetting(UserData.ChatIdKeyName) : 0;
-        var update = new FakeUpdateTelegramClient.FakeUpdate(command, userName, chatId);
+        chatId = sentReply ? chatId ?? user.GetLongSetting(UserData.ChatIdKeyName) : 0;
+        var update = new FakeUpdateTelegramClient.FakeUpdate(command, userName, chatId.GetValueOrDefault(), messageId);
         var tc = new FakeUpdateTelegramClient(this.botClient);
         await this.HandleUpdateAsync(tc, update, cancellationToken);
         return await tc.GetTextResponse();
@@ -184,7 +185,7 @@ public class TelegramService : ITelegramService
 
         this.logger.LogInformation("Received '{messageText}' message in chat {messageChatId}.", messageText, message.Chat.Id);
 
-        var messageContext = new MessageContext(botClient, message, user);
+        var messageContext = new MessageContext(this, botClient, message, user);
         _ = HandleCommands(messageContext, cancellationToken);
 
         return Task.CompletedTask;
@@ -418,10 +419,11 @@ public class TelegramService : ITelegramService
 
         public class FakeUpdate : Update
         {
-            public FakeUpdate(string command, string userName, long chatId)
+            public FakeUpdate(string command, string userName, long chatId, int messageId = 0)
             {
                 this.Message = new()
                 {
+                    MessageId = messageId,
                     Text = command,
                     Chat = new()
                     {

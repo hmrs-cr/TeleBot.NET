@@ -6,8 +6,11 @@ namespace TeleBotService.Core.Model;
 
 public class MessageContext
 {
-    internal MessageContext(ITelegramBotClient botClient, Message message, UserData user)
+    private readonly ITelegramService mainService;
+
+    internal MessageContext(ITelegramService mainService, ITelegramBotClient botClient, Message message, UserData user)
     {
+        this.mainService = mainService;
         this.BotClient = botClient;
         this.Message = message;
         this.Context = TelegramChatContext.GetContext(message.Chat);
@@ -23,4 +26,8 @@ public class MessageContext
     public Message Message { get; }
     public TelegramChatContext Context { get; }
     public UserData User { get; }
+
+    public Task<string?> ExecuteCommand(string commandLine, bool sentReply = true, CancellationToken ct = default) =>
+        this.mainService.ExecuteCommand(commandLine, this.User.UserName ?? string.Empty, sentReply, 
+            chatId: Context.ChatId, messageId: Message.MessageId, cancellationToken: ct);
 }
