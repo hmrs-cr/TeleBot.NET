@@ -80,7 +80,7 @@ then
           --build-arg INCLUDE_ALSA="$INCLUDE_ALSA" \
           --build-arg RUN_TESTS="$RUN_TESTS" \
           -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1
-          
+
     if [ "$?" != "0" ]; then
         rm TeleBotService/buildinfo
     fi

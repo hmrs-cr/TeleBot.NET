@@ -140,7 +140,7 @@ public class TelegramService : ITelegramService
         }
     }
 
-    public async Task<string?> ExecuteCommand(string command, string userName, bool sentReply = false, 
+    public async Task<string?> ExecuteCommand(string command, string userName, bool sentReply = false,
         long? chatId = null, int messageId = 0, CancellationToken cancellationToken = default)
     {
         var user = this.users.GetUser(userName);

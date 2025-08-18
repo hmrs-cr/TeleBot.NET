@@ -37,7 +37,7 @@ public class UpdateRadioListCommand : TelegramCommand
                     {
                         await this.internetRadioRepository.SaveStreamData(radioInfo.Key, radioInfo.Value);
                     }
-                    
+
                     await Reply(messageContext, $"Updated {radioInfoList.Count} radio entries.", cancellationToken: cancellationToken);
                 }
             }
