@@ -61,6 +61,11 @@ public class AudioFileMetadata : Audio
 
     internal async ValueTask<AudioFileMetadata?> AlreadyExistsInFolder(string folderPath)
     {
+        if (!Directory.Exists(folderPath))
+        {
+            return null;
+        }
+        
         var hashFileName = Directory.EnumerateFiles(folderPath, this.HashValue, 
             SearchOption.AllDirectories).FirstOrDefault();
 
