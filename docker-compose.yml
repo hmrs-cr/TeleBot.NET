@@ -11,6 +11,7 @@ services:
       - ${SND_DEVICE}
     volumes:
       - ${VOLUME_SRC1}:${VOLUME_DEST1}
+      - telebot-audio-messages:/App/audio-messages
     environment:
       - REMOTE_CONFIG_URL=${REMOTE_CONFIG_URL}
       - REMOTE_CONFIG_AUTH_TOKEN=${REMOTE_CONFIG_AUTH_TOKEN}
@@ -38,5 +39,6 @@ services:
     command: redis-server --save 10 1 --loglevel warning --requirepass ${REDIS_PASS}
 
 volumes:
+  telebot-audio-messages:
   telebot-local-config:
   redis-data:
