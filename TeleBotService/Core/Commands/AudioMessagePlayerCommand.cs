@@ -175,7 +175,28 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
     {
         if (fileUniqueId is null)
         {
-            return  mostRecentAudioFileMetadata;
+            if (mostRecentAudioFileMetadata == null)
+            {
+                string? mostRecentFileName = null;
+                var mostRecentCreationTime = DateTime.MinValue;
+                foreach (var filename in Directory.EnumerateFiles(this.voiceMessageFolder, AudioFileMetadata.MetadataFileName,
+                             SearchOption.AllDirectories))
+                {
+                    var fileTime = System.IO.File.GetCreationTime(filename);
+                    if (fileTime > mostRecentCreationTime)
+                    {
+                        mostRecentCreationTime = fileTime;
+                        mostRecentFileName = filename;
+                    }
+                }
+
+                if (mostRecentFileName is not null)
+                {
+                    mostRecentAudioFileMetadata = await AudioFileMetadata.Load(mostRecentFileName);
+                }
+            }
+            
+            return mostRecentAudioFileMetadata;
         }
         
         var folder = Directory.EnumerateDirectories(this.voiceMessageFolder, fileUniqueId, SearchOption.AllDirectories).FirstOrDefault();
