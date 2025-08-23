@@ -1,10 +1,10 @@
-services:  
+services:
   telebot-service:
     image: ${DOCKER_IMAGE_TAG}
     container_name: ${DOCKER_CONTAINER_NAME}
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "9988:8080"
     depends_on:
       - redis
     devices:
@@ -31,11 +31,11 @@ services:
   redis:
     image: redis
     container_name: ${DOCKER_REDIS_CONTAINER_NAME}
-    restart: unless-stopped    
+    restart: unless-stopped
     ports:
-      - "6379:6379"    
+      - "6379:6379"
     volumes:
-      - redis-data:/data    
+      - redis-data:/data
     command: redis-server --save 10 1 --loglevel warning --requirepass ${REDIS_PASS}
 
 volumes:
