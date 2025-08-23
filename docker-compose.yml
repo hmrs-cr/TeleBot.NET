@@ -4,7 +4,7 @@ services:
     container_name: ${DOCKER_CONTAINER_NAME}
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "9988:8080"
     depends_on:
       - redis
     volumes:
