@@ -103,7 +103,7 @@ public interface IVoiceMessageService
 
 public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
 {
-    private const string FFMpegPath = "/opt/homebrew/bin/ffmpeg";//"/usr/bin/ffmpeg";
+    private const string FFMpegPath = "/usr/bin/ffmpeg";
     
     private readonly JsonSerializerOptions jsonOptions = new()
     {
