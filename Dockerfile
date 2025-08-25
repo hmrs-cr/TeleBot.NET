@@ -23,24 +23,22 @@ COPY --from=build /src/TeleBotService.sh .
 RUN chmod +x ./TeleBotService.sh
 RUN mkdir ./local-config
 
-RUN if [ "${INCLUDE_SPEEDTEST}" = "yes" ]; then \
+RUN set -e; \
+    if [ "${INCLUDE_SPEEDTEST}" = "yes" ]; then \
         apt-get update \
         && apt-get install -y curl \
         && curl -s https://packagecloud.io/install/repositories/ookla/speedtest-cli/script.deb.sh | bash \
         && apt-get install -y speedtest; \
+    fi; \
+    if [ "${INCLUDE_ALSA}" = "yes" ]; then \
+        apt-get install -y --no-install-recommends alsa-utils opus-tools; \
+    fi; \
+    if [ "${INCLUDE_NETCAT}" = "yes" ]; then \
+        apt-get install -y --no-install-recommends netcat-traditional; \
+    fi; \
+    if [ "${INCLUDE_FFMPEG}" = "yes" ]; then \
+        apt-get install -y --no-install-recommends ffmpeg; \
     fi
-
-RUN if [ "${INCLUDE_ALSA}" = "yes" ]; then \
-      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools; \
-    fi
-
-RUN if [ "${INCLUDE_NETCAT}" = "yes" ]; then \
-      apt-get install -y netcat-traditional; \
-    fi 
-
-RUN if [ "${INCLUDE_FFMPEG}" = "yes" ]; then \
-           apt-get update && apt-get install -y ffmpeg; \
-        fi
 
 ENTRYPOINT ["./TeleBotService.sh"]
 
