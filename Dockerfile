@@ -38,7 +38,7 @@ RUN set -e; \
     fi; \
     if [ "${INCLUDE_FFMPEG}" = "yes" ]; then \
         apt-get install -y --no-install-recommends ffmpeg; \
-    fi
+    fi;
 
 ENTRYPOINT ["./TeleBotService.sh"]
 
