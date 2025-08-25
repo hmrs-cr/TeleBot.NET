@@ -31,15 +31,11 @@ RUN if [ "${INCLUDE_SPEEDTEST}" = "yes" ]; then \
     fi
 
 RUN if [ "${INCLUDE_ALSA}" = "yes" ]; then \
-      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools; \
+      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools && apt-get install -y --no-install-recommends ffmpeg; \
     fi
 
 RUN if [ "${INCLUDE_NETCAT}" = "yes" ]; then \
       apt-get install -y --no-install-recommends netcat-traditional; \
-    fi
-
-RUN if [ "${INCLUDE_FFMPEG}" = "yes" ]; then \
-      apt-get install -y --no-install-recommends ffmpeg; \
     fi
 
 ENTRYPOINT ["./TeleBotService.sh"]
