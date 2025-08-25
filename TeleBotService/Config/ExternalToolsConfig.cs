@@ -9,4 +9,6 @@ public record ExternalToolsConfig
     public string? ARecord { get; init; }
     public string? OpusEnc { get; init; }
     public string? MKFifo { get; init; }
+    
+    public string? FFMpeg { get; init; }
 }

@@ -36,9 +36,11 @@ RUN if [ "${INCLUDE_ALSA}" = "yes" ]; then \
 
 RUN if [ "${INCLUDE_NETCAT}" = "yes" ]; then \
       apt-get install -y netcat-traditional; \
-    fi
-    
+    fi 
 
+RUN if [ "${INCLUDE_FFMPEG}" = "yes" ]; then \
+           apt-get update && apt-get install -y ffmpeg; \
+        fi
 
 ENTRYPOINT ["./TeleBotService.sh"]
 

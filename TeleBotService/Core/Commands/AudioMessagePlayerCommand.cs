@@ -1,7 +1,11 @@
-﻿using System.Text;
+﻿using System.Net.Mime;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
+using TeleBotService.Config;
 using TeleBotService.Core.Model;
+using TeleBotService.Extensions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using File = Telegram.Bot.Types.File;
@@ -99,6 +103,8 @@ public interface IVoiceMessageService
 
 public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
 {
+    private const string FFMpegPath = "/opt/homebrew/bin/ffmpeg";//"/usr/bin/ffmpeg";
+    
     private readonly JsonSerializerOptions jsonOptions = new()
     {
         WriteIndented = true,
@@ -109,11 +115,13 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
     private readonly string voiceMessageFolder;
 
     private AudioFileMetadata? mostRecentAudioFileMetadata;
+    private readonly string ffMpegExecPath;
 
-    public AudioMessagePlayerCommand(ILogger<AudioMessagePlayerCommand> logger)
+    public AudioMessagePlayerCommand(ILogger<AudioMessagePlayerCommand> logger, IOptions<ExternalToolsConfig> config)
     {
         this.Logger = logger;
         this.voiceMessageFolder = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "audio-messages");
+        this.ffMpegExecPath = config.Value.FFMpeg ?? FFMpegPath;
     }
 
     public override bool IsAdmin => true;
@@ -144,15 +152,9 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
 
                 Directory.CreateDirectory(directory);
                 
-                await using var audioWriteStream = new FileStream(audioFileMetadata.LocalFullFilePath, FileMode.Create);
-                await using var metadataWriteStream = new FileStream(Path.Join(directory, AudioFileMetadata.MetadataFileName), FileMode.Create);
-                
-                var writeMetadataTask = JsonSerializer.SerializeAsync(metadataWriteStream, audioFileMetadata, jsonOptions, cancellationToken: cancellationToken);
-                var writeAudioTask =  messageContext.BotClient.DownloadFileAsync(fileInfo.FilePath, audioWriteStream, cancellationToken);
-                
-                var writeHashTask = System.IO.File.WriteAllTextAsync(Path.Join(directory, audioFileMetadata.HashValue), audioFileMetadata.HashValue, cancellationToken);
-                
-                await Task.WhenAll(writeAudioTask, writeMetadataTask, writeHashTask);
+                _ = System.IO.File.WriteAllTextAsync(Path.Join(directory, audioFileMetadata.HashValue), audioFileMetadata.HashValue, cancellationToken);
+                await DownloadAndConvertFile(messageContext, audioFileMetadata, cancellationToken);
+                _ = WriteMetadataFile(directory, audioFileMetadata, cancellationToken);
 
                 PlayLatestAudioMessage(audioFileMetadata);
 
@@ -168,6 +170,29 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
         {
             mostRecentAudioFileMetadata = audioFileMetadata;
             _ = messageContext.ExecuteCommand("play music with-resume MostRecentAudioMessage", ct: cancellationToken);
+        }
+    }
+
+    private async Task WriteMetadataFile(string directory, AudioFileMetadata audioFileMetadata, CancellationToken cancellationToken)
+    {
+        await using var metadataWriteStream = new FileStream(Path.Join(directory, AudioFileMetadata.MetadataFileName), FileMode.Create);
+        await JsonSerializer.SerializeAsync(metadataWriteStream, audioFileMetadata, jsonOptions, cancellationToken: cancellationToken);
+    }
+
+    private async Task DownloadAndConvertFile(MessageContext messageContext, AudioFileMetadata fileInfo, CancellationToken cancellationToken)
+    {
+        await using var audioWriteStream = new FileStream(fileInfo.LocalFullFilePath, FileMode.Create);
+        await messageContext.BotClient.DownloadFileAsync(fileInfo.FilePath!, audioWriteStream, cancellationToken);
+        if (fileInfo.MimeType?.Contains("ogg") == true || fileInfo.FilePath!.EndsWith(".oga"))
+        {
+            var newLocalFilePath = Path.ChangeExtension(fileInfo.LocalFullFilePath, "mp3");
+            newLocalFilePath = await ConvertOggToMp3(fileInfo.LocalFullFilePath, newLocalFilePath);
+            if (newLocalFilePath != fileInfo.LocalFullFilePath && System.IO.File.Exists(newLocalFilePath))
+            {
+                fileInfo.MimeType = fileInfo.MimeType?.Replace("ogg", "mpeg");
+                System.IO.File.Delete(fileInfo.LocalFullFilePath);
+                fileInfo.LocalFullFilePath = newLocalFilePath;
+            }
         }
     }
 
@@ -215,5 +240,17 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
         {
             yield return await AudioFileMetadata.Load(filename);
         }
+    }
+
+    private async Task<string> ConvertOggToMp3(string inputOgg, string outputMp3)
+    {
+        if (!System.IO.File.Exists(this.ffMpegExecPath))
+        {
+            this.LogInformation("FFMpeg tool not found.");
+            return inputOgg;
+        }
+        
+        await ProcessExtensions.ExecuteProcessCommand(this.ffMpegExecPath, $"-i {inputOgg} {outputMp3}");
+        return outputMp3;
     }
 }

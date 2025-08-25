@@ -38,12 +38,8 @@ if [ -z "${SND_DEVICE}" ]; then
   export SND_DEVICE="/dev/snd"
 fi
 
-if [ -z "${VOLUME_SRC1}" ]; then
-  export VOLUME_SRC1="telebot-local-config"
-fi
-
-if [ -z "${VOLUME_DEST1}" ]; then
-  export VOLUME_DEST1="/App/local-config"
+if [ -z "${INCLUDE_FFMPEG}" ]; then
+  export INCLUDE_FFMPEG="yes"
 fi
 
 if [ -z "${ASPNETCORE_ENVIRONMENT}" ]; then
