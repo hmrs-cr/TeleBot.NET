@@ -186,7 +186,7 @@ public class AudioMessagePlayerCommand : TelegramCommand, IVoiceMessageService
         if (fileInfo.MimeType?.Contains("ogg") == true || fileInfo.FilePath!.EndsWith(".oga"))
         {
             var newLocalFilePath = Path.ChangeExtension(fileInfo.LocalFullFilePath, "mp3");
-            LogDebug("Converting file '{LocalFullFilePath}' to {newLocalFilePath}", fileInfo.MimeType, newLocalFilePath);
+            LogDebug("Converting file '{LocalFullFilePath}' to {newLocalFilePath}", fileInfo.LocalFullFilePath, newLocalFilePath);
             newLocalFilePath = await ConvertOggToMp3(fileInfo.LocalFullFilePath, newLocalFilePath);
             if (newLocalFilePath != fileInfo.LocalFullFilePath && System.IO.File.Exists(newLocalFilePath))
             {
