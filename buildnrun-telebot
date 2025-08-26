@@ -26,8 +26,8 @@ if [ -z "${RUN_TESTS}" ]; then
   export RUN_TESTS="yes"
 fi
 
-if [ -z "${INCLUDE_ALSA}" ]; then
-  export INCLUDE_ALSA="yes"
+if [ -z "${INCLUDE_AUDIO_TOOLS}" ]; then
+  export INCLUDE_AUDIO_TOOLS="yes"
 fi
 
 if [ -z "${GIT_BRANCH}" ]; then
@@ -46,10 +46,8 @@ if [ -z "${ASPNETCORE_ENVIRONMENT}" ]; then
   export ASPNETCORE_ENVIRONMENT="Production"
 fi
 
-git checkout $GIT_BRANCH && git pull
-
 latcommit=$(git log --format="%h" -n 1)
-if [ "$1" == "--rebuild"  ]; then
+if [ "$1" == "--rebuild" ]; then
     lastbuildcommit="0"
 else
     lastbuildcommit=$(cat TeleBotService/buildinfo 2> /dev/null || echo "")
@@ -65,7 +63,6 @@ if [ "$1" == "--shutdown"  ]; then
     SHUTDOWN_CONTAINER=1
 fi
 
-
 if [ "$lastbuildcommit" != "$latcommit" ]
 then
     SECONDS=0
@@ -74,7 +71,7 @@ then
     docker build \
           --build-arg INCLUDE_SPEEDTEST="$INCLUDE_SPEEDTEST" \
           --build-arg INCLUDE_NETCAT="$INCLUDE_NETCAT" \
-          --build-arg INCLUDE_ALSA="$INCLUDE_ALSA" \
+          --build-arg INCLUDE_AUDIO_TOOLS="$INCLUDE_AUDIO_TOOLS" \
           --build-arg RUN_TESTS="$RUN_TESTS" \
           --build-arg INCLUDE_FFMPEG="$INCLUDE_FFMPEG" \
           -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1

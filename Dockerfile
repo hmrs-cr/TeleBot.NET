@@ -14,7 +14,7 @@ RUN dotnet publish /p:Version=$(date "+%y").$(date "+%m%d").$(date "+%H%M").$(da
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 ARG INCLUDE_SPEEDTEST
-ARG INCLUDE_ALSA
+ARG INCLUDE_AUDIO_TOOLS
 ARG INCLUDE_NETCAT
 
 WORKDIR /App
@@ -30,13 +30,15 @@ RUN if [ "${INCLUDE_SPEEDTEST}" = "yes" ]; then \
         && apt-get install -y speedtest; \
     fi
 
-RUN if [ "${INCLUDE_ALSA}" = "yes" ]; then \
-      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools && apt-get install -y --no-install-recommends ffmpeg; \
+RUN if [ "${INCLUDE_AUDIO_TOOLS}" = "yes" ]; then \
+      apt-get install -y --no-install-recommends alsa-utils && apt-get install -y --no-install-recommends opus-tools; \
     fi
 
 RUN if [ "${INCLUDE_NETCAT}" = "yes" ]; then \
-      apt-get install -y --no-install-recommends netcat-traditional; \
+      apt-get install -y netcat-traditional; \
     fi
+    
+
 
 ENTRYPOINT ["./TeleBotService.sh"]
 
