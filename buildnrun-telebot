@@ -67,14 +67,13 @@ if [ "$lastbuildcommit" != "$latcommit" ]
 then
     SECONDS=0
     echo "Generating new build. Last commit: $latcommit"
-    echo $latcommit > TeleBotService/buildinfo
+    echo "$latcommit" > TeleBotService/buildinfo
     docker build \
           --build-arg INCLUDE_SPEEDTEST="$INCLUDE_SPEEDTEST" \
           --build-arg INCLUDE_NETCAT="$INCLUDE_NETCAT" \
           --build-arg INCLUDE_AUDIO_TOOLS="$INCLUDE_AUDIO_TOOLS" \
           --build-arg RUN_TESTS="$RUN_TESTS" \
-          --build-arg INCLUDE_FFMPEG="$INCLUDE_FFMPEG" \
-          -t $DOCKER_IMAGE_TAG -f Dockerfile . && RESET_CONTAINER=1
+          -t "$DOCKER_IMAGE_TAG" -f Dockerfile . && RESET_CONTAINER=1
 
     if [ "$?" != "0" ]; then
         rm TeleBotService/buildinfo
