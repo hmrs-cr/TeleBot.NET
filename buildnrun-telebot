@@ -63,6 +63,8 @@ if [ "$1" == "--shutdown"  ]; then
     SHUTDOWN_CONTAINER=1
 fi
 
+git checkout "$GIT_BRANCH" && git pull
+
 if [ "$lastbuildcommit" != "$latcommit" ]
 then
     SECONDS=0
