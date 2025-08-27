@@ -46,6 +46,7 @@ if [ -z "${ASPNETCORE_ENVIRONMENT}" ]; then
   export ASPNETCORE_ENVIRONMENT="Production"
 fi
 
+git checkout "$GIT_BRANCH" && git pull
 latcommit=$(git log --format="%h" -n 1)
 if [ "$1" == "--rebuild" ]; then
     lastbuildcommit="0"
@@ -62,8 +63,6 @@ fi
 if [ "$1" == "--shutdown"  ]; then
     SHUTDOWN_CONTAINER=1
 fi
-
-git checkout "$GIT_BRANCH" && git pull
 
 if [ "$lastbuildcommit" != "$latcommit" ]
 then
